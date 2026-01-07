@@ -45,6 +45,9 @@ export function commitTurn(ctx: TurnContext, state: TurnState): Partial<GameStor
     countries: state.countries,
     marketEvents: state.marketEvents,
 
+    // applications
+    pendingApplications: state.pendingApplications,
+
     globalMarket: {
       value: state.globalMarketValue,
       description: `Фаза: ${state.country.cycle?.phase ?? 'unknown'}`,

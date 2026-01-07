@@ -26,7 +26,8 @@ export function BusinessesSection({
   onSuccess,
   onError,
 }: BusinessesSectionProps) {
-  const { sendOffer, turn: currentTurn } = useGameStore()
+  const { sendOffer, turn: currentTurn, player } = useGameStore()
+  const playerEnergy = player?.stats?.energy || 0
   const economy = useEconomy()
 
   const handleOpenWithPartner = (
@@ -35,6 +36,11 @@ export function BusinessesSection({
     playerShare: number,
     template: BusinessTemplate,
   ) => {
+    if (playerEnergy < 20) {
+      onError('Недостаточно энергии для открытия бизнеса с партнером! (нужно 20)')
+      return
+    }
+
     const inflatedCost = economy
       ? getInflatedPrice(template.initialCost, economy, 'business')
       : template.initialCost
@@ -94,6 +100,7 @@ export function BusinessesSection({
   return (
     <AllBusinessesDialog
       playerCash={playerCash}
+      playerEnergy={playerEnergy}
       onOpenBusiness={onOpenBusiness}
       onOpenWithPartner={handleOpenWithPartner}
       onSuccess={onSuccess}

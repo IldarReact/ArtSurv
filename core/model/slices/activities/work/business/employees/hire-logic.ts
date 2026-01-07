@@ -18,16 +18,30 @@ export function handleHireEmployee(
   const player = state.player as Player
   if (!player) return
 
+  // 1. Проверка энергии (нужно 5 на попытку найма)
+  const currentEnergy = player.personal?.stats?.energy ?? 0
+  if (currentEnergy < 5) {
+    state.pushNotification?.({
+      type: 'error',
+      title: 'Недостаточно энергии',
+      message: 'Вам нужно хотя бы 5 единиц энергии, чтобы провести собеседование.',
+    })
+    return
+  }
+
   const i = player.businesses.findIndex((b) => b.id === businessId)
   if (i === -1) return
 
   const business = player.businesses[i]
 
+  // 2. Списываем энергию за попытку (даже если будет отказ или ошибка валидации)
+  state.performTransaction?.({ energy: -5 })
+
   const playerRolesCount =
     (business.playerRoles.managerialRoles?.length || 0) +
     (business.playerRoles.operationalRole ? 1 : 0)
 
-  // Validate hiring parameters
+  // 3. Валидация параметров найма (деньги, лимиты)
   const validation = validateEmployeeHire(
     business.walletBalance || 0,
     candidate.requestedSalary,
@@ -44,19 +58,20 @@ export function handleHireEmployee(
     return
   }
 
-  // Refusal logic based on reputation
-  const baseProb = 30
+  // 4. Логика отказа на основе репутации
+  // Базовая вероятность согласия: 40% + репутация - (звезды * 12)
+  const baseProb = 40
   const reputationWeight = business.reputation || 0
-  const starPenalty = (candidate.stars || 1) * 15
-  const acceptanceProb = Math.max(5, Math.min(95, baseProb + reputationWeight - starPenalty))
+  const starPenalty = (candidate.stars || 1) * 12
+  const acceptanceProb = Math.max(5, Math.min(98, baseProb + reputationWeight - starPenalty))
 
-  // Skip random check in tests for determinism
+  // В тестах не используем рандом для детерминизма
   const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test'
   if (!isTest && Math.random() * 100 > acceptanceProb) {
     state.pushNotification?.({
       type: 'warning',
       title: 'Отказ от предложения',
-      message: `${candidate.name} отклонил ваше предложение. Репутация вашего бизнеса (${Math.round(reputationWeight)}) слишком низка для специалиста такого уровня (${candidate.stars}★).`,
+      message: `${candidate.name} отклонил ваше предложение. Ваша репутация (${Math.round(reputationWeight)}) недостаточно высока для специалиста такого уровня (${candidate.stars}★).`,
     })
     return
   }
@@ -72,8 +87,6 @@ export function handleHireEmployee(
   const updatedBusinesses = [...player.businesses]
   updatedBusinesses[i] = updatedBusiness
 
-  state.performTransaction?.({ energy: -10 })
-
   set((state) => {
     if (!state.player) return state
     return {
@@ -82,6 +95,12 @@ export function handleHireEmployee(
         businesses: updatedBusinesses,
       },
     }
+  })
+
+  state.pushNotification?.({
+    type: 'success',
+    title: 'Сотрудник нанят',
+    message: `${candidate.name} принял ваше предложение и приступил к работе в ${business.name}.`,
   })
 
   broadcastBusinessEmployeesUpdate(updatedBusiness, player)
@@ -173,7 +192,7 @@ export function handleHireFamilyMember(
     occupation: `Работает в ${business.name}`,
   }
 
-  state.performTransaction?.({ energy: -5 }) // Hiring family is easier
+  state.performTransaction?.({ energy: -5 }) // Hiring family costs 5 energy now
 
   set((state) => {
     if (!state.player) return state

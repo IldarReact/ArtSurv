@@ -93,7 +93,13 @@ export const handleUnfreezeBusiness = (
 
   const validation = validateBusinessUnfreeze(state.player.stats.money, business.initialCost)
   if (!validation.isValid) {
-    console.warn(validation.error)
+    const errorMessage = validation.error || 'Недостаточно средств для разморозки'
+    console.warn(errorMessage)
+    state.pushNotification?.({
+      type: 'error',
+      title: 'Ошибка разморозки',
+      message: errorMessage,
+    })
     return
   }
 

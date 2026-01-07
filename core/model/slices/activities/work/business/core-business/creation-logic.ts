@@ -26,7 +26,13 @@ export const handleOpenBusiness = (
   )
 
   if (!validation.isValid) {
-    console.warn(validation.error)
+    const errorMessage = validation.error || 'Неизвестная ошибка при открытии бизнеса'
+    console.warn(errorMessage)
+    state.pushNotification?.({
+      type: 'error',
+      title: 'Не удалось открыть бизнес',
+      message: errorMessage,
+    })
     return
   }
 
@@ -83,6 +89,12 @@ export const handleOpenBusiness = (
       },
       businesses: finalBusinesses,
     },
+  })
+
+  state.pushNotification?.({
+    type: 'success',
+    title: 'Бизнес открыт',
+    message: `Вы успешно открыли "${business.name}"`,
   })
 }
 

@@ -4,19 +4,26 @@ import React from 'react'
 import { BusinessTemplate } from '@/core/lib/data-loaders/businesses-loader'
 import { Button } from '@/shared/ui/button'
 
-interface DialogTriggerContentProps {
+interface DialogTriggerContentProps extends React.HTMLAttributes<HTMLDivElement> {
   businessTemplates: BusinessTemplate[]
 }
 
-export function DialogTriggerContent({ businessTemplates }: DialogTriggerContentProps) {
+export function DialogTriggerContent({ businessTemplates, ...props }: DialogTriggerContentProps) {
+  if (!businessTemplates || businessTemplates.length === 0) {
+    return null
+  }
+
   const minCost = Math.min(...businessTemplates.map((b) => b.initialCost))
   const maxCost = Math.max(...businessTemplates.map((b) => b.initialCost))
 
   return (
-    <div className="cursor-pointer">
-      <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-white/20 transition-all hover:bg-white/8">
+    <div
+      className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 rounded-xl"
+      {...props}
+    >
+      <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-white/20 transition-all hover:bg-white/8 group">
         <div className="flex items-center gap-4 mb-4">
-          <div className="p-3 rounded-xl bg-emerald-500/20">
+          <div className="p-3 rounded-xl bg-emerald-500/20 group-hover:bg-emerald-500/30 transition-colors">
             <Store className="w-8 h-8 text-emerald-400" />
           </div>
           <div className="flex-1">
@@ -34,19 +41,15 @@ export function DialogTriggerContent({ businessTemplates }: DialogTriggerContent
           </div>
           <div className="bg-white/5 rounded-lg p-3">
             <p className="text-xs text-white/60 mb-1">От</p>
-            <p className="text-green-400 font-bold">
-              ${minCost.toLocaleString()}
-            </p>
+            <p className="text-green-400 font-bold">${minCost.toLocaleString()}</p>
           </div>
           <div className="bg-white/5 rounded-lg p-3">
             <p className="text-xs text-white/60 mb-1">До</p>
-            <p className="text-green-400 font-bold">
-              ${maxCost.toLocaleString()}
-            </p>
+            <p className="text-green-400 font-bold">${maxCost.toLocaleString()}</p>
           </div>
         </div>
 
-        <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+        <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold pointer-events-none">
           <Info className="w-4 h-4 mr-2" />
           Выбрать бизнес
         </Button>

@@ -24,6 +24,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 
 interface AllBusinessesDialogProps {
   playerCash: number
+  playerEnergy: number
   onOpenBusiness: (business: import('@/core/types').Business, upfrontCost: number) => void
   onOpenWithPartner?: (
     partnerId: string,
@@ -37,6 +38,7 @@ interface AllBusinessesDialogProps {
 
 export function AllBusinessesDialog({
   playerCash,
+  playerEnergy,
   onOpenBusiness,
   onOpenWithPartner,
   onSuccess,
@@ -77,11 +79,13 @@ export function AllBusinessesDialog({
         currentTurn,
       )
 
-      if (playerCash >= upfrontCost) {
+      if (playerCash >= upfrontCost && playerEnergy >= 15) {
         onOpenBusiness(business, upfrontCost)
         onSuccess(`Бизнес "${template.name}" успешно открыт!`)
-      } else {
+      } else if (playerCash < upfrontCost) {
         onError(`Недостаточно средств. Необходимо $${upfrontCost.toLocaleString()}`)
+      } else {
+        onError(`Недостаточно энергии. Необходимо 15 ед.`)
       }
     } catch (error) {
       console.error('Failed to open business:', error)
@@ -114,7 +118,9 @@ export function AllBusinessesDialog({
               : template.initialCost
 
             const upfrontCost = Math.round(inflatedCost)
-            const canAfford = playerCash >= upfrontCost
+            const canAffordMoney = playerCash >= upfrontCost
+            const canAffordEnergy = playerEnergy >= 15
+            const canAfford = canAffordMoney && canAffordEnergy
             const isSelected = selectedBusinessId === template.id
 
             const corporateTaxRate = economy?.corporateTaxRate || 15

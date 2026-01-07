@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckCircle, Briefcase, Users, Globe } from 'lucide-react'
+import { CheckCircle, Briefcase, Users, Globe, Zap } from 'lucide-react'
 import React from 'react'
 
 import { ROLE_LABELS } from '../shared-constants'
@@ -156,13 +156,18 @@ export function EmployeeHireDialog({
           >
             <div className="flex items-center justify-center gap-2">
               <CheckCircle className="w-4 h-4" />
-              <span>
-                {activeTab === 'players'
-                  ? selectedCandidate?.id.startsWith('player_')
-                    ? 'Занять слот'
-                    : 'Отправить оффер'
-                  : 'Нанять'}
-              </span>
+              <div className="flex flex-col items-start leading-tight">
+                <span>
+                  {activeTab === 'players'
+                    ? selectedCandidate?.id.startsWith('player_')
+                      ? 'Занять слот'
+                      : 'Отправить оффер'
+                    : 'Нанять'}
+                </span>
+                <span className="text-[9px] opacity-70 flex items-center gap-1">
+                  <Zap className="w-2 h-2 fill-yellow-400 text-yellow-400" /> -5 энергии
+                </span>
+              </div>
               {selectedCandidate && (
                 <span className="ml-2 opacity-60">
                   $

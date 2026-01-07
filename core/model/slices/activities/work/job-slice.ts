@@ -118,7 +118,7 @@ export const createJobSlice: StateCreator<GameStore, [], [], JobSlice> = (set, g
         ? {
             skills: appData.requirements.map((r) => ({
               name: r.skillId,
-              level: 1,
+              level: r.minLevel,
             })),
           }
         : undefined,
@@ -180,9 +180,27 @@ export const createJobSlice: StateCreator<GameStore, [], [], JobSlice> = (set, g
       return
     }
 
-    // Chance calculation: base 30% + intelligence/2
+    // Chance calculation
     const intelligence = player.personal.stats.intelligence || 0
-    const chance = 30 + intelligence / 2
+    const playerSkills = player.personal.skills || []
+    const jobRequirements = job.requirements?.skills || []
+
+    let isSkillMatch = true
+    if (jobRequirements.length > 0) {
+      for (const req of jobRequirements) {
+        const playerSkill = playerSkills.find((s) => s.name === req.name)
+        if (!playerSkill || playerSkill.level <= req.level) {
+          isSkillMatch = false
+          break
+        }
+      }
+    } else {
+      // If no requirements, we use intelligence chance
+      isSkillMatch = false
+    }
+
+    const baseChance = 30 + intelligence / 2
+    const chance = isSkillMatch ? 100 : baseChance
     const roll = Math.random() * 100
     const isSuccess = roll < chance
 
@@ -207,7 +225,9 @@ export const createJobSlice: StateCreator<GameStore, [], [], JobSlice> = (set, g
                   energy: state.player.personal.stats.energy - energyCost,
                 },
               },
-              jobs: state.player.jobs.map((j) => (j.id === jobId ? { ...j, salary: newSalary } : j)),
+              jobs: state.player.jobs.map((j) =>
+                j.id === jobId ? { ...j, salary: newSalary } : j,
+              ),
               quarterlySalary: state.player.quarterlySalary + salaryDiff * 3,
             }
           : null,

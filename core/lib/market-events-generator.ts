@@ -51,27 +51,27 @@ const MARKET_EVENT_TEMPLATES: MarketEventTemplate[] = [
   // Негативные события (падение рынка)
   {
     title: 'Экономический кризис',
-    description: 'Мировая экономика вошла в рецессию. Спрос на товары и услуги резко упал.',
-    impact: -0.6,
-    duration: 6,
+    description: 'Мировая экономика вошла в рецессию. Спрос на товары и услуги немного упал.',
+    impact: -0.25, // Reduced from -0.6
+    duration: 4,   // Reduced from 6
     type: 'negative',
-    probability: 0.03
+    probability: 0.02 // Reduced from 0.03
   },
   {
     title: 'Финансовый коллапс',
-    description: 'Крах фондового рынка вызвал панику среди инвесторов и потребителей.',
-    impact: -0.8,
-    duration: 8,
+    description: 'Крах фондового рынка вызвал временную панику среди инвесторов.',
+    impact: -0.4,  // Reduced from -0.8
+    duration: 6,   // Reduced from 8
     type: 'negative',
-    probability: 0.01
+    probability: 0.005 // Reduced from 0.01
   },
   {
     title: 'Рост инфляции',
-    description: 'Высокая инфляция снижает покупательскую способность населения.',
-    impact: -0.3,
-    duration: 5,
+    description: 'Инфляция немного снижает покупательскую способность населения.',
+    impact: -0.15, // Reduced from -0.3
+    duration: 4,
     type: 'negative',
-    probability: 0.12
+    probability: 0.1
   },
   {
     title: 'Торговые войны',

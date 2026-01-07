@@ -1,7 +1,7 @@
 export { AllBusinessesDialog } from './business/components/all-businesses-dialog'
 export { BusinessManagementDialog } from './business/business-management'
 export { BusinessesSection } from './business/components/businesses-section'
-export { CurrentJobsList as CurrentJobsSection } from './components/CurrentJobsList'
+export { CurrentJobsList as CurrentJobsSection } from './components/current-jobs-list'
 export { FreelanceSection } from './components/FreelanceSection'
 export { StartupsSection } from './components/StartupsSection'
 export { VacanciesSection } from './components/VacanciesSection'

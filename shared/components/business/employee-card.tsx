@@ -54,11 +54,15 @@ interface EmployeeCardProps {
     energy?: number
     sanity?: number
     health?: number
+    happiness?: number
+    intelligence?: number
   }
   cost?: {
     energy?: number
     sanity?: number
     health?: number
+    happiness?: number
+    intelligence?: number
   }
   effortPercent?: number
   isPartialAllowed?: boolean
@@ -103,6 +107,7 @@ export function EmployeeCard({
   effortPercent,
   isPartialAllowed = false,
   onEffortChange,
+  requirements,
   onAction,
   actionLabel,
   actionIcon,
@@ -184,6 +189,8 @@ export function EmployeeCard({
         onEffortChange={onEffortChange}
         finalCosts={finalCosts}
         traits={traits}
+        requirements={requirements}
+        isVacancy={isVacancy}
       />
 
       <EmployeeCardFooter

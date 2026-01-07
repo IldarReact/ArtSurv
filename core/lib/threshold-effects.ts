@@ -47,26 +47,26 @@ export function generateLowStatEvents(
   const notifications: Notification[] = []
   const quarter = getQuarter(turn)
 
-  if ((stats.sanity || 0) < 20 && Math.random() < 0.3) {
+  if ((stats.sanity || 0) < 20 && Math.random() < 0.15) {
     notifications.push({
       id: `conflict_work_${Date.now()}`,
       type: 'warning',
       title: '⚠️ Конфликт на работе',
-      message: 'Из-за стресса вы поссорились с коллегой. Это может повлиять на вашу карьеру.',
+      message: 'Из-за стресса вы поссорились с коллегой. Постарайтесь отдохнуть.',
       date: `${year} Q${quarter}`,
       isRead: false,
     })
   }
 
-  if ((stats.sanity || 0) < 20 && Math.random() < 0.2) {
+  if ((stats.sanity || 0) < 20 && Math.random() < 0.1) {
     notifications.push({
       id: `business_error_${Date.now()}`,
       type: 'warning',
       title: '📉 Ошибка в бизнесе',
-      message: 'Из-за стресса вы приняли неверное решение. Репутация бизнеса пострадала.',
+      message: 'Из-за усталости вы допустили небольшую ошибку в расчетах.',
       date: `${year} Q${quarter}`,
       isRead: false,
-      data: { reputationLoss: 10 },
+      data: { reputationLoss: 5 },
     })
   }
 

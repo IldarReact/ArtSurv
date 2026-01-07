@@ -70,12 +70,16 @@ export function BusinessCard({
       <div className="p-6">
         <div className="flex justify-between items-start mb-3">
           <h3 className="text-2xl font-bold text-white">{template.name}</h3>
-          <div
-            className={`text-xl font-bold flex flex-col items-end ${canAfford ? 'text-green-400' : 'text-red-400'}`}
-          >
-            <div className="flex items-center gap-1">
+          <div className="flex flex-col items-end gap-1">
+            <div
+              className={`text-xl font-bold flex items-center gap-1 ${canAfford ? 'text-green-400' : 'text-red-400'}`}
+            >
               <DollarSign className="w-5 h-5" />
               {upfrontCost.toLocaleString()}
+            </div>
+            <div className="flex items-center gap-1 text-xs font-medium text-amber-400">
+              <Zap className="w-3 h-3 fill-amber-400" />
+              15 ед.
             </div>
           </div>
         </div>

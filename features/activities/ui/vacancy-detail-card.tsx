@@ -56,6 +56,7 @@ export function VacancyDetailCard({
         salary={salaryValue}
         salaryLabel="/мес"
         avatar={image}
+        isVacancy={true}
         stars={Math.max(1, ...requirements.map((r) => r.level), 1)}
         requirements={requirements}
         cost={jobCost}

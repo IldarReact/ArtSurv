@@ -39,11 +39,16 @@ export function generateBusinessEvents(
   })
 
   const events: BusinessEvent[] = []
-  // 0-3 события за квартал
-  const eventCount = Math.floor(Math.random() * 4)
+  
+  // New businesses (less than 4 quarters) have 0 events for stability
+  const businessAge = currentTurn - (business.startedTurn ?? currentTurn)
+  if (businessAge < 4) return []
 
-  // Шанс негативного события выше, если эффективность или репутация низкие
-  let negativeChance = 0.3 + (100 - business.efficiency) / 200 + (100 - business.reputation) / 200
+  // 0-1 event per quarter (reduced from 0-3)
+  const eventCount = Math.random() < 0.4 ? 1 : 0
+
+  // Lowered base negative chance from 0.3 to 0.15
+  let negativeChance = 0.15 + (100 - business.efficiency) / 400 + (100 - business.reputation) / 400
 
   // Применяем юридическую защиту (снижаем шанс в % от текущего шанса)
   if (legalProtectionPct > 0) {

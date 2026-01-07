@@ -1,4 +1,4 @@
-import { Zap, Brain, TrendingUp, Clock } from 'lucide-react'
+import { Zap, Brain, TrendingUp, Clock, Heart, Smile, Lightbulb } from 'lucide-react'
 import React from 'react'
 
 import { Badge } from '@/shared/ui/badge'
@@ -26,6 +26,8 @@ interface EmployeeCardContentProps {
     energy?: number
     sanity?: number
     health?: number
+    happiness?: number
+    intelligence?: number
   }
   traits?: Array<{
     name: string
@@ -34,6 +36,8 @@ interface EmployeeCardContentProps {
     color: string
     description: string
   }>
+  requirements?: Array<{ skill: string; level: number }>
+  isVacancy?: boolean
 }
 
 export const EmployeeCardContent: React.FC<EmployeeCardContentProps> = ({
@@ -45,9 +49,31 @@ export const EmployeeCardContent: React.FC<EmployeeCardContentProps> = ({
   onEffortChange,
   finalCosts,
   traits,
+  requirements,
+  isVacancy,
 }) => {
   return (
     <CardContent className="p-6 pt-2 space-y-6">
+      {/* Requirements for Vacancies */}
+      {isVacancy && requirements && requirements.length > 0 && (
+        <div className="bg-white/5 rounded-2xl p-4 border border-white/10 group-hover:bg-white/10 transition-colors">
+          <div className="text-[10px] text-white/60 uppercase font-black tracking-[0.15em] mb-3">
+            Требования к навыкам
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {requirements.map((req, i) => (
+              <Badge
+                key={i}
+                variant="outline"
+                className="bg-white/10 border-white/20 text-[11px] py-1.5 px-3 font-bold text-white shadow-sm"
+              >
+                {req.skill}: {req.level}★
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Productivity or Impact */}
       {(productivity !== undefined || displayImpact) && (
         <div className="grid grid-cols-1 gap-4">
@@ -179,23 +205,47 @@ export const EmployeeCardContent: React.FC<EmployeeCardContentProps> = ({
         </div>
       )}
 
-      {/* Costs (Energy/Sanity) */}
+      {/* Costs (Energy/Sanity/Health/Happiness/Intelligence) */}
       {finalCosts && (
-        <div className="flex gap-4 pt-1">
-          {finalCosts.energy !== undefined && (
-            <div className="flex items-center gap-2 text-[11px] font-bold text-white/60 bg-white/5 px-2 py-1 rounded-md">
-              <Zap className="w-3 h-3 text-amber-400" />
-              {finalCosts.energy > 0 ? '-' : '+'}
-              {Math.abs(finalCosts.energy)}
-              <span className="text-[9px] opacity-40 font-normal">/кв</span>
+        <div className="flex flex-wrap gap-3 pt-1">
+          {finalCosts.energy !== undefined && finalCosts.energy !== 0 && (
+            <div className="flex items-center gap-2 text-[11px] font-bold text-white/80 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
+              <Zap className="w-3.5 h-3.5 text-amber-400" />
+              {finalCosts.energy > 0 ? '+' : ''}
+              {finalCosts.energy}
+              <span className="text-[9px] opacity-40 font-normal ml-0.5">/кв</span>
             </div>
           )}
-          {finalCosts.sanity !== undefined && (
-            <div className="flex items-center gap-2 text-[11px] font-bold text-white/60 bg-white/5 px-2 py-1 rounded-md">
-              <Brain className="w-3 h-3 text-purple-400" />
-              {finalCosts.sanity > 0 ? '-' : '+'}
-              {Math.abs(finalCosts.sanity)}
-              <span className="text-[9px] opacity-40 font-normal">/кв</span>
+          {finalCosts.sanity !== undefined && finalCosts.sanity !== 0 && (
+            <div className="flex items-center gap-2 text-[11px] font-bold text-white/80 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
+              <Brain className="w-3.5 h-3.5 text-purple-400" />
+              {finalCosts.sanity > 0 ? '+' : ''}
+              {finalCosts.sanity}
+              <span className="text-[9px] opacity-40 font-normal ml-0.5">/кв</span>
+            </div>
+          )}
+          {finalCosts.health !== undefined && finalCosts.health !== 0 && (
+            <div className="flex items-center gap-2 text-[11px] font-bold text-white/80 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
+              <Heart className="w-3.5 h-3.5 text-red-400" />
+              {finalCosts.health > 0 ? '+' : ''}
+              {finalCosts.health}
+              <span className="text-[9px] opacity-40 font-normal ml-0.5">/кв</span>
+            </div>
+          )}
+          {finalCosts.happiness !== undefined && finalCosts.happiness !== 0 && (
+            <div className="flex items-center gap-2 text-[11px] font-bold text-white/80 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
+              <Smile className="w-3.5 h-3.5 text-green-400" />
+              {finalCosts.happiness > 0 ? '+' : ''}
+              {finalCosts.happiness}
+              <span className="text-[9px] opacity-40 font-normal ml-0.5">/кв</span>
+            </div>
+          )}
+          {finalCosts.intelligence !== undefined && finalCosts.intelligence !== 0 && (
+            <div className="flex items-center gap-2 text-[11px] font-bold text-white/80 bg-white/5 px-2.5 py-1.5 rounded-lg border border-white/5">
+              <Lightbulb className="w-3.5 h-3.5 text-blue-400" />
+              {finalCosts.intelligence > 0 ? '+' : ''}
+              {finalCosts.intelligence}
+              <span className="text-[9px] opacity-40 font-normal ml-0.5">/кв</span>
             </div>
           )}
         </div>

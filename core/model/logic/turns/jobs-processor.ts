@@ -27,16 +27,16 @@ export function processJobs(
     let isFired = false
 
     if (cycle) {
-      let risk = 0.01
+      let risk = 0.005 // Lowered base risk
 
-      if (cycle.phase === 'recession') risk += 0.15
+      if (cycle.phase === 'recession') risk += 0.05 // Lowered recession penalty
       if (cycle.phase === 'growth') risk -= 0.005
 
       const tenure = currentTurn - (job.startedTurn ?? currentTurn)
-      if (tenure < 4) risk += 0.1
-      if (tenure > 12) risk -= 0.05
+      if (tenure < 4) risk += 0.03 // Lowered probation penalty
+      if (tenure > 12) risk -= 0.02
 
-      risk = Math.min(0.5, Math.max(0, risk))
+      risk = Math.min(0.2, Math.max(0, risk)) // Lowered max risk cap
 
       if (Math.random() < risk) {
         isFired = true
