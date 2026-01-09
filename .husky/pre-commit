@@ -1,3 +1,14 @@
+# 1. Проверка имени ветки
+bash scripts/check-branch-name.sh
+
+# 2. Проверка орфографии (только предупреждение, не блокирует коммит)
+pnpm exec cspell lint . --no-summary --no-progress || echo "Предупреждение: найдены возможные опечатки. Проверьте cspell.json"
+
+# 3. Линтинг и форматирование стадированных файлов
 pnpm exec lint-staged
+
+# 4. Проверка типов TypeScript
 pnpm exec tsc --noEmit
+
+# 5. Проверка на дубликаты кода (DRY)
 pnpm dry:check
