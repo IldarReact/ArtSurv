@@ -1,12 +1,7 @@
-import { AssetType } from "./finance.types"
-import { StatEffect } from "./stats.types"
+import { AssetType } from './finance.types'
+import { StatEffect } from './stats.types'
 
-export type ShopCategory =
-  | 'food'
-  | 'transport'
-  | 'health'
-  | 'services'
-  | 'housing'
+export type ShopCategory = 'food' | 'transport' | 'health' | 'services' | 'housing'
 
 /** Базовый интерфейс */
 export interface BaseShopItem {
@@ -20,8 +15,8 @@ export interface BaseShopItem {
 /** Разовая покупка (машина, гаджет, подарок) */
 export interface OneTimeShopItem extends BaseShopItem {
   price: number
-  isRecurring?: never
-  costPerTurn?: never
+  isRecurring?: false
+  costPerTurn?: number
 
   // Для активов (машины, недвижимость и т.д.)
   assetType?: AssetType
@@ -32,7 +27,7 @@ export interface OneTimeShopItem extends BaseShopItem {
 export interface RecurringShopItem extends BaseShopItem {
   isRecurring: true
   costPerTurn: number
-  price?: never
+  price?: number
 }
 
 /** Главный тип */

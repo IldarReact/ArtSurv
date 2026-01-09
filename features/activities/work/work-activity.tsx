@@ -3,10 +3,10 @@
 import React from 'react'
 
 import { useWorkActivity } from './hooks/use-work-activity'
-import { ActiveFreelanceSection } from './sections/ActiveFreelanceSection'
-import { CurrentJobsSection } from './sections/CurrentJobsSection'
-import { EarningOpportunitiesSection } from './sections/EarningOpportunitiesSection'
-import { MyBusinessesSection } from './sections/MyBusinessesSection'
+import { ActiveFreelanceSection } from './sections/active-freelance-section'
+import { CurrentJobsSection } from './sections/current-jobs-section'
+import { EarningOpportunitiesSection } from './sections/earning-opportunities-section'
+import { MyBusinessesSection } from './sections/my-businesses-section'
 
 import { FeedbackAnimation } from '@/shared/ui/feedback-animation'
 

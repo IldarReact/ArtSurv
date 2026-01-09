@@ -5,7 +5,7 @@ import type { BusinessTemplate } from '../purchase-logic'
 
 describe('createBusinessPurchase', () => {
   const mockTemplate: BusinessTemplate = {
-    id: 'bus_test',
+    id: 'bus_retail',
     name: 'Test Business',
     description: 'A test business',
     initialCost: 100000,
@@ -78,9 +78,9 @@ describe('createBusinessPurchase', () => {
   })
 
   it('should handle ID prefixes correctly', () => {
-    const templateWithPrefix = { ...mockTemplate, id: 'bus_retail_store' }
+    const templateWithPrefix = { ...mockTemplate, id: 'bus_retail' }
     const result = createBusinessPurchase(templateWithPrefix, 100000, currentTurn)
 
-    expect(result.business.type).toBe('retail_store')
+    expect(result.business.type).toBe('retail')
   })
 })

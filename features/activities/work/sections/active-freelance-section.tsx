@@ -1,12 +1,12 @@
-"use client"
+'use client'
 
-import { CheckCircle } from "lucide-react"
-import React from "react"
+import { CheckCircle } from 'lucide-react'
+import React from 'react'
 
-import { useInflatedPrices } from "@/core/hooks"
-import type { FreelanceGig } from "@/core/types"
-import { Button } from "@/shared/ui/button"
-import { SectionSeparator } from "@/shared/ui/section-separator"
+import { useInflatedPrices } from '@/core/hooks'
+import type { FreelanceGig } from '@/core/types'
+import { Button } from '@/shared/ui/button'
+import { SectionSeparator } from '@/shared/ui/section-separator'
 
 interface ActiveFreelanceSectionProps {
   gigs: FreelanceGig[]
@@ -15,7 +15,11 @@ interface ActiveFreelanceSectionProps {
 
 export function ActiveFreelanceSection({ gigs, onComplete }: ActiveFreelanceSectionProps) {
   // Map gigs to priceable items
-  const gigsWithPrices = gigs.map(gig => ({ ...gig, price: gig.payment, category: 'services' as const }))
+  const gigsWithPrices = gigs.map((gig) => ({
+    ...gig,
+    price: gig.payment,
+    category: 'services' as const,
+  }))
   const inflatedGigs = useInflatedPrices(gigsWithPrices)
 
   if (gigs.length === 0) {
@@ -27,11 +31,16 @@ export function ActiveFreelanceSection({ gigs, onComplete }: ActiveFreelanceSect
       <SectionSeparator title="Активные заказы" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {inflatedGigs.map((gig) => (
-          <div key={gig.id} className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col justify-between">
+          <div
+            key={gig.id}
+            className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col justify-between"
+          >
             <div>
               <div className="flex justify-between items-start mb-2">
                 <h4 className="font-bold text-white">{gig.title}</h4>
-                <span className="text-green-400 font-bold">${gig.inflatedPrice.toLocaleString()}</span>
+                <span className="text-green-400 font-bold">
+                  ${gig.inflatedPrice.toLocaleString()}
+                </span>
               </div>
               <p className="text-sm text-white/60 mb-4">{gig.description}</p>
             </div>

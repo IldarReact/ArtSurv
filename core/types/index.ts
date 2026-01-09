@@ -89,7 +89,7 @@ export type { ShopCategory, ShopItem } from './shop.types'
 export type { RestActivity } from './rest.types'
 
 // Notification types
-export type { Notification } from '@/core/types/notification.types'
+export type { Notification } from './notification.types'
 
 // Personal life state
 export type { PersonalLife } from './personal.types'

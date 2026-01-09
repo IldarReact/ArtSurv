@@ -24,7 +24,7 @@ export function useWorkActivity() {
   const handleApply = (
     title: string,
     company: string,
-    salary: string,
+    salary: number,
     cost: StatEffect,
     requirements: Array<{ skill: string; level: number }>,
   ) => {
@@ -39,13 +39,12 @@ export function useWorkActivity() {
       return
     }
 
-    const salaryNum = parseInt(salary.replace(/[^0-9]/g, ''))
     const reqs = requirements.map((r) => ({
       skillId: r.skill,
       minLevel: r.level as SkillLevel,
     }))
 
-    applyForJob(title, company, salaryNum, cost, reqs)
+    applyForJob(title, company, salary, cost, reqs)
     setFeedback({ show: true, success: true, message: `Заявка на "${title}" отправлена!` })
   }
 

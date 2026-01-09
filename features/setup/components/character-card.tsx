@@ -1,11 +1,11 @@
-import { motion } from "framer-motion"
+import { motion } from 'framer-motion'
 
-import { getCharacterImage, calculateQuarterlySalary } from "../utils"
+import { getCharacterImage, calculateQuarterlySalary } from '../utils'
 
-import { getJobById } from "@/core/lib/data-loaders/jobs-loader"
-import type { CharacterData } from "@/core/types/character.types"
-import { Button } from "@/shared/ui/button"
-import { cn } from "@/shared/utils/utils"
+import { getJobById } from '@/core/lib/data-loaders/jobs-loader'
+import type { CharacterData } from '@/core/types/character.types'
+import { Button } from '@/shared/ui/button'
+import { cn } from '@/shared/utils/utils'
 
 interface CharacterCardProps {
   character: CharacterData
@@ -16,7 +16,14 @@ interface CharacterCardProps {
   onSelectClick: () => void
 }
 
-export function CharacterCard({ character, countryId, isCenter, archetype, onDetailsClick, onSelectClick }: CharacterCardProps) {
+export function CharacterCard({
+  character,
+  countryId,
+  isCenter,
+  archetype,
+  onDetailsClick,
+  onSelectClick,
+}: CharacterCardProps) {
   return (
     <motion.div
       key={`${archetype}-${character.id}`}
@@ -27,17 +34,21 @@ export function CharacterCard({ character, countryId, isCenter, archetype, onDet
         scale: isCenter ? 1 : 0.85,
         x: 0,
         zIndex: isCenter ? 10 : 1,
-        filter: isCenter ? "blur(0px)" : "blur(4px) brightness(0.6)",
+        filter: isCenter ? 'blur(0px)' : 'blur(4px) brightness(0.6)',
       }}
       exit={{ opacity: 0, scale: 0.8 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
       className={cn(
-        "relative h-[70vh] aspect-2/3 rounded-3xl overflow-hidden shadow-2xl transition-all duration-500",
-        "border border-white/10 bg-black/40 backdrop-blur-sm",
+        'relative h-[70vh] aspect-2/3 rounded-3xl overflow-hidden shadow-2xl transition-all duration-500',
+        'border border-white/10 bg-black/40 backdrop-blur-sm',
       )}
     >
       <div className="absolute inset-0">
-        <img src={getCharacterImage(archetype)} alt={archetype} className="w-full h-full object-cover" />
+        <img
+          src={getCharacterImage(archetype)}
+          alt={archetype}
+          className="w-full h-full object-cover"
+        />
         <div className="absolute inset-0 bg-linear-to-t from-black via-black/40 to-transparent opacity-90" />
       </div>
 
@@ -53,15 +64,25 @@ export function CharacterCard({ character, countryId, isCenter, archetype, onDet
             <div className="flex justify-between items-center text-lg">
               <span className="text-white/70">Доход:</span>
               <span className="font-bold text-green-400">
-                ${(() => {
-                  const job = getJobById(character.startingJobId, countryId)
-                  return job ? calculateQuarterlySalary(job.salary).toLocaleString() : '0'
-                })()}/кв
+                $
+                {(() => {
+                  if (character.startingJobId) {
+                    const job = getJobById(character.startingJobId, countryId)
+                    if (job) return calculateQuarterlySalary(job.salary).toLocaleString()
+                  }
+                  return calculateQuarterlySalary(character.startingSalary || 0).toLocaleString()
+                })()}
+                /кв
               </span>
             </div>
             <div className="flex justify-between items-center text-lg">
               <span className="text-white/70">Капитал:</span>
-              <span className={cn("font-bold", character.startingMoney >= 0 ? "text-white" : "text-red-400")}>
+              <span
+                className={cn(
+                  'font-bold',
+                  character.startingMoney >= 0 ? 'text-white' : 'text-red-400',
+                )}
+              >
                 ${character.startingMoney.toLocaleString()}
               </span>
             </div>

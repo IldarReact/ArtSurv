@@ -27,7 +27,7 @@ export const CountryEconomySchema = z
     inflation: z.number(),
     stockMarketInflation: z.number(),
     keyRate: z.number(),
-    interestRate: z.number(),
+    interestRate: z.number().optional(),
     unemployment: z.number(),
     taxRate: z.number(),
     corporateTaxRate: z.number(),

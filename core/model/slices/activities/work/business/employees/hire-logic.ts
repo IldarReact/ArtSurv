@@ -35,7 +35,7 @@ export function handleHireEmployee(
   const business = player.businesses[i]
 
   // 2. Списываем энергию за попытку (даже если будет отказ или ошибка валидации)
-  state.performTransaction?.({ energy: -5 })
+  state.applyStatChanges({ energy: -5 })
 
   const playerRolesCount =
     (business.playerRoles.managerialRoles?.length || 0) +
@@ -192,7 +192,8 @@ export function handleHireFamilyMember(
     occupation: `Работает в ${business.name}`,
   }
 
-  state.performTransaction?.({ energy: -5 }) // Hiring family costs 5 energy now
+  // Hiring family costs 5 energy now
+  state.applyStatChanges({ energy: -5 })
 
   set((state) => {
     if (!state.player) return state

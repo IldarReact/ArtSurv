@@ -48,7 +48,7 @@ describe('offers partnership flow', () => {
 
     const offerDetails = {
       businessName: 'Совместный магазин',
-      businessType: 'shop',
+      businessType: 'retail',
       businessDescription: 'Продажа товаров',
       totalCost: 10000,
       partnerInvestment: 5000,

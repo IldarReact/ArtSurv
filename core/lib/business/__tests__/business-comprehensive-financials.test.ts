@@ -116,8 +116,11 @@ describe('Business Comprehensive Financials', () => {
       const breakdown = result.debug?.expensesBreakdown
 
       expect(breakdown).toBeDefined()
-      expect(breakdown?.rent).toBe(150 * 5) // baseRentPerEmployee * maxEmployees
-      expect(breakdown?.equipment).toBe(30 * 5) // baseUtilitiesPerEmployee * maxEmployees
+      // baseRentPerEmployee (100) * effectiveScalingCount (maxEmp * 0.2 + actualStaff * 0.8)
+      // 100 * (5 * 0.2 + 0 * 0.8) = 100
+      expect(breakdown?.rent).toBe(100)
+      // baseUtilitiesPerEmployee (20) * effectiveScalingCount (1) = 20
+      expect(breakdown?.equipment).toBe(20)
     })
   })
 })

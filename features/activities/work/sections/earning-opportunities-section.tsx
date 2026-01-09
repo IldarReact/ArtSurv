@@ -3,14 +3,13 @@
 import React from 'react'
 
 import { BusinessesSection } from '../business/components/businesses-section'
-import { FreelanceSection } from '../components/FreelanceSection'
-import { StartupsSection } from '../components/StartupsSection'
-import { VacanciesSection } from '../components/VacanciesSection'
-
-import { SectionSeparator } from '@/shared/ui/section-separator'
+import { FreelanceSection } from '../components/freelance-section'
+import { StartupsSection } from '../components/startups-section'
+import { VacanciesSection } from '../components/vacancies-section'
 
 import { SkillLevel, StatEffect } from '@/core/types'
 import { Business } from '@/core/types/business.types'
+import { SectionSeparator } from '@/shared/ui/section-separator'
 
 interface FeedbackState {
   show: boolean
@@ -23,7 +22,7 @@ interface EarningOpportunitiesSectionProps {
   onApply: (
     title: string,
     company: string,
-    salary: string,
+    salary: number,
     cost: StatEffect,
     requirements: Array<{ skill: string; level: number }>,
   ) => void

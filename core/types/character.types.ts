@@ -1,5 +1,5 @@
-import type { Stats } from './stats.types'
 import type { Debt } from './finance.types'
+import type { Stats } from './stats.types'
 
 export interface CharacterSkill {
   id: string
@@ -25,8 +25,8 @@ export interface CharacterData {
   name: string
   description: string
   startingMoney: number
-  startingJobId: string
-  startingSalary: number
+  startingJobId?: string
+  startingSalary?: number
   startingStats: Omit<Stats, 'money'>
   startingSkills?: CharacterSkill[]
   startingDebts?: CharacterDebt[]

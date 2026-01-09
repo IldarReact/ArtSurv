@@ -1,22 +1,21 @@
 // src/shared/data/loaders/freelance-loader.ts
+import { FreelanceGigSchema } from '@/core/schemas/game.schema'
 import type { FreelanceGig } from '@/core/types/freelance.types'
 import brFreelance from '@/shared/data/world/countries/brazil/freelance.json'
 import geFreelance from '@/shared/data/world/countries/germany/freelance.json'
 import usFreelance from '@/shared/data/world/countries/us/freelance.json'
 
-function validateFreelance(item: unknown): item is FreelanceGig {
-  const f = item as FreelanceGig
-  return !!(
-    f.id && typeof f.id === 'string' &&
-    f.title && typeof f.title === 'string' &&
-    typeof f.payment === 'number' &&
-    f.cost && typeof f.cost === 'object' &&
-    Array.isArray(f.requirements)
-  )
-}
-
 function loadFreelance(data: unknown[], source: string): FreelanceGig[] {
-  return data.filter(validateFreelance) as FreelanceGig[]
+  return data
+    .map((item) => {
+      const result = FreelanceGigSchema.safeParse(item)
+      if (!result.success) {
+        console.error(`Validation failed for freelance gig in ${source}:`, result.error.format())
+        return null
+      }
+      return result.data as FreelanceGig
+    })
+    .filter((item): item is FreelanceGig => item !== null)
 }
 
 const COUNTRY_FREELANCE: Record<string, FreelanceGig[]> = {
@@ -30,7 +29,7 @@ export function getFreelanceGigs(countryId: string = 'us'): FreelanceGig[] {
 }
 
 export function getFreelanceById(id: string, countryId: string = 'us'): FreelanceGig | undefined {
-  return getFreelanceGigs(countryId).find(g => g.id === id)
+  return getFreelanceGigs(countryId).find((g) => g.id === id)
 }
 
 export const ALL_FREELANCE = COUNTRY_FREELANCE.us

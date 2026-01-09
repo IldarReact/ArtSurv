@@ -1,24 +1,53 @@
 import { WORLD_COUNTRIES } from './economy-loader'
 
+import {
+  EmployeeDataSchema,
+  IdeaTemplateSchema,
+  IdeaReplacementsSchema,
+} from '@/core/schemas/business.schema'
 import type { EmployeeRole, EmployeeStars, EmployeeData } from '@/core/types/business.types'
 import type { CountryEconomy } from '@/core/types/economy.types'
 import type { IdeaTemplate, IdeaReplacements } from '@/core/types/idea.types'
 import businessEvents from '@/shared/data/business/business-events.json'
 import ideaTemplates from '@/shared/data/business/idea-templates.json'
-const employeeData = _employeeData as unknown as EmployeeData
+import _employeeData from '@/shared/data/employees/employee-data.json'
 import crisisOptions from '@/shared/data/events/crisis-options.json'
 
 // Country Candidates
-import _employeeData from '@/shared/data/employees/employee-data.json'
 import brazilCandidates from '@/shared/data/world/countries/brazil/candidates.json'
 import germanyCandidates from '@/shared/data/world/countries/germany/candidates.json'
 import usCandidates from '@/shared/data/world/countries/us/candidates.json'
 import countryArchetypes from '@/shared/data/world/country-archetypes.json'
 
+// --- Employee Data Validation ---
+const employeeDataResult = EmployeeDataSchema.safeParse(_employeeData)
+if (!employeeDataResult.success) {
+  console.error('Critical: Invalid employee data:', employeeDataResult.error.format())
+  throw new Error('Static data validation failed: employee-data.json')
+}
+const employeeData: EmployeeData = employeeDataResult.data
+
 const COUNTRY_CANDIDATES: Record<string, { firstNames: string[]; lastNames: string[] }> = {
   brazil: brazilCandidates,
   germany: germanyCandidates,
   us: usCandidates,
+}
+
+// --- Idea Templates Validation ---
+const ideaTemplatesResult = IdeaTemplateSchema.array().safeParse(ideaTemplates.templates)
+if (!ideaTemplatesResult.success) {
+  console.error('Critical: Invalid idea templates:', ideaTemplatesResult.error.format())
+  throw new Error('Static data validation failed: idea-templates.json (templates)')
+}
+const ideaReplacementsResult = IdeaReplacementsSchema.safeParse(ideaTemplates.replacements)
+if (!ideaReplacementsResult.success) {
+  console.error('Critical: Invalid idea replacements:', ideaReplacementsResult.error.format())
+  throw new Error('Static data validation failed: idea-templates.json (replacements)')
+}
+
+const ideaTemplatesData = {
+  templates: ideaTemplatesResult.data as IdeaTemplate[],
+  replacements: ideaReplacementsResult.data as IdeaReplacements,
 }
 
 // Types
@@ -84,8 +113,8 @@ export const getRandomPositiveEvent = () => {
 }
 
 // --- Idea Templates ---
-export const getIdeaTemplates = () => ideaTemplates.templates as unknown as IdeaTemplate[]
-export const getIdeaReplacements = () => ideaTemplates.replacements as unknown as IdeaReplacements
+export const getIdeaTemplates = () => ideaTemplatesData.templates
+export const getIdeaReplacements = () => ideaTemplatesData.replacements
 
 // --- Crisis Options ---
 export const getCrisisOptions = () => crisisOptions

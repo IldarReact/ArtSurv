@@ -8,7 +8,7 @@ describe('createPartnerBusiness', () => {
   const mockOffer = {
     details: {
       businessName: 'Тестовый бизнес',
-      businessType: 'shop' as BusinessType,
+      businessType: 'retail' as BusinessType,
       businessDescription: 'Описание бизнеса',
       totalCost: 100000,
       yourInvestment: 50000,
@@ -30,7 +30,7 @@ describe('createPartnerBusiness', () => {
 
     // Проверка базовых полей
     expect(business.name).toBe('Тестовый бизнес')
-    expect(business.type).toBe('shop')
+    expect(business.type).toBe('retail')
     expect(business.description).toBe('Описание бизнеса')
 
     // Проверка партнёрских полей

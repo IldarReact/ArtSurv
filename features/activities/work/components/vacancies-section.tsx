@@ -3,19 +3,19 @@
 import { Briefcase } from 'lucide-react'
 import React from 'react'
 
-import { OpportunityCard } from '../../ui/opportunity-card'
-import { VacancyDetailCard } from '../../ui/vacancy-detail-card'
+import { VacancyDetailCard } from './vacancy-detail-card'
 
 import { useInflatedPrices } from '@/core/hooks'
 import { getAllJobsForCountry } from '@/core/lib/data-loaders/jobs-loader'
 import { useGameStore } from '@/core/model/store'
 import { StatEffect } from '@/core/types'
+import { OpportunityCard } from '@/features/activities/ui/opportunity-card'
 
 interface VacanciesSectionProps {
   onApply: (
     title: string,
     company: string,
-    salary: string,
+    salary: number,
     cost: StatEffect,
     requirements: Array<{ skill: string; level: number }>,
   ) => void
@@ -55,7 +55,7 @@ export function VacanciesSection({ onApply }: VacanciesSectionProps) {
                 key={job.id}
                 title={job.title}
                 company={job.company}
-                salary={`$${job.inflatedPrice.toLocaleString()}/мес`}
+                salary={job.inflatedPrice}
                 energyCost={job.cost.energy || 0}
                 requirements={
                   job.requirements?.skills?.map((s) => ({ skill: s.name, level: s.level })) || []
@@ -67,7 +67,7 @@ export function VacanciesSection({ onApply }: VacanciesSectionProps) {
                   onApply(
                     job.title,
                     job.company,
-                    `$${job.inflatedPrice.toLocaleString()}/мес`,
+                    job.inflatedPrice,
                     job.cost,
                     job.requirements?.skills?.map((s) => ({ skill: s.name, level: s.level })) || [],
                   )

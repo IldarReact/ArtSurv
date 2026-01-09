@@ -3,12 +3,11 @@
 import { Rocket, Brain, Zap } from 'lucide-react'
 import React from 'react'
 
-import { OpportunityCard } from '../../ui/opportunity-card'
-
-import { IdeaManagementDialog } from './IdeaManagementDialog'
+import { IdeaManagementDialog } from './idea-management-dialog'
 
 import { useGameStore } from '@/core/model/store'
 import type { BusinessIdea } from '@/core/types/idea.types'
+import { OpportunityCard } from '@/features/activities/ui/opportunity-card'
 import { Badge } from '@/shared/ui/badge'
 import { Button } from '@/shared/ui/button'
 import { Progress } from '@/shared/ui/progress'
@@ -98,7 +97,6 @@ export function StartupsSection() {
           ) : (
             <div className="text-center py-4 text-white/40 text-sm">
               <p>У вас пока нет бизнес-идей.</p>
-              <p>Нажмите кнопку выше, чтобы придумать что-то новое!</p>
             </div>
           )}
         </div>
@@ -106,20 +104,13 @@ export function StartupsSection() {
 
       {selectedIdea && (
         <IdeaManagementDialog
+          idea={selectedIdea}
           isOpen={!!selectedIdea}
           onClose={() => setSelectedIdea(null)}
-          idea={selectedIdea}
-          playerMoney={player.stats?.money ?? 0}
-          playerSkills={player.personal.skills}
           onDevelop={developIdea}
-          onLaunch={(id) => {
-            launchBusinessFromIdea(id)
-            setSelectedIdea(null)
-          }}
-          onDiscard={(id) => {
-            discardIdea(id)
-            setSelectedIdea(null)
-          }}
+          onLaunch={launchBusinessFromIdea}
+          onDiscard={discardIdea}
+          playerEnergy={player.stats?.energy ?? 0}
         />
       )}
     </>

@@ -1,3 +1,4 @@
+import { BusinessTemplateSchema } from '@/core/schemas/business.schema'
 // Country imports
 import brBusinesses from '@/shared/data/world/countries/brazil/businesses.json'
 import geBusinesses from '@/shared/data/world/countries/germany/businesses.json'
@@ -20,7 +21,7 @@ export interface BusinessTemplate {
   monthlyExpenses: number
   maxEmployees: number
   minEmployees: number
-  inventory: {
+  inventory?: {
     maxStock: number
     pricePerUnit: number
     purchaseCost: number
@@ -36,45 +37,17 @@ export interface BusinessTemplate {
   stressImpact?: number
 }
 
-function validateBusinessType(item: unknown): item is BusinessTemplate {
-  const b = item as BusinessTemplate
-
-  if (!b.id || typeof b.id !== 'string') return false
-  if (!b.name || typeof b.name !== 'string') return false
-  if (!b.type || typeof b.type !== 'string') return false
-  if (typeof b.price !== 'number' || b.price < 0) return false
-  if (typeof b.quantity !== 'number' || b.quantity < 0) return false
-  if (typeof b.isServiceBased !== 'boolean') return false
-  if (typeof b.initialCost !== 'number' || b.initialCost < 0) return false
-  if (typeof b.upfrontCost !== 'number' || b.upfrontCost < 0) return false
-  if (typeof b.openingQuarters !== 'number' || b.openingQuarters < 0) return false
-  if (typeof b.monthlyIncome !== 'number' || b.monthlyIncome < 0) return false
-  if (typeof b.monthlyExpenses !== 'number' || b.monthlyExpenses < 0) return false
-  if (typeof b.maxEmployees !== 'number' || b.maxEmployees < 0) return false
-  if (typeof b.minEmployees !== 'number' || b.minEmployees < 0) return false
-  if (!b.inventory || typeof b.inventory !== 'object') return false
-  if (!b.risk || typeof b.risk !== 'string') return false
-  if (!Array.isArray(b.employeeRoles) || b.employeeRoles.length === 0) {
-    console.error(`Business ${b.id} missing employeeRoles`)
-    return false
-  }
-
-  return true
-}
-
 function loadBusinessTypes(data: unknown[], source: string): BusinessTemplate[] {
-  const validated: BusinessTemplate[] = []
-
-  for (const item of data) {
-    if (validateBusinessType(item)) {
-      validated.push(item)
-    } else {
-      console.error(`Invalid business type in ${source}:`, item)
-      throw new Error(`Business type data validation failed for ${source}`)
-    }
-  }
-
-  return validated
+  return data
+    .map((item) => {
+      const result = BusinessTemplateSchema.safeParse(item)
+      if (!result.success) {
+        console.error(`Invalid business type in ${source}:`, item, result.error.format())
+        throw new Error(`Business type data validation failed for ${source}`)
+      }
+      return result.data as BusinessTemplate
+    })
+    .filter((item): item is BusinessTemplate => item !== null)
 }
 
 // Country Data Registry

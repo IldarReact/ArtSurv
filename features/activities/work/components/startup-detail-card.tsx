@@ -1,14 +1,14 @@
-import { Zap, AlertTriangle, Lightbulb } from "lucide-react"
+import { Zap, AlertTriangle, Lightbulb } from 'lucide-react'
 
-import { Badge } from "@/shared/ui/badge"
-import { Button } from "@/shared/ui/button"
+import { Badge } from '@/shared/ui/badge'
+import { Button } from '@/shared/ui/button'
 
 interface StartupDetailCardProps {
   title: string
   type: string
   description: string
   potentialIncome: string
-  riskLevel: "Низкий" | "Средний" | "Высокий" | "Экстремальный"
+  riskLevel: 'Низкий' | 'Средний' | 'Высокий' | 'Экстремальный'
   energyCost: number
   stressImpact: string
   image: string
@@ -26,15 +26,20 @@ export function StartupDetailCard({
   stressImpact,
   image,
   requirements,
-  onStart
+  onStart,
 }: StartupDetailCardProps) {
   const getRiskColor = (risk: string) => {
     switch (risk) {
-      case "Низкий": return "text-[#004d00]"
-      case "Средний": return "text-yellow-400"
-      case "Высокий": return "text-orange-400"
-      case "Экстремальный": return "text-rose-400"
-      default: return "text-white"
+      case 'Низкий':
+        return 'text-[#004d00]'
+      case 'Средний':
+        return 'text-yellow-400'
+      case 'Высокий':
+        return 'text-orange-400'
+      case 'Экстремальный':
+        return 'text-rose-400'
+      default:
+        return 'text-white'
     }
   }
 
@@ -43,7 +48,10 @@ export function StartupDetailCard({
       <div className="w-full md:w-1/3 h-48 md:h-auto relative">
         <img src={image} alt={title} className="w-full h-full object-cover" />
         <div className="absolute top-2 left-2">
-          <Badge variant="secondary" className="bg-black/60 backdrop-blur-md text-white border-white/10">
+          <Badge
+            variant="secondary"
+            className="bg-black/60 backdrop-blur-md text-white border-white/10"
+          >
             {type}
           </Badge>
         </div>

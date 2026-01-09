@@ -11,7 +11,7 @@ const SECRET_KEY =
   process.env.NEXT_PUBLIC_SAVE_SECRET || 'lifesim-default-secret-key-change-in-production'
 
 // Strict mode: reject corrupted/modified saves
-const STRICT_MODE = process.env.NODE_ENV === 'production'
+const STRICT_MODE = process.env.NODE_ENV === 'production' || process.env.VITEST === 'true'
 
 interface SaveData {
   version: number

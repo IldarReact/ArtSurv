@@ -8,8 +8,8 @@ import { PartnershipManagement } from './components/business-lifecycle/partnersh
 import { EmployeeManagement } from './components/employee-management'
 import { MetricsOverview } from './components/metrics-overview'
 import { PricingAndProduction } from './components/pricing-and-production'
-import { useBusinessActions } from './hooks/useBusinessActions'
-import { calculateEmployeeSalary } from './hooks/useEmployeeSalary'
+import { useBusinessActions } from './hooks/use-business-actions'
+import { calculateEmployeeSalary } from './hooks/use-employee-salary'
 import type { BusinessManagementDialogProps } from './types'
 
 import {

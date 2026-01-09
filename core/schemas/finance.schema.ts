@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const AssetTypeSchema = z.enum(['housing', 'stock', 'business', 'deposit'])
+export const AssetTypeSchema = z.enum(['housing', 'real_estate', 'stock', 'business', 'deposit'])
 export const DebtTypeSchema = z.enum(['mortgage', 'consumer_credit', 'student_loan'])
 
 export const AssetSchema = z
@@ -87,3 +87,34 @@ export const QuarterlyReportSchema = z
     warning: z.string().nullable(),
   })
   .strict()
+
+// --- Shop Types ---
+
+export const ShopCategorySchema = z.enum(['food', 'transport', 'health', 'services', 'housing'])
+
+export const ShopItemSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().optional(),
+    category: ShopCategorySchema,
+    effects: z.record(z.string(), z.number()).optional(),
+    isRecurring: z.boolean().default(false),
+    price: z.number().finite().min(0).default(0),
+    costPerTurn: z.number().finite().min(0).default(0),
+    assetType: AssetTypeSchema.optional(),
+    maintenanceCost: z.number().finite().min(0).optional(),
+  })
+  .transform((data) => {
+    // If it has costPerTurn > 0, it's definitely recurring
+    if (data.costPerTurn > 0) {
+      data.isRecurring = true
+    }
+    // If it's recurring, price is usually 0
+    if (data.isRecurring && data.price > 0 && data.costPerTurn === 0) {
+      // Some items might have price instead of costPerTurn in JSON
+      data.costPerTurn = data.price
+      data.price = 0
+    }
+    return data
+  })

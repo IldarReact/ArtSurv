@@ -3,7 +3,6 @@
 import { Users, Trash2, ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
 import React from 'react'
 
-
 import { ROLE_ICONS, ROLE_LABELS } from '../../constants'
 
 import { getRoleConfig } from '@/core/lib/business'

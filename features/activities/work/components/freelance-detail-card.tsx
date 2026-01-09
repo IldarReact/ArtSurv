@@ -3,7 +3,7 @@
 import { Star } from 'lucide-react'
 import { useState } from 'react'
 
-import { EmployeeCard } from '../../../shared/components/business/employee-card'
+import { EmployeeCard } from '../../../../shared/components/business/employee-card'
 
 import { Button } from '@/shared/ui/button'
 import {
@@ -103,14 +103,8 @@ export function FreelanceDetailCard({
               </div>
             </div>
 
-            <Button
-              onClick={() => {
-                setShowDetails(false)
-                onTakeOrder?.()
-              }}
-              className="w-full bg-white text-black hover:bg-white/90 font-bold"
-            >
-              Взять заказ
+            <Button onClick={onTakeOrder} className="w-full bg-white text-black hover:bg-white/90">
+              ВЗЯТЬ ЗАКАЗ (-{energyCost}⚡)
             </Button>
           </div>
         </DialogContent>

@@ -8,6 +8,8 @@ describe('Business Logic Integration (Layer 4)', () => {
     let state: any = {
       player: {
         id: 'p1',
+        stats: { energy: 100 },
+        personal: { stats: { energy: 100 } },
         businesses: [
           {
             id: 'biz_1',
@@ -35,6 +37,27 @@ describe('Business Logic Integration (Layer 4)', () => {
           },
         ],
       },
+      applyStatChanges: (changes: any) => {
+        set((state: any) => ({
+          player: {
+            ...state.player,
+            stats: {
+              ...state.player.stats,
+              energy: Math.max(0, (state.player.stats.energy || 0) + (changes.energy || 0)),
+            },
+            personal: {
+              ...state.player.personal,
+              stats: {
+                ...state.player.personal.stats,
+                energy: Math.max(
+                  0,
+                  (state.player.personal.stats.energy || 0) + (changes.energy || 0),
+                ),
+              },
+            },
+          },
+        }))
+      },
     }
     const get = () => state
     const set = (patch: any) => {
@@ -42,11 +65,14 @@ describe('Business Logic Integration (Layer 4)', () => {
       state = { ...state, ...next }
     }
 
+    const core = createCoreBusinessSlice(set as any, get as any, {} as any) as any
+    const emp = createEmployeesSlice(set as any, get as any, {} as any) as any
+
     return {
       get,
       set,
-      core: createCoreBusinessSlice(set as any, get as any, {} as any) as any,
-      emp: createEmployeesSlice(set as any, get as any, {} as any) as any,
+      core,
+      emp,
     }
   }
 

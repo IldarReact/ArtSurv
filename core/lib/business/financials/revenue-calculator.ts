@@ -91,7 +91,7 @@ function calculateServiceRevenue(
   }
 
   const staffingCheck = checkMinimumStaffing(business)
-  const staffingMod = staffingCheck.isValid ? 1 : 0.2
+  const staffingMod = staffingCheck.isValid ? 1 : 0.5 // Balanced: 50% penalty instead of 80%
 
   let serviceDemand =
     baseServiceDemand *

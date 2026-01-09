@@ -6,15 +6,12 @@
  * ✅ Single responsibility: create properly initialized Business object
  */
 
-import type {
-  Business,
-  BusinessType,
-  BusinessRoleTemplate,
-  BusinessInventory,
-} from '@/core/types'
+import { BusinessSchema } from '@/core/schemas/game.schema'
+import type { Business, BusinessType, BusinessRoleTemplate, BusinessInventory } from '@/core/types'
 import type { StatEffect } from '@/core/types/stats.types'
 
 export interface CreateBusinessParams {
+  id?: string
   name: string
   type: BusinessType
   description: string
@@ -59,6 +56,7 @@ export interface CreateBusinessParams {
  */
 export function createBusinessObject(params: CreateBusinessParams): Business {
   const {
+    id,
     name,
     type,
     description,
@@ -80,7 +78,7 @@ export function createBusinessObject(params: CreateBusinessParams): Business {
 
   const business: Business = {
     // Identifiers
-    id: `business_${Date.now()}`,
+    id: id || `business_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     name,
     type,
     description,
@@ -151,6 +149,19 @@ export function createBusinessObject(params: CreateBusinessParams): Business {
     // History
     eventsHistory: [],
     foundedTurn: currentTurn,
+  }
+
+  // Final safety check: ensure the created business object is valid according to our schema
+  const validation = BusinessSchema.safeParse(business)
+  if (!validation.success) {
+    console.error('CRITICAL: Created invalid business object:', validation.error.format())
+    // In dev, we might want to throw, but in production, we'll log and return the object anyway
+    // to avoid crashing the whole game if one minor property is off.
+    if (process.env.NODE_ENV === 'development' || process.env.VITEST === 'true') {
+      throw new Error(
+        `Business creation failed validation: ${JSON.stringify(validation.error.format())}`,
+      )
+    }
   }
 
   return business

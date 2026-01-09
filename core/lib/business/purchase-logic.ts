@@ -4,12 +4,7 @@
 
 import { createBusinessObject } from './create-business'
 
-import type {
-  Business,
-  BusinessType,
-  BusinessInventory,
-  BusinessRoleTemplate,
-} from '@/core/types'
+import type { Business, BusinessType, BusinessInventory, BusinessRoleTemplate } from '@/core/types'
 
 export interface BusinessTemplate {
   id: string
@@ -30,6 +25,8 @@ export interface PartnerConfig {
   partnerId: string
   partnerName: string
   playerShare: number // 0-100
+  playerId?: string // Optional custom player ID
+  playerName?: string // Optional custom player name
   initialState?: 'active' | 'opening' // Force state
 }
 
@@ -56,9 +53,9 @@ export function createBusinessPurchase(
 
   const businessType =
     template.type ||
-    ((template.id.startsWith('bus_')
-      ? template.id.replace('bus_', '')
-      : template.id) as BusinessType)
+    (template.id.startsWith('bus_')
+      ? (template.id.replace('bus_', '') as BusinessType)
+      : (template.id as BusinessType))
 
   if (partnerConfig) {
     // Partner purchase: player pays their share of the total cost
@@ -66,6 +63,7 @@ export function createBusinessPurchase(
 
     // Create business with partner info
     business = createBusinessObject({
+      id: template.id,
       name: template.name,
       type: businessType,
       description: template.description,
@@ -90,8 +88,8 @@ export function createBusinessPurchase(
     // Add partner specific data
     business.partners = [
       {
-        id: 'player', // Placeholder
-        name: 'Вы',
+        id: partnerConfig.playerId || 'player',
+        name: partnerConfig.playerName || 'Вы',
         type: 'player',
         share: partnerConfig.playerShare,
         investedAmount: playerInvestment,

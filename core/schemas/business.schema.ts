@@ -1,4 +1,5 @@
 import { z } from 'zod'
+
 import { StatEffectSchema, SkillLevelSchema, SkillRequirementSchema } from './base.schema'
 
 export const EmployeeRoleSchema = z.enum([
@@ -99,7 +100,7 @@ export const BusinessSchema = z
     partners: z.array(BusinessPartnerSchema),
     proposals: z.array(BusinessProposalSchema),
     openingProgress: z.object({
-      totalQuarters: z.number().int().min(1),
+      totalQuarters: z.number().int().min(0),
       quartersLeft: z.number().int().min(0),
       investedAmount: z.number().finite().min(0),
       totalCost: z.number().finite().min(0),
@@ -205,11 +206,11 @@ export const FreelanceGigSchema = z
     id: z.string(),
     title: z.string(),
     category: z.string(),
-    description: z.string(),
+    description: z.string().optional(),
     payment: z.number().finite().min(0),
     cost: StatEffectSchema,
     requirements: z.array(SkillRequirementSchema),
-    imageUrl: z.string(),
+    imageUrl: z.string().optional(),
   })
   .strict()
 
@@ -230,5 +231,109 @@ export const BusinessIdeaSchema = z
     investedAmount: z.number().finite().min(0),
     generatedTurn: z.number().int().min(0),
     expiresIn: z.number().int().min(0),
+  })
+  .strict()
+
+export const StaffImpactResultSchema = z
+  .object({
+    efficiencyBase: z.number().optional(),
+    efficiencyMultiplier: z.number().optional(),
+    expenseReduction: z.number().optional(),
+    salesBonus: z.number().optional(),
+    reputationBonus: z.number().optional(),
+    taxReduction: z.number().optional(),
+    legalProtection: z.number().optional(),
+    staffProductivityBonus: z.number().optional(),
+    // Data from employee-data.json
+    management: z.number().optional(),
+    efficiency: z.number().optional(),
+    salesAbility: z.number().optional(),
+    creativity: z.number().optional(),
+    technical: z.number().optional(),
+  })
+  .strict()
+
+export const EmployeeDataSchema = z
+  .object({
+    firstNames: z.array(z.string()),
+    lastNames: z.array(z.string()),
+    humanTraits: z.array(z.string()),
+    roleDescriptions: z.record(
+      z.string(),
+      z.object({
+        strengths: z.array(z.string()),
+        weaknesses: z.array(z.string()),
+      }),
+    ),
+    roleModifiers: z.record(z.string(), StaffImpactResultSchema),
+    baseSalaries: z.record(z.string(), z.number().finite().min(0)),
+    starMultipliers: z.array(z.number().finite().min(0)),
+  })
+  .strict()
+
+// --- Business Idea Templates (for loaders) ---
+
+export const IdeaTemplateSchema = z
+  .object({
+    nameTemplates: z.array(z.string()),
+    descriptionTemplates: z.array(z.string()),
+    type: z.enum(['retail', 'service', 'cafe', 'tech', 'manufacturing', 'food']),
+    requiredSkills: z.array(SkillRequirementSchema),
+    riskRange: z.tuple([
+      z.enum(['low', 'medium', 'high', 'very_high']),
+      z.enum(['low', 'medium', 'high', 'very_high']),
+    ]),
+    returnRange: z.tuple([z.number().finite(), z.number().finite()]),
+    investmentRange: z.tuple([z.number().finite(), z.number().finite()]),
+  })
+  .strict()
+
+export const IdeaReplacementsSchema = z.record(z.string(), z.array(z.string())).and(
+  z.object({
+    categories: z.array(z.string()),
+    niches: z.array(z.string()),
+    fields: z.array(z.string()),
+    products: z.array(z.string()),
+  }),
+)
+
+// --- Business Template Types (for loaders) ---
+
+export const BusinessTemplateSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string().optional(),
+    imageUrl: z.string().optional(),
+    type: z.enum(['retail', 'service', 'cafe', 'tech', 'manufacturing', 'food']),
+    price: z.number().finite().min(0),
+    quantity: z.number().finite().min(0),
+    isServiceBased: z.boolean(),
+    initialCost: z.number().finite().min(0),
+    upfrontCost: z.number().finite().min(0),
+    upfrontPaymentPercentage: z.number().finite().min(0).max(100).optional(),
+    openingQuarters: z.number().int().min(0),
+    monthlyIncome: z.number().finite(),
+    monthlyExpenses: z.number().finite(),
+    maxEmployees: z.number().int().min(0),
+    minEmployees: z.number().int().min(0),
+    inventory: z
+      .object({
+        maxStock: z.number().finite().min(0),
+        pricePerUnit: z.number().finite().min(0),
+        purchaseCost: z.number().finite().min(0),
+        autoPurchaseAmount: z.number().finite().min(0),
+      })
+      .optional(),
+    employeeRoles: z.array(
+      z.object({
+        role: EmployeeRoleSchema,
+        priority: z.enum(['required', 'recommended', 'optional']),
+        description: z.string(),
+      }),
+    ),
+    risk: z.enum(['low', 'medium', 'high']),
+    energyCost: z.number().finite().optional(),
+    stressImpact: z.number().finite().optional(),
   })
   .strict()

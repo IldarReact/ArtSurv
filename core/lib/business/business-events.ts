@@ -39,9 +39,9 @@ export function generateBusinessEvents(
   })
 
   const events: BusinessEvent[] = []
-  
+
   // New businesses (less than 4 quarters) have 0 events for stability
-  const businessAge = currentTurn - (business.startedTurn ?? currentTurn)
+  const businessAge = currentTurn - (business.foundedTurn ?? currentTurn)
   if (businessAge < 4) return []
 
   // 0-1 event per quarter (reduced from 0-3)

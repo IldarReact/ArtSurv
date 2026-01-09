@@ -1,7 +1,8 @@
+import { ShopItemSchema } from '@/core/schemas/finance.schema'
 import { ShopItem } from '@/core/types/shop.types'
 
 // Country imports
-// USA
+// ... (imports remain the same)
 import brHousing from '@/shared/data/world/countries/brazil/housing.json'
 import brFood from '@/shared/data/world/countries/brazil/shop-categories/food.json'
 import brHealth from '@/shared/data/world/countries/brazil/shop-categories/health.json'
@@ -18,46 +19,21 @@ import usHealth from '@/shared/data/world/countries/us/shop-categories/health.js
 import usServices from '@/shared/data/world/countries/us/shop-categories/services.json'
 import usTransport from '@/shared/data/world/countries/us/transport.json'
 
-
-// Germany
-
-
-// Brazil
-
-
 /**
  * Type-safe data loaders with runtime validation
  */
 
-function validateShopItem(item: unknown): item is ShopItem {
-  if (!item || typeof item !== 'object') return false
-  const i = item as Record<string, unknown>
-
-  if (!i.id || !i.name || !i.category) return false
-
-  // Если это подписка — нужен costPerTurn
-  if (i.isRecurring === true) {
-    return typeof i.costPerTurn === 'number' && i.costPerTurn >= 0
-  }
-
-  // Иначе — нужен price
-  return typeof i.price === 'number' && i.price >= 0
-}
-
 function loadAndValidate(data: unknown[], source: string): ShopItem[] {
-  const validated: ShopItem[] = []
-
-  for (const item of data) {
-    if (validateShopItem(item)) {
-      validated.push(item)
-    } else {
-      // fix1
-      // console.error(`Invalid item in ${source}:`, item)
-      // throw new Error(`Data validation failed for ${source}`)
-    }
-  }
-
-  return validated
+  return data
+    .map((item) => {
+      const result = ShopItemSchema.safeParse(item)
+      if (!result.success) {
+        console.error(`Invalid shop item in ${source}:`, item, result.error.format())
+        return null
+      }
+      return result.data as ShopItem
+    })
+    .filter((item): item is ShopItem => item !== null)
 }
 
 // Country Data Registry - ALL data is country-specific
@@ -67,22 +43,22 @@ const COUNTRY_DATA: Record<string, ShopItem[]> = {
     ...loadAndValidate(geTransport, 'germany/transport.json'),
     ...loadAndValidate(geHealth, 'germany/health.json'),
     ...loadAndValidate(geServices, 'germany/services.json'),
-    ...loadAndValidate(geHousing, 'germany/housing.json')
+    ...loadAndValidate(geHousing, 'germany/housing.json'),
   ],
   us: [
     ...loadAndValidate(usFood, 'us/food.json'),
     ...loadAndValidate(usTransport, 'us/transport.json'),
     ...loadAndValidate(usHealth, 'us/health.json'),
     ...loadAndValidate(usServices, 'us/services.json'),
-    ...loadAndValidate(usHousing, 'us/housing.json')
+    ...loadAndValidate(usHousing, 'us/housing.json'),
   ],
   brazil: [
     ...loadAndValidate(brFood, 'brazil/food.json'),
     ...loadAndValidate(brTransport, 'brazil/transport.json'),
     ...loadAndValidate(brHealth, 'brazil/health.json'),
     ...loadAndValidate(brServices, 'brazil/services.json'),
-    ...loadAndValidate(brHousing, 'brazil/housing.json')
-  ]
+    ...loadAndValidate(brHousing, 'brazil/housing.json'),
+  ],
 }
 
 // Get items for specific country (NO fallback to commons)
@@ -100,13 +76,13 @@ export const ALL_SHOP_ITEMS = COUNTRY_DATA.us || []
 // Helper to get item by ID
 export function getShopItemById(id: string, countryId: string = 'us'): ShopItem | undefined {
   const items = getCountryItems(countryId)
-  return items.find(item => item.id === id)
+  return items.find((item) => item.id === id)
 }
 
 // Helper to get items by category
 export function getShopItemsByCategory(category: string, countryId: string = 'us'): ShopItem[] {
   const items = getCountryItems(countryId)
-  return items.filter(item => item.category === category)
+  return items.filter((item) => item.category === category)
 }
 
 // Helper to get all items for a country

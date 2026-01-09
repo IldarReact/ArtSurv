@@ -1,24 +1,21 @@
+import { SkillDefinitionSchema } from '@/core/schemas/game.schema'
 import type { SkillDefinition } from '@/core/types/skill.types'
 import skillsData from '@/shared/data/world/commons/skills.json'
 
-function validateSkill(item: unknown): item is SkillDefinition {
-  const s = item as SkillDefinition
-  if (!s.id || typeof s.id !== 'string') return false
-  if (!s.name || typeof s.name !== 'string') return false
-  if (!s.description || typeof s.description !== 'string') return false
-  // Validate category if present
-  if (s.category && !['technical', 'language', 'social', 'creative', 'physical'].includes(s.category)) {
-    return false
+export const ALL_SKILLS: SkillDefinition[] = (skillsData as unknown[]).map((item, index) => {
+  const result = SkillDefinitionSchema.safeParse(item)
+  if (result.success) {
+    return result.data as SkillDefinition
+  } else {
+    console.error(`Invalid skill at index ${index}:`, item, result.error.format())
+    throw new Error(`Skill data validation failed`)
   }
-  return true
-}
-
-export const ALL_SKILLS: SkillDefinition[] = skillsData.filter(validateSkill) as SkillDefinition[]
+})
 
 export function getSkillById(id: string): SkillDefinition | undefined {
-  return ALL_SKILLS.find(s => s.id === id)
+  return ALL_SKILLS.find((s) => s.id === id)
 }
 
 export function getSkillsByCategory(category: string): SkillDefinition[] {
-  return ALL_SKILLS.filter(s => s.category === category)
+  return ALL_SKILLS.filter((s) => s.category === category)
 }

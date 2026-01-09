@@ -78,8 +78,15 @@ export function calculateOpEx(
   const employeesCost = baseEmployeesCost + payrollTaxes
 
   // 2. Fixed Costs
-  const rent = staffing.baseRentPerEmployee * business.maxEmployees
-  const utilities = staffing.baseUtilitiesPerEmployee * business.maxEmployees
+  // Balance: Rent and utilities should scale with ACTUAL employees more than MAX capacity
+  // This prevents new businesses with high capacity from going bankrupt instantly
+  const actualStaffCount = (business.employees?.length || 0) + (business.playerEmployment ? 1 : 0)
+  const capacityFactor = business.maxEmployees * 0.2 // Base facility cost (20% of max)
+  const staffingFactor = actualStaffCount * 0.8 // Scaling cost based on actual staff (80%)
+  const effectiveScalingCount = capacityFactor + staffingFactor
+
+  const rent = staffing.baseRentPerEmployee * effectiveScalingCount
+  const utilities = staffing.baseUtilitiesPerEmployee * effectiveScalingCount
   const insurance = business.hasInsurance ? business.insuranceCost || 0 : 0
   const MIN_FIXED_COSTS = staffing.minFixedCosts
 

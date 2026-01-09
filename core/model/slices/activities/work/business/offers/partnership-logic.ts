@@ -2,6 +2,7 @@ import type { GameStore } from '../../../../types'
 
 import { createPartnerBusiness } from '@/core/lib/business/create-partner-business'
 import { broadcastEvent } from '@/core/lib/multiplayer'
+import { PartnershipOfferSchema } from '@/core/schemas/game.schema'
 import type { PartnershipOffer } from '@/core/types'
 import type { BusinessType } from '@/core/types/business.types'
 
@@ -24,9 +25,21 @@ export interface PartnershipAcceptedPayload {
 export function handleAcceptPartnership(
   state: GameStore,
   set: (fn: (state: GameStore) => Partial<GameStore>) => void,
-  offer: PartnershipOffer,
+  offerData: unknown,
 ) {
   if (!state.player) return
+
+  const result = PartnershipOfferSchema.safeParse(offerData)
+  if (!result.success) {
+    console.error('Invalid partnership offer data:', result.error.format())
+    state.pushNotification?.({
+      type: 'error',
+      title: 'Ошибка данных',
+      message: 'Получено некорректное предложение о партнерстве',
+    })
+    return
+  }
+  const offer = result.data as PartnershipOffer
 
   // Проверяем, хватает ли у игрока денег
   if (state.player.stats.money < offer.details.partnerInvestment) {
@@ -113,6 +126,12 @@ export function handleOnPartnershipAccepted(
   payload: PartnershipAcceptedPayload,
 ) {
   if (!state.player) return
+
+  // Basic validation for payload since it comes from network
+  if (!payload.businessId || !payload.partnerId || !payload.businessType) {
+    console.error('Invalid partnership accepted payload:', payload)
+    return
+  }
 
   try {
     const initiatorBusiness = createPartnerBusiness(

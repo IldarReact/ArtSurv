@@ -13,8 +13,8 @@ describe('employees-slice', () => {
       player: {
         id: 'p1',
         name: 'Player',
-        stats: { money: 5000 },
-        personal: { stats: { money: 5000 } },
+        stats: { money: 5000, energy: 100 },
+        personal: { stats: { money: 5000, energy: 100 } },
         businesses: [
           {
             id: 'biz_1',
@@ -68,6 +68,27 @@ describe('employees-slice', () => {
             foundedTurn: 1,
           },
         ],
+      },
+      applyStatChanges: (changes: any) => {
+        set((state: any) => ({
+          player: {
+            ...state.player,
+            stats: {
+              ...state.player.stats,
+              energy: Math.max(0, (state.player.stats.energy || 0) + (changes.energy || 0)),
+            },
+            personal: {
+              ...state.player.personal,
+              stats: {
+                ...state.player.personal.stats,
+                energy: Math.max(
+                  0,
+                  (state.player.personal.stats.energy || 0) + (changes.energy || 0),
+                ),
+              },
+            },
+          },
+        }))
       },
     }
     const get = () => state

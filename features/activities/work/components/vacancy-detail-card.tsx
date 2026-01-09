@@ -1,12 +1,10 @@
 'use client'
 
 import { Building, Info, CheckCircle } from 'lucide-react'
-import { Star } from 'lucide-react'
 import { useState } from 'react'
 
-import { EmployeeCard } from '../../../shared/components/business/employee-card'
-
 import type { Job } from '@/core/types/job.types'
+import { EmployeeCard } from '@/shared/components/business/employee-card'
 import { Button } from '@/shared/ui/button'
 import {
   Dialog,
@@ -20,7 +18,7 @@ import { cn } from '@/shared/utils/utils'
 interface VacancyDetailCardProps {
   title: string
   company: string
-  salary: string
+  salary: number
   energyCost?: number
   requirements: Array<{ skill: string; level: number }>
   image: string
@@ -42,8 +40,7 @@ export function VacancyDetailCard({
 }: VacancyDetailCardProps) {
   const [showDetails, setShowDetails] = useState(false)
 
-  // Извлекаем числовое значение зарплаты для EmployeeCard
-  const salaryValue = parseInt(salary.replace(/[^0-9]/g, '')) || 0
+  const formattedSalary = `$${salary.toLocaleString()}/мес`
 
   return (
     <>
@@ -53,7 +50,7 @@ export function VacancyDetailCard({
         role="worker" // Дефолтная роль для отображения иконки, если не указана
         roleLabel="Вакансия"
         company={company}
-        salary={salaryValue}
+        salary={salary}
         salaryLabel="/мес"
         avatar={image}
         isVacancy={true}
@@ -88,7 +85,7 @@ export function VacancyDetailCard({
                 <p className="text-[10px] uppercase font-bold tracking-widest text-white/40 mb-2">
                   Зарплата
                 </p>
-                <p className="text-3xl font-black text-green-400">{salary}</p>
+                <p className="text-3xl font-black text-green-400">{formattedSalary}</p>
               </div>
 
               <div>
@@ -99,18 +96,19 @@ export function VacancyDetailCard({
                   {requirements.map((req, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between bg-white/5 rounded-xl p-4 border border-white/5"
+                      className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5"
                     >
-                      <span className="text-white font-medium">{req.skill}</span>
+                      <span className="font-bold text-zinc-100">{req.skill}</span>
                       <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star
-                            key={star}
-                            className={`w-4 h-4 ${
-                              star <= req.level
-                                ? 'text-yellow-400 fill-yellow-400'
-                                : 'text-white/10'
-                            }`}
+                        {Array.from({ length: 5 }).map((_, j) => (
+                          <div
+                            key={j}
+                            className={cn(
+                              'w-2 h-2 rounded-full',
+                              j < req.level
+                                ? 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.4)]'
+                                : 'bg-white/10',
+                            )}
                           />
                         ))}
                       </div>
@@ -119,21 +117,30 @@ export function VacancyDetailCard({
                 </div>
               </div>
 
-              <Button
-                onClick={() => {
-                  setShowDetails(false)
-                  onApply?.()
-                }}
-                disabled={isApplied}
-                className={cn(
-                  'w-full h-14 rounded-2xl font-black uppercase tracking-widest transition-all duration-300',
-                  isApplied
-                    ? 'bg-white/5 text-white/20 border border-white/5'
-                    : 'bg-white text-black hover:bg-white/90 shadow-xl shadow-white/10',
-                )}
-              >
-                {isApplied ? 'Заявка уже отправлена' : 'Откликнуться на вакансию'}
-              </Button>
+              <div className="pt-4 flex flex-col gap-3">
+                <Button
+                  onClick={onApply}
+                  disabled={isApplied}
+                  className={cn(
+                    'w-full h-14 text-lg font-black rounded-2xl transition-all duration-300',
+                    isApplied
+                      ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                      : 'bg-white text-black hover:bg-zinc-200 hover:scale-[1.02] active:scale-[0.98]',
+                  )}
+                >
+                  {isApplied ? (
+                    <span className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5" />
+                      ОТКЛИК ОТПРАВЛЕН
+                    </span>
+                  ) : (
+                    'ОТКЛИКНУТЬСЯ НА ВАКАНСИЮ'
+                  )}
+                </Button>
+                <p className="text-center text-xs font-bold text-white/20 uppercase tracking-widest">
+                  Расход энергии: {energyCost}⚡
+                </p>
+              </div>
             </div>
           </div>
         </DialogContent>

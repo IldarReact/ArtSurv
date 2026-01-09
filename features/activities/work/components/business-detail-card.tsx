@@ -1,10 +1,10 @@
-"use client"
+'use client'
 
-import { Zap } from "lucide-react"
-import React from "react"
+import { Zap } from 'lucide-react'
+import React from 'react'
 
-import { Badge } from "@/shared/ui/badge"
-import { Button } from "@/shared/ui/button"
+import { Badge } from '@/shared/ui/badge'
+import { Button } from '@/shared/ui/button'
 
 interface BusinessDetailCardProps {
   title: string
@@ -31,14 +31,17 @@ export function BusinessDetailCard({
   stressImpact,
   image,
   onBuy,
-  detailDialog
+  detailDialog,
 }: BusinessDetailCardProps) {
   return (
     <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-white/20 transition-colors">
       <div className="relative h-32">
         <img src={image} alt={title} className="w-full h-full object-cover" />
         <div className="absolute top-2 left-2">
-          <Badge variant="secondary" className="bg-black/60 backdrop-blur-md text-white border-white/10">
+          <Badge
+            variant="secondary"
+            className="bg-black/60 backdrop-blur-md text-white border-white/10"
+          >
             {type}
           </Badge>
         </div>

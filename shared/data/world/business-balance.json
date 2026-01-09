@@ -1,8 +1,8 @@
 {
   "staffing": {
-    "payrollTaxRate": 15,
-    "baseRentPerEmployee": 150,
-    "baseUtilitiesPerEmployee": 30,
+    "payrollTaxRate": 10,
+    "baseRentPerEmployee": 100,
+    "baseUtilitiesPerEmployee": 20,
     "minFixedCosts": 100
   },
   "production": {

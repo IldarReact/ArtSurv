@@ -15,6 +15,20 @@ export function commitTurn(ctx: TurnContext, state: TurnState): Partial<GameStor
     nextGameStatus = 'year_report'
   }
 
+  // Safety check for money
+  const netProfit = state.financial.adjustedNetProfit || 0
+  const moneyDelta = state.moneyDelta || 0
+  let nextMoney = state.player.stats.money + netProfit + moneyDelta
+
+  if (isNaN(nextMoney) || !isFinite(nextMoney)) {
+    console.error('CRITICAL: Invalid money calculation in commitTurn', {
+      currentMoney: state.player.stats.money,
+      netProfit,
+      moneyDelta,
+    })
+    nextMoney = state.player.stats.money // Fallback to current money to avoid NaN
+  }
+
   return {
     // meta
     turn: nextTurn,
@@ -32,7 +46,7 @@ export function commitTurn(ctx: TurnContext, state: TurnState): Partial<GameStor
       stats: {
         ...state.player.stats,
         ...state.stats, // ✅ SYNC: Применяем изменения статов (Health, Energy, etc.)
-        money: state.player.stats.money + state.financial.adjustedNetProfit + state.moneyDelta,
+        money: nextMoney,
       },
 
       personal: {

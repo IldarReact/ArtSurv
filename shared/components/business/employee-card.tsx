@@ -2,9 +2,9 @@
 
 import React from 'react'
 
-import { EmployeeCardContent } from './employee-card/EmployeeCardContent'
-import { EmployeeCardFooter } from './employee-card/EmployeeCardFooter'
-import { EmployeeCardHeader } from './employee-card/EmployeeCardHeader'
+import { EmployeeCardContent } from './employee-card/employee-card-content'
+import { EmployeeCardFooter } from './employee-card/employee-card-footer'
+import { EmployeeCardHeader } from './employee-card/employee-card-header'
 
 import type { StaffImpactResult, PlayerBusinessImpact, EmployeeSkills } from '@/core/types'
 import { Card } from '@/shared/ui/card'

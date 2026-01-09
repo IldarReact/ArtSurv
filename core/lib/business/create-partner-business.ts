@@ -1,11 +1,6 @@
 import { createBusinessPurchase } from './purchase-logic'
 
-import type {
-  Business,
-  BusinessType,
-  BusinessRoleTemplate,
-  BusinessInventory,
-} from '@/core/types'
+import type { Business, BusinessType, BusinessRoleTemplate, BusinessInventory } from '@/core/types'
 
 export function createPartnerBusiness(
   offer: {
@@ -64,20 +59,12 @@ export function createPartnerBusiness(
       partnerId: offer.fromPlayerId,
       partnerName: offer.fromPlayerName,
       playerShare: offer.details.yourShare,
+      playerId,
+      playerName: 'Вы', // We can still use 'Вы' for the current player's display name
       partnerBusinessId,
       initialState: 'active', // Partner businesses in this flow are usually active immediately
     },
   )
-
-  // Ensure the ID from the offer is preserved if it exists
-  if (offer.details.businessId) {
-    business.id = offer.details.businessId
-  }
-
-  // Override the 'Вы' placeholder with the correct playerId
-  if (business.partners[0]) {
-    business.partners[0].id = playerId
-  }
 
   return business
 }
