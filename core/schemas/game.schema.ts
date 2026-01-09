@@ -124,6 +124,7 @@ export const SkillSchema = z
 export const ActiveCourseSchema = z
   .object({
     id: z.string(),
+    title: z.string().optional(), // New base field
     courseName: z.string(),
     skillName: z.string(),
     skillBonus: z.number().finite(),
@@ -137,6 +138,7 @@ export const ActiveCourseSchema = z
 export const ActiveUniversitySchema = z
   .object({
     id: z.string(),
+    title: z.string().optional(), // New base field
     programName: z.string(),
     skillName: z.string(),
     skillBonus: z.number().finite(),

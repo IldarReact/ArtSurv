@@ -61,6 +61,7 @@ export function commitTurn(ctx: TurnContext, state: TurnState): Partial<GameStor
 
     // applications
     pendingApplications: state.pendingApplications,
+    pendingFreelanceApplications: state.pendingFreelanceApplications,
 
     globalMarket: {
       value: state.globalMarketValue,

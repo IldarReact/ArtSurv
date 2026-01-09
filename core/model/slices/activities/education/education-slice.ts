@@ -63,6 +63,7 @@ export const createEducationSlice: StateCreator<GameStore, [], [], EducationSlic
 
     const newCourse: ActiveCourse = {
       id: `course_${Date.now()}`,
+      title: courseName,
       courseName,
       skillName: normalizedSkillName,
       skillBonus: 0,
@@ -153,6 +154,7 @@ export const createEducationSlice: StateCreator<GameStore, [], [], EducationSlic
 
     const newUni: ActiveUniversity = {
       id: `uni_${Date.now()}`,
+      title: programName,
       programName,
       skillName: normalizedSkillName,
       skillBonus: 0,

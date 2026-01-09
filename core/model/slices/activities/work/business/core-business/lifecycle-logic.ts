@@ -1,7 +1,8 @@
+import type { GameStore } from '../../../../types'
+
 import { applyStats } from '@/core/helpers/apply-stats'
 import { validateBusinessUnfreeze } from '@/core/lib/business'
 import type { Business, Employee } from '@/core/types'
-import type { GameStore } from '../../../../types'
 
 export const handleCloseBusiness = (
   get: () => GameStore,
@@ -110,6 +111,10 @@ export const handleUnfreezeBusiness = (
           state: 'opening' as const,
           openingProgress: {
             ...b.openingProgress,
+            id: b.openingProgress.id || `opening_${b.id}`,
+            title: b.openingProgress.title || `Разморозка: ${b.name}`,
+            totalDuration: 1,
+            remainingDuration: 1,
             quartersLeft: 1,
           },
         }

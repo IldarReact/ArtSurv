@@ -42,6 +42,9 @@ export interface EmployeeRoleConfig {
     progressPerQuarter: number
   } | null
 
+  // Минимальный уровень навыка для занятия роли
+  minSkillLevel?: number
+
   // Влияние навыка игрока на бизнес (если он работает в этой роли)
   businessImpact?: BusinessImpact
   staffImpact?: (stars: number) => StaffImpactResult
@@ -56,6 +59,7 @@ interface RawRoleData {
     name: string
     progressPerQuarter: number
   } | null
+  minSkillLevel?: number
   impactCoefficients: Record<string, number>
 }
 

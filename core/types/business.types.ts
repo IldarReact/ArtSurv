@@ -1,5 +1,6 @@
 // Business-related types
 
+import { Progressable } from './progress.types'
 import { StatEffect } from './stats.types'
 
 export type EmployeeRole =
@@ -265,8 +266,10 @@ export interface Business {
   proposals: BusinessProposal[]
 
   // Открытие
-  openingProgress: {
+  openingProgress: Progressable & {
+    /** @deprecated use totalDuration */
     totalQuarters: number // Сколько кварталов нужно для открытия
+    /** @deprecated use remainingDuration */
     quartersLeft: number // Сколько осталось
     investedAmount: number // Сколько уже вложено
     totalCost: number // Общая стоимость
@@ -384,4 +387,5 @@ export interface EmployeeCandidate {
   avatar?: string
   humanTraits: string[] // ID черт характера из human-traits.json
   countryId?: string
+  meetsRequirements?: boolean
 }

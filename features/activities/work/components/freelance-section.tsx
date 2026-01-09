@@ -18,6 +18,7 @@ interface FreelanceSectionProps {
     payment: number,
     energyCost: number,
     requirements: Array<{ skill: string; level: SkillLevel }>,
+    duration: number,
   ) => void
 }
 
@@ -42,33 +43,38 @@ export function FreelanceSection({ onTakeOrder }: FreelanceSectionProps) {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {gigsWithInflation.map((gig) => (
-            <FreelanceDetailCard
-              key={gig.id}
-              title={gig.title}
-              category={gig.category}
-              description={gig.title}
-              payment={gig.inflatedPrice}
-              energyCost={Math.abs(gig.cost.energy || 0)}
-              requirements={gig.requirements.map((r) => ({
-                skill: r.skillId,
-                level: r.minLevel,
-              }))}
-              image="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop"
-              onTakeOrder={() =>
-                onTakeOrder(
-                  gig.id,
-                  gig.title,
-                  gig.inflatedPrice,
-                  Math.abs(gig.cost.energy || 0),
-                  gig.requirements.map((r) => ({
-                    skill: r.skillId,
-                    level: r.minLevel as SkillLevel,
-                  })),
-                )
-              }
-            />
-          ))}
+          {gigsWithInflation.map((gig, idx) => {
+            const originalGig = gigs[idx]
+            return (
+              <FreelanceDetailCard
+                key={originalGig.id}
+                title={originalGig.title}
+                category={originalGig.category}
+                description={originalGig.title}
+                payment={gig.inflatedPrice}
+                energyCost={Math.abs(originalGig.cost.energy || 0)}
+                duration={originalGig.duration}
+                requirements={originalGig.requirements.map((r) => ({
+                  skill: r.skillId,
+                  level: r.minLevel as SkillLevel,
+                }))}
+                image="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop"
+                onApply={() =>
+                  onTakeOrder(
+                    originalGig.id,
+                    originalGig.title,
+                    gig.inflatedPrice,
+                    Math.abs(originalGig.cost.energy || 0),
+                    originalGig.requirements.map((r) => ({
+                      skill: r.skillId,
+                      level: r.minLevel as SkillLevel,
+                    })),
+                    originalGig.duration,
+                  )
+                }
+              />
+            )
+          })}
         </div>
       </div>
     </OpportunityCard>

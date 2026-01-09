@@ -46,6 +46,10 @@ describe('Business Logic Alignment (User Feedback & Refactoring)', () => {
       autoPurchaseAmount: 0,
     },
     openingProgress: {
+      id: 'test-opening',
+      title: 'Opening Test Business',
+      totalDuration: 0,
+      remainingDuration: 0,
       totalQuarters: 0,
       quartersLeft: 0,
       investedAmount: 0,

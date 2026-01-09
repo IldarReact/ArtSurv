@@ -1,5 +1,6 @@
 import { SKILL_STAR_DIVISOR, MONTHS_PER_QUARTER } from '../../shared-constants'
 
+import { canPlayerTakeRole } from '@/core/lib/business'
 import type { EmployeeCandidate, Player, EmployeeStars, Skill, EmployeeSkills } from '@/core/types'
 
 export function getSkillStarsCount(value: number): number {
@@ -40,6 +41,7 @@ export function createPlayerCandidate(
         efficiency: 100,
       } as EmployeeSkills),
       humanTraits: [], // Можно подтянуть из трейтов игрока
+      meetsRequirements: canPlayerTakeRole(defaultRole, skills),
     }
   }
 

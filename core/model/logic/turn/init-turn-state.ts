@@ -72,8 +72,9 @@ export function initTurnState(ctx: TurnContext): TurnState {
       adjustedNetProfit: 0,
     },
 
-    // jobs / education
+    // jobs / education / freelance
     pendingApplications: prev.pendingApplications ?? [],
+    pendingFreelanceApplications: prev.pendingFreelanceApplications ?? [],
     protectedSkills: new Set(),
 
     // economy

@@ -10,10 +10,7 @@ interface ShopPricing {
   isRecurring: boolean
 }
 
-export function useShopPricing(
-  item: ShopItem,
-  playerMoney: number,
-): ShopPricing {
+export function useShopPricing(item: ShopItem, playerMoney: number): ShopPricing {
   const displayPrice = useInflatedPrice(item)
   const isRecurring = useMemo(() => isRecurringItem(item), [item])
 

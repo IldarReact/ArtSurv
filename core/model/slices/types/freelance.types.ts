@@ -12,6 +12,7 @@ export interface FreelanceSlice {
     payment: number,
     cost: StatEffect,
     requirements: SkillRequirement[],
+    duration: number,
   ) => void
   acceptFreelanceGig: (applicationId: string) => void
   completeFreelanceGig: (gigId: string) => void

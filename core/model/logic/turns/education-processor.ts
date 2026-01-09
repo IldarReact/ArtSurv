@@ -1,135 +1,122 @@
+import { processProgress } from '@/core/lib/progress/progress-processor'
 import { formatGameDate } from '@/core/lib/quarter'
-import type { Notification, Skill, SkillLevel } from '@/core/types'
+import type {
+  Notification,
+  Skill,
+  SkillLevel,
+  ActiveCourse,
+  ActiveUniversity,
+  Progressable,
+} from '@/core/types'
 
 interface EducationResult {
-  activeCourses: Array<any>
-  activeUniversity: Array<any>
+  activeCourses: ActiveCourse[]
+  activeUniversity: ActiveUniversity[]
   updatedSkills: Skill[]
   notifications: Notification[]
   protectedSkills: string[]
 }
 
 /**
- * Process active courses and university studies for the turn.
- * Updates durations, awards skill levels when finished, and produces notifications.
+ * Generic handler for education progress (courses or university)
  */
-export function processEducation(
-  activeCourses: Array<any>,
-  activeUniversity: Array<any>,
+function handleEducationProgress<
+  T extends Progressable & { skillName: string; courseName?: string; programName?: string },
+>(
+  items: T[],
   updatedSkills: Skill[],
   currentTurn: number,
   currentYear: number,
+  type: 'course' | 'uni',
+): { active: T[]; notifications: Notification[] } {
+  const notifications: Notification[] = []
+  const progress = processProgress(items)
+
+  progress.completed.forEach((item) => {
+    const levelsGained = Math.ceil(item.totalDuration)
+    const skillIdx = updatedSkills.findIndex((s) => s.name === item.skillName)
+    const itemName = item.courseName || item.programName || item.title
+    const isUni = type === 'uni'
+    const successTitle = isUni ? 'Диплом получен' : 'Курс завершен'
+    const successMsg = isUni
+      ? `Поздравляем! Вы завершили обучение по программе "${itemName}"`
+      : `Вы завершили курс "${itemName}"`
+
+    if (skillIdx === -1) {
+      const newLevel = Math.min(5, levelsGained) as SkillLevel
+      updatedSkills.push({
+        id: `skill_${Date.now()}_${Math.random()}`,
+        name: item.skillName,
+        level: newLevel,
+        progress: 0,
+        lastPracticedTurn: currentTurn,
+        isBeingStudied: false,
+      })
+      notifications.push({
+        id: `${type}_end_${Date.now()}_${Math.random()}`,
+        type: 'success',
+        title: successTitle,
+        message: `${successMsg} и получили навык ${item.skillName} (${newLevel} зв.)!`,
+        date: formatGameDate(currentYear, currentTurn),
+        isRead: false,
+      })
+    } else {
+      const skill = { ...updatedSkills[skillIdx] }
+      skill.level = Math.min(5, skill.level + levelsGained) as SkillLevel
+      skill.progress = 0
+      skill.lastPracticedTurn = currentTurn
+      updatedSkills[skillIdx] = skill
+      notifications.push({
+        id: `${type}_end_${Date.now()}_${Math.random()}`,
+        type: 'success',
+        title: successTitle,
+        message: `${successMsg}. Навык ${skill.name} повышен до ${skill.level} зв.!`,
+        date: formatGameDate(currentYear, currentTurn),
+        isRead: false,
+      })
+    }
+  })
+
+  return { active: progress.active, notifications }
+}
+
+/**
+ * Process active courses and university studies for the turn.
+ */
+export function processEducation(
+  activeCourses: ActiveCourse[],
+  activeUniversity: ActiveUniversity[],
+  playerSkills: Skill[],
+  currentTurn: number,
+  currentYear: number,
 ): EducationResult {
-  const newNotifications: Notification[] = []
+  const updatedSkills = [...playerSkills]
   const protectedSkills = new Set<string>()
 
-  // Courses
-  const finishedCourses: string[] = []
-  activeCourses = activeCourses
-    .map((c) => {
-      const course = { ...c }
-      course.remainingDuration -= 1
-      protectedSkills.add(course.skillName)
-
-      if (course.remainingDuration <= 0) {
-        finishedCourses.push(course.id)
-        const levelsGained = Math.ceil(course.totalDuration)
-        const skillIdx = updatedSkills.findIndex((s) => s.name === course.skillName)
-
-        if (skillIdx === -1) {
-          const newLevel = Math.min(5, levelsGained) as SkillLevel
-          updatedSkills.push({
-            id: `skill_${Date.now()}_${Math.random()}`,
-            name: course.skillName,
-            level: newLevel,
-            progress: 0,
-            lastPracticedTurn: currentTurn,
-            isBeingStudied: false,
-          })
-          newNotifications.push({
-            id: `course_end_${Date.now()}_${Math.random()}`,
-            type: 'success',
-            title: 'Курс завершен',
-            message: `Вы завершили курс "${course.courseName}" и получили навык ${course.skillName} (${newLevel} зв.)!`,
-            date: formatGameDate(currentYear, currentTurn),
-            isRead: false,
-          })
-        } else {
-          const skill = { ...updatedSkills[skillIdx] }
-          skill.level = Math.min(5, skill.level + levelsGained) as SkillLevel
-          skill.progress = 0
-          skill.lastPracticedTurn = currentTurn
-          updatedSkills[skillIdx] = skill
-          newNotifications.push({
-            id: `course_end_${Date.now()}_${Math.random()}`,
-            type: 'success',
-            title: 'Курс завершен',
-            message: `Вы завершили курс "${course.courseName}". Навык ${skill.name} повышен до ${skill.level} зв.!`,
-            date: formatGameDate(currentYear, currentTurn),
-            isRead: false,
-          })
-        }
-      }
-      return course
-    })
-    .filter((c) => !finishedCourses.includes(c.id))
-
-  // University
-  const finishedUni: string[] = []
-  activeUniversity = activeUniversity
-    .map((u) => {
-      const uni = { ...u }
-      uni.remainingDuration -= 1
-      protectedSkills.add(uni.skillName)
-
-      if (uni.remainingDuration <= 0) {
-        finishedUni.push(uni.id)
-        const levelsGained = Math.ceil(uni.totalDuration)
-        const skillIdx = updatedSkills.findIndex((s) => s.name === uni.skillName)
-
-        if (skillIdx === -1) {
-          const newLevel = Math.min(5, levelsGained) as SkillLevel
-          updatedSkills.push({
-            id: `skill_${Date.now()}_${Math.random()}`,
-            name: uni.skillName,
-            level: newLevel,
-            progress: 0,
-            lastPracticedTurn: currentTurn,
-            isBeingStudied: false,
-          })
-          newNotifications.push({
-            id: `uni_end_${Date.now()}_${Math.random()}`,
-            type: 'success',
-            title: 'Диплом получен',
-            message: `Поздравляем! Вы завершили обучение по программе "${uni.programName}" и получили навык ${uni.skillName} (${newLevel} зв.)!`,
-            date: formatGameDate(currentYear, currentTurn),
-            isRead: false,
-          })
-        } else {
-          const skill = { ...updatedSkills[skillIdx] }
-          skill.level = Math.min(5, skill.level + levelsGained) as SkillLevel
-          skill.progress = 0
-          skill.lastPracticedTurn = currentTurn
-          updatedSkills[skillIdx] = skill
-          newNotifications.push({
-            id: `uni_end_${Date.now()}_${Math.random()}`,
-            type: 'success',
-            title: 'Диплом получен',
-            message: `Поздравляем! Вы завершили обучение по программе "${uni.programName}". Навык ${skill.name} повышен до ${skill.level} зв.!`,
-            date: formatGameDate(currentYear, currentTurn),
-            isRead: false,
-          })
-        }
-      }
-      return uni
-    })
-    .filter((u) => !finishedUni.includes(u.id))
-
-  return {
+  const courseRes = handleEducationProgress(
     activeCourses,
+    updatedSkills,
+    currentTurn,
+    currentYear,
+    'course',
+  )
+  const uniRes = handleEducationProgress(
     activeUniversity,
     updatedSkills,
-    notifications: newNotifications,
+    currentTurn,
+    currentYear,
+    'uni',
+  )
+
+  // Protect skills being studied
+  courseRes.active.forEach((c) => protectedSkills.add(c.skillName))
+  uniRes.active.forEach((u) => protectedSkills.add(u.skillName))
+
+  return {
+    activeCourses: courseRes.active,
+    activeUniversity: uniRes.active,
+    updatedSkills,
+    notifications: [...courseRes.notifications, ...uniRes.notifications],
     protectedSkills: Array.from(protectedSkills),
   }
 }

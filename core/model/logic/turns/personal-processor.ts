@@ -1,3 +1,4 @@
+import { processProgress } from '@/core/lib/progress/progress-processor'
 import { formatGameDate } from '@/core/lib/quarter'
 import type { Notification } from '@/core/types'
 import type { Player } from '@/core/types'
@@ -15,8 +16,7 @@ export function processPersonal(
   let isDating = prevPersonal.isDating
 
   if (isDating && !potentialPartner) {
-    const success =
-      Math.random() < 0.7 || (turn % 4 === 0)
+    const success = Math.random() < 0.7 || turn % 4 === 0
     if (success) {
       const names = ['Мария', 'Анна', 'Елена', 'Виктория', 'София', 'Алиса', 'Дарья', 'Полина']
       const jobs = [
@@ -62,10 +62,18 @@ export function processPersonal(
   const familyMembers = [...prevPersonal.familyMembers]
 
   if (pregnancy) {
-    pregnancy = { ...pregnancy, turnsLeft: pregnancy.turnsLeft - 1 }
+    // Синхронизируем старые поля для процессора
+    const progressable = {
+      ...pregnancy,
+      totalDuration: pregnancy.totalDuration || 3,
+      remainingDuration: pregnancy.turnsLeft,
+    }
 
-    if (pregnancy.turnsLeft <= 0) {
-      const childCount = pregnancy.isTwins ? 2 : 1
+    const res = processProgress([progressable])
+
+    if (res.completed.length > 0) {
+      const completedPregnancy = res.completed[0] as typeof pregnancy
+      const childCount = completedPregnancy.isTwins ? 2 : 1
       const names = ['Макс', 'Александр', 'Михаил', 'Артем', 'Иван', 'Дмитрий']
 
       for (let i = 0; i < childCount; i++) {
@@ -86,15 +94,20 @@ export function processPersonal(
       notifications.push({
         id: `birth_${Date.now()}`,
         type: 'success',
-        title: pregnancy.isTwins ? 'Двойня! 👶👶' : 'Рождение ребенка! 👶',
+        title: completedPregnancy.isTwins ? 'Двойня! 👶👶' : 'Рождение ребенка! 👶',
         message: `Поздравляем! В вашей семье ${
-          pregnancy.isTwins ? 'пополнение (двойня)' : 'пополнение'
+          completedPregnancy.isTwins ? 'пополнение (двойня)' : 'пополнение'
         }.`,
         date: formatGameDate(year, turn),
         isRead: false,
       })
 
       pregnancy = null
+    } else {
+      pregnancy = {
+        ...res.active[0],
+        turnsLeft: res.active[0].remainingDuration,
+      } as typeof pregnancy
     }
   }
 

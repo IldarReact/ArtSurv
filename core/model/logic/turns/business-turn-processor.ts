@@ -6,6 +6,7 @@ import {
   updateBusinessMetrics,
   calculateBusinessFinancials,
 } from '@/core/lib/business'
+import { processProgress } from '@/core/lib/progress/progress-processor'
 import { formatGameDate } from '@/core/lib/quarter'
 import type { Skill, SkillLevel, Notification } from '@/core/types'
 import type { Business } from '@/core/types/business.types'
@@ -52,8 +53,24 @@ export function processBusinessTurn(
 
     // 1. Opening Phase
     if (updatedBiz.state === 'opening') {
-      updatedBiz.openingProgress.quartersLeft -= 1
-      if (updatedBiz.openingProgress.quartersLeft <= 0) {
+      // Синхронизируем поля для процессора
+      const progressable = {
+        ...updatedBiz.openingProgress,
+        id: updatedBiz.openingProgress.id || `opening_${updatedBiz.id}`,
+        title: updatedBiz.openingProgress.title || `Открытие: ${updatedBiz.name}`,
+        totalDuration: updatedBiz.openingProgress.totalQuarters,
+        remainingDuration: updatedBiz.openingProgress.quartersLeft,
+      }
+
+      const res = processProgress([progressable])
+
+      updatedBiz.openingProgress = {
+        ...updatedBiz.openingProgress,
+        ...(res.active[0] || res.completed[0]),
+        quartersLeft: (res.active[0] || res.completed[0]).remainingDuration,
+      }
+
+      if (res.completed.length > 0) {
         updatedBiz.state = 'active'
         notifications.push({
           id: `biz_open_${updatedBiz.id}_${currentTurn}`,

@@ -1,6 +1,6 @@
 import { Check, Key } from 'lucide-react'
 
-import { useShopPricing } from '../useShopPricing'
+import { useShopPricing } from '../use-shop-pricing'
 import { formatPrice, getHousingTypeLabel } from '../utils/formatters'
 import { getStatIcon } from '../utils/icons'
 
@@ -60,7 +60,7 @@ export function ShopItemCard({
           className="w-full h-full object-cover transform rotate-1 scale-110 group-hover:scale-115 transition-transform duration-500"
         />
         <div className="absolute inset-0 bg-black/40" />
-        
+
         {/* Значок для жилья */}
         {isHousing && (
           <div className="absolute top-3 left-3">
@@ -69,7 +69,7 @@ export function ShopItemCard({
             </div>
           </div>
         )}
-        
+
         {/* Статус текущего жилья */}
         {isCurrentHousing && (
           <div className="absolute top-3 right-3">
@@ -84,26 +84,18 @@ export function ShopItemCard({
       {/* Маттовое покрытие с текстом */}
       <div className="relative bg-zinc-950/95 backdrop-blur-sm p-5 space-y-4">
         <div>
-          <h3 className="text-xl font-bold text-white mb-1">
-            {item.name}
-          </h3>
+          <h3 className="text-xl font-bold text-white mb-1">{item.name}</h3>
           {isHousing && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-blue-300">
-                {getHousingTypeLabel(item, country)}
-              </span>
-              {('capacity' in item && item.capacity) ? (
-                <span className="text-xs text-white/60">
-                  • {(item.capacity as number)} мест
-                </span>
+              <span className="text-xs text-blue-300">{getHousingTypeLabel(item, country)}</span>
+              {'capacity' in item && item.capacity ? (
+                <span className="text-xs text-white/60">• {item.capacity as number} мест</span>
               ) : null}
             </div>
           )}
         </div>
 
-        <p className="text-sm text-blue-100/80 leading-relaxed">
-          {item.description}
-        </p>
+        <p className="text-sm text-blue-100/80 leading-relaxed">{item.description}</p>
 
         {item.effects && Object.keys(item.effects).length > 0 && (
           <div className="flex flex-wrap gap-2">

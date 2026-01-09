@@ -54,6 +54,7 @@ export function useWorkActivity() {
     payment: number,
     energyCost: number,
     requirements: Array<{ skill: string; level: SkillLevel }>,
+    duration: number,
   ) => {
     if (!player) return
     if (player.personal.stats.energy < energyCost) {
@@ -70,17 +71,16 @@ export function useWorkActivity() {
       minLevel: r.level,
     }))
 
-    applyForFreelance(gigId, title, payment, { energy: energyCost }, reqs)
+    applyForFreelance(gigId, title, payment, { energy: -energyCost }, reqs, duration)
     setFeedback({ show: true, success: true, message: `Заявка на заказ "${title}" отправлена!` })
-  }
-
-  const handleCompleteGig = (gigId: string, title: string) => {
-    completeFreelanceGig(gigId)
-    setFeedback({ show: true, success: true, message: `Заказ "${title}" выполнен!` })
   }
 
   const handleAskForRaise = (jobId: string) => {
     askForRaise(jobId)
+  }
+
+  const handleCompleteGig = (gigId: string) => {
+    completeFreelanceGig(gigId)
   }
 
   const allJobs = React.useMemo(() => {
@@ -145,8 +145,8 @@ export function useWorkActivity() {
     setFeedback,
     handleApply,
     handleFreelanceApply,
-    handleCompleteGig,
     handleAskForRaise,
+    handleCompleteGig,
     allJobs,
   }
 }

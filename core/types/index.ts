@@ -36,10 +36,16 @@ export type { GameOffer, JobOffer, PartnershipOffer, ShareSaleOffer } from './ga
 export type { GlobalMarketCondition, MarketEvent } from './market.types'
 
 // Freelance types
-export type { FreelanceGig, FreelanceApplication } from './freelance.types'
+export type { FreelanceGig, FreelanceApplication, ActiveFreelanceGig } from './freelance.types'
 
 // Skill and education types
-export type { SkillLevel, Skill, ActiveCourse, ActiveUniversity } from './skill.types'
+export type {
+  SkillLevel,
+  Skill,
+  ActiveCourse,
+  ActiveUniversity,
+  SkillRequirement,
+} from './skill.types'
 
 // Economy types
 export type {
@@ -81,6 +87,9 @@ export type {
   NearbyConstruction,
   HousingOption,
 } from './housing.types'
+
+// Progress types
+export type { Progressable, ProgressResult } from './progress.types'
 
 // Shop types
 export type { ShopCategory, ShopItem } from './shop.types'

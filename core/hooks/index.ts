@@ -1,1 +1,1 @@
-export { useInflatedPrice, useInflatedPrices, useEconomy } from './useInflation'
+export { useInflatedPrice, useInflatedPrices, useEconomy } from './use-inflation'

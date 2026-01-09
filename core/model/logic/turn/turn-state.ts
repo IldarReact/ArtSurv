@@ -3,6 +3,7 @@ import type {
   Player,
   Notification,
   JobApplication,
+  FreelanceApplication,
   MarketEvent,
   QuarterlyReport,
   Stats,
@@ -68,8 +69,9 @@ export interface TurnState {
     adjustedNetProfit: number
   }
 
-  // jobs / education
+  // jobs / education / freelance
   pendingApplications: JobApplication[]
+  pendingFreelanceApplications: FreelanceApplication[]
   protectedSkills: Set<string>
 
   // economy

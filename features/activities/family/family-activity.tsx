@@ -103,9 +103,16 @@ export function FamilyActivity(): React.JSX.Element | null {
             <h4 className="font-bold text-white">Ожидание ребенка</h4>
             <p className="text-white/60 text-sm">
               До рождения осталось:{' '}
-              <span className="text-white font-bold">{pregnancy.turnsLeft} кв.</span>
+              <span className="text-white font-bold">{pregnancy.remainingDuration} кв.</span>
             </p>
-            <Progress value={((3 - pregnancy.turnsLeft) / 3) * 100} className="h-2 mt-2 w-48" />
+            <Progress
+              value={
+                ((pregnancy.totalDuration - pregnancy.remainingDuration) /
+                  pregnancy.totalDuration) *
+                100
+              }
+              className="h-2 mt-2 w-48"
+            />
           </div>
         </div>
       )}

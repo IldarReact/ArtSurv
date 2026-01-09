@@ -75,10 +75,11 @@ export function createBusinessObject(params: CreateBusinessParams): Business {
   } = params
 
   const isServiceBased = type === 'service' || type === 'tech'
+  const businessId = id || `business_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
   const business: Business = {
     // Identifiers
-    id: id || `business_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: businessId,
     name,
     type,
     description,
@@ -102,6 +103,10 @@ export function createBusinessObject(params: CreateBusinessParams): Business {
 
     // Opening Progress (if applicable)
     openingProgress: {
+      id: `opening_${businessId}`,
+      title: `Открытие: ${name}`,
+      totalDuration: openingQuarters,
+      remainingDuration: openingQuarters,
       totalQuarters: openingQuarters,
       quartersLeft: openingQuarters,
       investedAmount: upfrontCost,
@@ -193,13 +198,18 @@ export function createBusinessBranch(
     state: 'opening',
     networkId,
     isMainBranch: false,
-    employees: [],
-    inventory: {
-      ...mainBusiness.inventory,
-      currentStock: 0,
-    },
-    quarterlyTax: 0,
     openingProgress: {
+      ...mainBusiness.openingProgress,
+      id: `opening_branch_${Date.now()}`,
+      title: `Открытие филиала: ${branchName}`,
+      totalDuration: Math.max(
+        1,
+        Math.round((mainBusiness.openingProgress?.totalDuration || 1) * 0.7),
+      ),
+      remainingDuration: Math.max(
+        1,
+        Math.round((mainBusiness.openingProgress?.totalDuration || 1) * 0.7),
+      ),
       totalQuarters: Math.max(
         1,
         Math.round((mainBusiness.openingProgress?.totalQuarters || 1) * 0.7),
@@ -212,6 +222,12 @@ export function createBusinessBranch(
       totalCost: cost,
       upfrontCost: cost,
     },
+    employees: [],
+    inventory: {
+      ...mainBusiness.inventory,
+      currentStock: 0,
+    },
+    quarterlyTax: 0,
     reputation: 50,
     efficiency: 50,
     eventsHistory: [],

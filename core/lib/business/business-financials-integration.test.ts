@@ -70,6 +70,10 @@ describe('calculateBusinessFinancials Integration Tests', () => {
       operationalRole: null,
     },
     openingProgress: {
+      id: 'test-opening',
+      title: 'Opening Test Business',
+      totalDuration: 1,
+      remainingDuration: 0,
       totalQuarters: 1,
       quartersLeft: 0,
       investedAmount: 100000,

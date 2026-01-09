@@ -1,9 +1,13 @@
 import { z } from 'zod'
-import { StatEffectSchema, StatsSchema } from './base.schema'
+
+import { StatEffectSchema } from './base.schema'
 
 export const BuffSchema = z
   .object({
     id: z.string(),
+    title: z.string(),
+    totalDuration: z.number().int().min(1),
+    remainingDuration: z.number().int().min(0),
     source: z.string(),
     effects: StatEffectSchema,
     duration: z.number().int(),
@@ -83,6 +87,10 @@ export const PotentialPartnerSchema = z
 
 export const PregnancySchema = z
   .object({
+    id: z.string(),
+    title: z.string(),
+    totalDuration: z.number().int().min(1),
+    remainingDuration: z.number().int().min(0),
     turnsLeft: z.number().int().min(0),
     isTwins: z.boolean(),
     motherId: z.string(),

@@ -3,6 +3,7 @@ import { businessStep } from './business.step'
 import { economyStep } from './economy.step'
 import { educationStep } from './education.step'
 import { financialStep } from './financial.step'
+import { freelanceStep } from './freelance.step'
 import { historyStep } from './history.step'
 import { inflationStep } from './inflation.step'
 import { jobsStep } from './jobs.step'
@@ -16,6 +17,7 @@ export const STEPS = [
   economyStep,
   educationStep,
   jobsStep,
+  freelanceStep,
   personalStep,
   businessStep,
   buffsStep,
@@ -34,6 +36,7 @@ export * from './financial.step'
 export * from './history.step'
 export * from './inflation.step'
 export * from './jobs.step'
+export * from './freelance.step'
 export * from './lifestyle.step'
 export * from './market.step'
 export * from './personal.step'

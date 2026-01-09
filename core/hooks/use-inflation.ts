@@ -14,16 +14,21 @@ import {
 } from '@/core/lib/calculations/price-helpers'
 import { useGameStore } from '@/core/model/store'
 import type { CountryEconomy } from '@/core/types/economy.types'
+import type { StatEffect } from '@/core/types/stats.types'
 
 // Type guards для автоопределения категории
 type PriceableItem =
   | { category: 'housing'; price?: number; costPerTurn?: number }
   | { category: 'education'; price: number }
-  | { category: 'shop' | 'food' | 'health' | 'services'; price?: number; costPerTurn?: number }
+  | {
+      category: 'shop' | 'food' | 'health' | 'services'
+      price?: number
+      costPerTurn?: number | StatEffect
+    }
   | { category: 'business'; price: number }
   | { category: 'transport'; price?: number; costPerTurn?: number }
   | { salary: number } // Для зарплат
-  | { price?: number; costPerTurn?: number; category?: string } // Fallback
+  | { price?: number; costPerTurn?: number | StatEffect; category?: string } // Fallback
 
 /**
  * Main hook - автоматически применяет инфляцию
@@ -42,7 +47,7 @@ export function useInflatedPrice(item: PriceableItem): number {
 
     // Get base price (handle recurring items)
     const basePrice =
-      'costPerTurn' in item && item.costPerTurn
+      'costPerTurn' in item && typeof item.costPerTurn === 'number'
         ? item.costPerTurn
         : 'price' in item && item.price
           ? item.price
@@ -92,7 +97,7 @@ export function useInflatedPrices<T extends PriceableItem>(
         inflatedPrice:
           'salary' in item
             ? item.salary
-            : 'costPerTurn' in item && item.costPerTurn
+            : 'costPerTurn' in item && typeof item.costPerTurn === 'number'
               ? item.costPerTurn
               : 'price' in item && item.price
                 ? item.price
@@ -123,7 +128,7 @@ function calculateInflatedPrice(item: PriceableItem, economy: CountryEconomy): n
   }
 
   const basePrice =
-    'costPerTurn' in item && item.costPerTurn
+    'costPerTurn' in item && typeof item.costPerTurn === 'number'
       ? item.costPerTurn
       : 'price' in item && item.price
         ? item.price

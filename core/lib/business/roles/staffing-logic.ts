@@ -12,14 +12,19 @@ export function canPlayerTakeRole(role: EmployeeRole, playerSkills: Skill[]): bo
   const config = getRoleConfig(role)
   if (!config) return false
 
-  // Управленческие роли может взять любой
-  if (config.type === 'managerial') {
+  // Если нет требований к уровню, может взять любой
+  if (config.minSkillLevel === undefined || config.minSkillLevel === 0) {
     return true
   }
 
-  // Операционные роли - желательно иметь навык, но не обязательно
-  // Игрок может работать и без навыка, но с низкой эффективностью
-  return true
+  // Найти соответствующий навык
+  const skillName = config.skillGrowth?.name
+  if (!skillName) return true // Если нет привязанного навыка (странно, но допустимо)
+
+  const playerSkill = playerSkills.find((s) => s.name === skillName)
+  const currentLevel = playerSkill?.level || 0
+
+  return currentLevel >= config.minSkillLevel
 }
 
 /**

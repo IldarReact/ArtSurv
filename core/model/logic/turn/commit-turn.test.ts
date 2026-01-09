@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+
 import { commitTurn } from './commit-turn'
 import type { TurnContext } from './turn-context'
 import type { TurnState } from './turn-state'
@@ -30,6 +31,7 @@ describe('commitTurn', () => {
     country: { cycle: { phase: 'growth' } } as any,
     globalMarketValue: 100,
     notifications: [],
+    pendingFreelanceApplications: [],
     globalEvents: [],
     marketEvents: [],
     historyEntry: { turn: 1, year: 2024 } as any,

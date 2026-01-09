@@ -33,6 +33,7 @@ interface EarningOpportunitiesSectionProps {
     payment: number,
     energyCost: number,
     requirements: Array<{ skill: string; level: SkillLevel }>,
+    duration: number,
   ) => void
   setFeedback: React.Dispatch<React.SetStateAction<FeedbackState>>
 }

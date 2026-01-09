@@ -4,6 +4,7 @@
     "title": "SwiftUI приложение для фитнес-стартапа",
     "category": "tech",
     "payment": 18000,
+    "duration": 3,
     "cost": {
       "energy": -70,
       "sanity": -20
@@ -20,6 +21,7 @@
     "title": "Настройка Shopify магазина",
     "category": "business",
     "payment": 10000,
+    "duration": 2,
     "cost": {
       "energy": -50
     },

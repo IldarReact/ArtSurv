@@ -36,6 +36,16 @@ export function processJobs(
       if (tenure < 4) risk += 0.03 // Lowered probation penalty
       if (tenure > 12) risk -= 0.02
 
+      // Skill bonus: reduce risk if player skills are higher than required
+      let skillBonus = 0
+      job.requirements?.skills?.forEach((req) => {
+        const skill = updatedSkills.find((s) => s.name === req.name)
+        if (skill && skill.level > req.level) {
+          skillBonus += (skill.level - req.level) * 0.01
+        }
+      })
+      risk -= skillBonus
+
       risk = Math.min(0.2, Math.max(0, risk)) // Lowered max risk cap
 
       if (Math.random() < risk) {
@@ -80,6 +90,21 @@ export function processJobs(
           }
 
           updatedSkills[idx] = skill
+
+          // Salary increase chance if skill is high or improved
+          const baseReqLevel = req.level || 0
+          if (skill.level > baseReqLevel && Math.random() < 0.05) {
+            const increase = Math.round(job.salary * 0.05)
+            job.salary += increase
+            notifications.push({
+              id: `salary_up_${job.id}_${currentTurn}`,
+              type: 'success',
+              title: 'Повышение зарплаты! 💰',
+              message: `За отличную работу на должности ${job.title} вам повысили зарплату на $${increase}.`,
+              date: formatGameDate(currentYear, currentTurn),
+              isRead: false,
+            })
+          }
         }
       })
     }
@@ -98,31 +123,36 @@ export function processJobs(
       else score += skill.level - req.minLevel
     }
 
-    const chance = match ? Math.min(0.95, 0.6 + score * 0.1) : 0.05
+    const chance = match ? Math.min(0.95, 0.4 + score * 0.1) : 0.02
 
     if (Math.random() < chance) {
       notifications.push({
-        id: `offer_${app.id}_${currentTurn}`,
-        type: 'job_offer',
-        title: '🎉 Оффер!',
-        message: `Вам предложили работу ${app.jobTitle} в ${app.company}.`,
+        id: `job_offer_${app.id}_${currentTurn}`,
+        type: 'info',
+        title: '💼 Приглашение на работу!',
+        message: `Ваша заявка в компанию ${app.company} на должность ${app.jobTitle} была одобрена.`,
         date: formatGameDate(currentYear, currentTurn),
         isRead: false,
         data: {
-          applicationId: app.id,
-          jobTitle: app.jobTitle,
+          jobApplicationId: app.id,
           company: app.company,
+          title: app.jobTitle,
           salary: app.salary,
-          cost: app.cost,
-          requirements: app.requirements ?? [],
         },
       })
+    } else if ((app as any).daysPending < 1) {
+      // Keep application for one more turn
+      remainingApplications.push({
+        ...app,
+        daysPending: ((app as any).daysPending || 0) + 1,
+      } as any)
     } else {
+      // Finally rejected
       notifications.push({
-        id: `reject_${app.id}_${currentTurn}`,
-        type: 'info',
-        title: '❌ Отказ',
-        message: `Компания ${app.company} отклонила вашу заявку.`,
+        id: `job_rejected_${app.id}_${currentTurn}`,
+        type: 'warning',
+        title: 'Отказ по вакансии',
+        message: `К сожалению, компания ${app.company} отклонила вашу заявку на должность ${app.jobTitle}.`,
         date: formatGameDate(currentYear, currentTurn),
         isRead: false,
       })

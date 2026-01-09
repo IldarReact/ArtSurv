@@ -20,9 +20,10 @@ interface FreelanceDetailCardProps {
   description: string
   payment: number
   energyCost: number
+  duration: number
   requirements: Array<{ skill: string; level: number }>
   image: string
-  onTakeOrder?: () => void
+  onApply?: () => void
 }
 
 export function FreelanceDetailCard({
@@ -31,9 +32,10 @@ export function FreelanceDetailCard({
   description,
   payment,
   energyCost,
+  duration,
   requirements,
   image,
-  onTakeOrder,
+  onApply,
 }: FreelanceDetailCardProps) {
   const [showDetails, setShowDetails] = useState(false)
 
@@ -50,7 +52,7 @@ export function FreelanceDetailCard({
         avatar={image}
         requirements={requirements}
         cost={{ energy: -energyCost }}
-        onAction={onTakeOrder}
+        onAction={onApply}
         actionLabel="Взять заказ"
         onSecondaryAction={() => setShowDetails(true)}
         secondaryActionLabel="Подробнее"
@@ -67,7 +69,7 @@ export function FreelanceDetailCard({
             <div className="bg-white/5 rounded-lg p-4">
               <p className="text-white/80 leading-relaxed mb-4">{description}</p>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <p className="text-sm text-white/50 mb-1">Оплата</p>
                   <p className="text-2xl font-bold text-green-400">${payment}</p>
@@ -75,6 +77,10 @@ export function FreelanceDetailCard({
                 <div>
                   <p className="text-sm text-white/50 mb-1">Расход энергии</p>
                   <p className="text-2xl font-bold text-amber-400">-{energyCost}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-white/50 mb-1">Длительность</p>
+                  <p className="text-2xl font-bold text-blue-400">{duration} кв.</p>
                 </div>
               </div>
             </div>
@@ -103,7 +109,7 @@ export function FreelanceDetailCard({
               </div>
             </div>
 
-            <Button onClick={onTakeOrder} className="w-full bg-white text-black hover:bg-white/90">
+            <Button onClick={onApply} className="w-full bg-white text-black hover:bg-white/90">
               ВЗЯТЬ ЗАКАЗ (-{energyCost}⚡)
             </Button>
           </div>

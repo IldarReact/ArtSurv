@@ -2,8 +2,8 @@ import React from 'react'
 
 import { ActiveEducationCard } from '../components/active-education-card'
 
-import { SectionSeparator } from '@/shared/ui/section-separator'
 import type { ActiveUniversity, ActiveCourse } from '@/core/types'
+import { SectionSeparator } from '@/shared/ui/section-separator'
 
 interface ActiveEducationSectionProps {
   activeUniversity: ActiveUniversity[]
@@ -25,7 +25,7 @@ export const ActiveEducationSection: React.FC<ActiveEducationSectionProps> = ({
         {activeUniversity.map((uni) => (
           <ActiveEducationCard
             key={uni.id}
-            title={uni.programName}
+            title={uni.title || uni.programName}
             progress={uni.totalDuration - uni.remainingDuration}
             total={uni.totalDuration}
             energy={uni.costPerTurn?.energy || 0}
@@ -34,7 +34,7 @@ export const ActiveEducationSection: React.FC<ActiveEducationSectionProps> = ({
         {activeCourses.map((course) => (
           <ActiveEducationCard
             key={course.id}
-            title={course.courseName}
+            title={course.title || course.courseName}
             progress={course.totalDuration - course.remainingDuration}
             total={course.totalDuration}
             energy={course.costPerTurn?.energy || 0}

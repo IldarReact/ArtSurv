@@ -1,7 +1,7 @@
 import type { Business } from './business.types'
 import type { CountryEconomy, GlobalEvent } from './economy.types'
 import type { Asset, Debt, QuarterlyReport } from './finance.types'
-import type { FreelanceGig } from './freelance.types'
+import type { ActiveFreelanceGig } from './freelance.types'
 import type { FreelanceApplication } from './freelance.types'
 import type { BusinessIdea } from './idea.types'
 import type { Job } from './job.types'
@@ -55,7 +55,7 @@ export interface Player {
   // New Job System
   jobs: Job[]
   // Freelance System
-  activeFreelanceGigs: FreelanceGig[]
+  activeFreelanceGigs: ActiveFreelanceGig[]
   // Business System
   businesses: Business[]
   // Business Ideas System

@@ -39,26 +39,30 @@ export function CandidateCard({
 
   const isPlayer = candidate.id.startsWith('player_')
 
-  const mappedTraits = (candidate.humanTraits
-    ?.map((traitId) => {
-      const trait = TRAITS_MAP[traitId]
-      if (!trait) return null
-      const TraitIcon = getTraitIcon(trait.type)
-      return {
-        name: trait.name,
-        type: trait.type,
-        icon: <TraitIcon className="w-3 h-3" />,
-        color: getTraitColor(trait.type),
-        description: trait.description,
-      }
-    })
-    .filter(Boolean) as Array<{
-    name: string
-    type: string
-    icon: React.ReactNode
-    color: string
-    description: string
-  }>) || []
+  const mappedTraits =
+    (candidate.humanTraits
+      ?.map((traitId) => {
+        const trait = TRAITS_MAP[traitId]
+        if (!trait) return null
+        const TraitIcon = getTraitIcon(trait.type)
+        return {
+          name: trait.name,
+          type: trait.type,
+          icon: <TraitIcon className="w-3 h-3" />,
+          color: getTraitColor(trait.type),
+          description: trait.description,
+        }
+      })
+      .filter(Boolean) as Array<{
+      name: string
+      type: string
+      icon: React.ReactNode
+      color: string
+      description: string
+    }>) || []
+
+  const roleCfg = getRoleConfig(candidate.role)
+  const isMeAndIncompatible = isMe && candidate.meetsRequirements === false
 
   return (
     <EmployeeCard
@@ -74,25 +78,33 @@ export function CandidateCard({
       isSelected={isSelected}
       isPlayer={isPlayer}
       isMe={isMe}
-      canAfford={canAfford}
+      canAfford={canAfford && !isMeAndIncompatible}
       impact={(() => {
         const cfg = getRoleConfig(candidate.role)
         return cfg?.staffImpact ? cfg.staffImpact(candidate.stars) : undefined
       })()}
       skills={candidate.skills}
       traits={mappedTraits}
-      onAction={onClick}
-      actionLabel={actionLabel || (isSelected ? 'Выбрано' : 'Выбрать')}
-      actionIcon={
-        actionIcon ||
-        (isSelected ? (
-          <CheckCircle className="w-3 h-3 mr-1" />
-        ) : (
-          <UserPlus className="w-3 h-3 mr-1" />
-        ))
+      onAction={isMeAndIncompatible ? undefined : onClick}
+      actionLabel={
+        isMeAndIncompatible
+          ? `Нужен уровень ${roleCfg?.minSkillLevel} ${roleCfg?.skillGrowth?.name}`
+          : actionLabel || (isSelected ? 'Выбрано' : 'Выбрать')
       }
-      actionVariant={actionVariant || (isSelected ? 'secondary' : 'default')}
-      className={`${!canAfford ? 'opacity-60' : ''} ${className || ''}`}
+      actionIcon={
+        isMeAndIncompatible
+          ? null
+          : actionIcon ||
+            (isSelected ? (
+              <CheckCircle className="w-3 h-3 mr-1" />
+            ) : (
+              <UserPlus className="w-3 h-3 mr-1" />
+            ))
+      }
+      actionVariant={
+        isMeAndIncompatible ? 'ghost' : actionVariant || (isSelected ? 'secondary' : 'default')
+      }
+      className={`${!canAfford || isMeAndIncompatible ? 'opacity-60' : ''} ${className || ''}`}
     />
   )
 }

@@ -45,7 +45,7 @@ export function WorkActivity(): React.JSX.Element | null {
       />
 
       <div className="space-y-8 pb-10">
-        <ActiveFreelanceSection gigs={player.activeFreelanceGigs} onComplete={handleCompleteGig} />
+        <ActiveFreelanceSection gigs={player.activeFreelanceGigs} />
 
         <MyBusinessesSection
           player={player}

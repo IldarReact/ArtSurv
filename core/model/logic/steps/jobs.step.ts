@@ -1,6 +1,8 @@
 import type { TurnStep } from '../turn/turn-step'
 import { processJobs } from '../turns/jobs-processor'
 
+import { applyStatEffects } from '@/core/lib/stats/apply-effects'
+
 export const jobsStep: TurnStep = (ctx, state) => {
   const res = processJobs(
     state.player.jobs,
@@ -18,26 +20,9 @@ export const jobsStep: TurnStep = (ctx, state) => {
   // Apply job costs
   state.player.jobs.forEach((job) => {
     if (job.cost) {
-      const e = job.cost.energy
-      if (typeof e === 'number' && Number.isFinite(e)) {
-        state.statModifiers.energy = (state.statModifiers.energy || 0) - e
-      }
-      const h = job.cost.happiness
-      if (typeof h === 'number' && Number.isFinite(h)) {
-        state.statModifiers.happiness = (state.statModifiers.happiness || 0) + h
-      }
-      const he = job.cost.health
-      if (typeof he === 'number' && Number.isFinite(he)) {
-        state.statModifiers.health = (state.statModifiers.health || 0) + he
-      }
-      const s = job.cost.sanity
-      if (typeof s === 'number' && Number.isFinite(s)) {
-        state.statModifiers.sanity = (state.statModifiers.sanity || 0) + s
-      }
-      const i = job.cost.intelligence
-      if (typeof i === 'number' && Number.isFinite(i)) {
-        state.statModifiers.intelligence = (state.statModifiers.intelligence || 0) + i
-      }
+      // Jobs use 'subtract' for costs, but positive modifiers for gains
+      // The applyStatEffects will handle the sign based on the third argument
+      applyStatEffects(state.statModifiers, job.cost, 'add')
     }
   })
 

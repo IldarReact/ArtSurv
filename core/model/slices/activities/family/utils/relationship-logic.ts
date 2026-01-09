@@ -57,6 +57,10 @@ export const processTryForBaby = (player: Player) => {
 
   return {
     pregnancy: {
+      id: `pregnancy_${Date.now()}`,
+      title: 'Беременность',
+      totalDuration: 3,
+      remainingDuration: 3,
       turnsLeft: 3,
       isTwins: Math.random() < 0.1,
       motherId: 'wife',

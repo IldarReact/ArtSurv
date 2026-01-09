@@ -100,6 +100,10 @@ export const BusinessSchema = z
     partners: z.array(BusinessPartnerSchema),
     proposals: z.array(BusinessProposalSchema),
     openingProgress: z.object({
+      id: z.string(),
+      title: z.string(),
+      totalDuration: z.number().int().min(0),
+      remainingDuration: z.number().int().min(0),
       totalQuarters: z.number().int().min(0),
       quartersLeft: z.number().int().min(0),
       investedAmount: z.number().finite().min(0),
@@ -211,6 +215,7 @@ export const FreelanceGigSchema = z
     cost: StatEffectSchema,
     requirements: z.array(SkillRequirementSchema),
     imageUrl: z.string().optional(),
+    duration: z.number().int().min(1).default(1),
   })
   .strict()
 
