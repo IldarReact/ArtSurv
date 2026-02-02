@@ -1,63 +1,8 @@
-import type { GameStateCreator, BusinessSlice } from '../../../types'
-
 import type { BusinessProposal, BusinessChangeType } from '@/core/types/business.types'
 
+import type { GameStateCreator, BusinessSlice } from '../../../types'
+
 export const createPartnershipsSlice: GameStateCreator<Partial<BusinessSlice>> = (set, get) => ({
-  proposeAction: (
-    businessId: string,
-    changeType: BusinessChangeType,
-    data: BusinessProposal['data'],
-  ) => {
-    const state = get()
-    if (!state.player) return
-
-    const business = state.player.businesses.find((b) => b.id === businessId)
-    if (!business) return
-
-    // Compute player's share
-    const playerPartner = business.partners.find((p) => p.type === 'player')
-    const playerShare = playerPartner ? playerPartner.share : 100
-
-    // If player has controlling share, perform immediately
-    if (playerShare > 50) {
-      switch (changeType) {
-        case 'price':
-          if (data.newPrice !== undefined) get().changePrice(businessId, data.newPrice)
-          break
-        case 'quantity':
-          if (data.newQuantity !== undefined) get().setQuantity(businessId, data.newQuantity)
-          break
-      }
-      return
-    }
-
-    const proposal: BusinessProposal = {
-      id: `prop_${Date.now()}`,
-      businessId,
-      changeType,
-      initiatorId: playerPartner?.id || 'player',
-      initiatorName: state.player.name,
-      data,
-      votes: { [playerPartner?.id || 'player']: true },
-      status: 'pending',
-      createdAt: Date.now(),
-    }
-
-    // В онлайн-партнёрстве решение принимают только игроки.
-    // Предложение остаётся pending до получения голосов других игроков.
-
-    const updatedBusinesses = state.player.businesses.map((b) =>
-      b.id === businessId ? { ...b, proposals: [...b.proposals, proposal] } : b,
-    )
-
-    set({
-      player: {
-        ...state.player,
-        businesses: updatedBusinesses,
-      },
-    })
-  },
-
   addPartnerToBusiness: (
     businessId: string,
     partnerId: string,
@@ -82,11 +27,11 @@ export const createPartnershipsSlice: GameStateCreator<Partial<BusinessSlice>> =
     if (!ownerPartner) {
       updatedPartners.push({
         id: state.player.id,
-        name: state.player.name,
-        type: 'player',
-        share: 100,
         investedAmount: business.initialCost,
+        name: state.player.name,
         relation: 100,
+        share: 100,
+        type: 'player',
       })
     }
 
@@ -94,43 +39,119 @@ export const createPartnershipsSlice: GameStateCreator<Partial<BusinessSlice>> =
       p.id === state.player?.id ? { ...p, share: Math.max(0, p.share - share) } : p,
     )
 
-    const currentSum = updatedPartners.reduce((sum, p) => sum + p.share, 0)
+    let currentSum = 0
+    for (const p of updatedPartners) {
+      currentSum += p.share
+    }
     const available = Math.max(0, 100 - currentSum)
     const finalShare = Math.min(share, available)
     if (finalShare <= 0) {
-      state.pushNotification?.({
-        type: 'error',
-        title: 'Недостаточная доступная доля',
+      state.pushNotification({
         message: 'Нельзя назначить долю партнёру: сумма долей превышает 100%',
+        title: 'Недостаточная доступная доля',
+        type: 'error',
       })
       return
     }
 
     updatedPartners.push({
       id: partnerId,
-      name: partnerName,
-      type: 'player',
-      share: finalShare,
       investedAmount: investment,
+      name: partnerName,
       relation: 50,
+      share: finalShare,
+      type: 'player',
     })
 
     const updatedBusiness = { ...business, partners: updatedPartners }
-    const updatedBusinesses = [...state.player.businesses]
-    updatedBusinesses[i] = updatedBusiness
 
-    set({
-      player: {
-        ...state.player,
-        businesses: updatedBusinesses,
-      },
+    state.updatePlayer((prev) => {
+      const businesses = [...prev.businesses]
+      businesses[i] = updatedBusiness
+      return { businesses }
     })
   },
 
   // leaveBusinessJob remains delegated to employees slice; keep a thin wrapper
   leaveBusinessJob: (businessId: string) => {
     const s = get()
-    if (typeof s.leaveBusinessJob === 'function') return s.leaveBusinessJob(businessId)
-    console.warn('[partnerships-slice] leaveBusinessJob delegated, but target not found')
+    if (typeof s.leaveBusinessJob === 'function') {
+      s.leaveBusinessJob(businessId)
+      return
+    }
+  },
+
+  proposeAction: (
+    businessId: string,
+    changeType: BusinessChangeType,
+    data: BusinessProposal['data'],
+  ) => {
+    const state = get()
+    if (!state.player) return
+
+    const business = state.player.businesses.find((b) => b.id === businessId)
+    if (!business) return
+
+    // Compute player's share
+    const playerPartner = business.partners.find((p) => p.type === 'player')
+    const playerShare = playerPartner?.share ?? 100
+
+    // If player has controlling share, perform immediately
+    const CONTROLLING_SHARE = 50
+    if (playerShare > CONTROLLING_SHARE) {
+      switch (changeType) {
+        case 'price':
+          if (data.newPrice !== undefined) get().changePrice(businessId, data.newPrice)
+          break
+        case 'quantity':
+          if (data.newQuantity !== undefined) get().setQuantity(businessId, data.newQuantity)
+          break
+        case 'hire_employee':
+        case 'fire_employee':
+        case 'freeze':
+        case 'unfreeze':
+        case 'open_branch':
+        case 'branch':
+        case 'dividend':
+        case 'auto_purchase':
+        case 'change_role':
+        case 'fund_collection':
+        case 'promote_employee':
+        case 'demote_employee':
+        case 'set_salary':
+          // These might also be immediate if share > 50, but currently we leave them for proposal flow or implement later
+          break
+        case 'expand_storage':
+        case 'marketing_campaign':
+        case 'change_name':
+        case 'sell_business':
+          break
+        default:
+          // Other actions require proposal
+          break
+      }
+      if (changeType === 'price' || changeType === 'quantity') return
+    }
+
+    const proposal: BusinessProposal = {
+      businessId,
+      changeType,
+      createdAt: Date.now(),
+      data,
+      id: `prop_${String(Date.now())}`,
+      initiatorId: playerPartner?.id ?? 'player',
+      initiatorName: state.player.name,
+      status: 'pending',
+      votes: { [playerPartner?.id ?? 'player']: true },
+    }
+
+    // В онлайн-партнёрстве решение принимают только игроки.
+    // Предложение остаётся pending до получения голосов других игроков.
+
+    state.updatePlayer((prev) => ({
+      businesses: prev.businesses.map((b) =>
+        b.id === businessId ? { ...b, proposals: [...b.proposals, proposal] } : b,
+      ),
+    }))
   },
 })

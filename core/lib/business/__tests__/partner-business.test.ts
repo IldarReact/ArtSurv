@@ -1,22 +1,22 @@
 import { describe, it, expect } from 'vitest'
 
-import { createPartnerBusiness } from '../create-partner-business'
-
 import type { BusinessType } from '@/core/types/business.types'
+
+import { createPartnerBusiness } from '../create-partner-business'
 
 describe('createPartnerBusiness', () => {
   const mockOffer = {
     details: {
+      businessDescription: 'Описание бизнеса',
       businessName: 'Тестовый бизнес',
       businessType: 'retail' as BusinessType,
-      businessDescription: 'Описание бизнеса',
+      employeeRoles: [
+        { description: 'Manager', priority: 'required' as const, role: 'manager' as const },
+        { description: 'Accountant', priority: 'required' as const, role: 'accountant' as const },
+      ],
       totalCost: 100000,
       yourInvestment: 50000,
       yourShare: 50,
-      employeeRoles: [
-        { role: 'manager' as const, priority: 'required' as const, description: 'Manager' },
-        { role: 'accountant' as const, priority: 'required' as const, description: 'Accountant' },
-      ],
     },
     fromPlayerId: 'player1',
     fromPlayerName: 'Игрок 1',

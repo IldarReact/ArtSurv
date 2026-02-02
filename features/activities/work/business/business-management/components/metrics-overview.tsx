@@ -3,15 +3,10 @@
 import { TrendingUp, TrendingDown, Wallet, Users, Star, Activity } from 'lucide-react'
 import React from 'react'
 
-import { Progress } from '@/shared/ui/progress'
+import { Progress } from '@/shared/components/progress'
 import { cn } from '@/shared/utils/utils'
 
 interface MetricsOverviewProps {
-  safeIncome: number
-  safeExpenses: number
-  totalEmployees: number
-  maxEmployees: number
-  reputation: number
   efficiency: number
   expensesBreakdown?: {
     employees: number
@@ -19,26 +14,29 @@ interface MetricsOverviewProps {
     equipment: number
     other: number
   }
+  maxEmployees: number
+  reputation: number
+  safeExpenses: number
+  safeIncome: number
+  totalEmployees: number
 }
 
 export function MetricsOverview({
-  safeIncome = 0,
-  safeExpenses = 0,
-  totalEmployees = 0,
-  maxEmployees = 1,
-  reputation = 0,
-  efficiency = 0,
+  efficiency,
   expensesBreakdown,
+  maxEmployees,
+  reputation,
+  safeExpenses,
+  safeIncome,
+  totalEmployees,
 }: MetricsOverviewProps) {
   // Защита от NaN при расчетах
-  const income = isNaN(safeIncome) || safeIncome === null ? 0 : safeIncome
-  const expenses = isNaN(safeExpenses) || safeExpenses === null ? 0 : safeExpenses
-  const currentReputation = isNaN(reputation) || reputation === null ? 0 : Math.round(reputation)
-  const currentEfficiency = isNaN(efficiency) || efficiency === null ? 0 : Math.round(efficiency)
-  const currentTotalEmployees =
-    isNaN(totalEmployees) || totalEmployees === null ? 0 : totalEmployees
-  const currentMaxEmployees =
-    isNaN(maxEmployees) || maxEmployees === null || maxEmployees === 0 ? 1 : maxEmployees
+  const income = Number.isFinite(safeIncome) ? safeIncome : 0
+  const expenses = Number.isFinite(safeExpenses) ? safeExpenses : 0
+  const currentReputation = Number.isFinite(reputation) ? Math.round(reputation) : 0
+  const currentEfficiency = Number.isFinite(efficiency) ? Math.round(efficiency) : 0
+  const currentTotalEmployees = Number.isFinite(totalEmployees) ? totalEmployees : 0
+  const currentMaxEmployees = Number.isFinite(maxEmployees) && maxEmployees !== 0 ? maxEmployees : 1
   const profit = income - expenses
 
   return (
@@ -140,7 +138,7 @@ export function MetricsOverview({
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-white">{currentReputation}%</span>
           </div>
-          <Progress value={currentReputation} className="h-1" />
+          <Progress className="h-1" value={currentReputation} />
         </div>
       </div>
 
@@ -153,7 +151,7 @@ export function MetricsOverview({
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-white">{currentEfficiency}%</span>
           </div>
-          <Progress value={currentEfficiency} className="h-1" />
+          <Progress className="h-1" value={currentEfficiency} />
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
-import type { GameStore } from '../../../../types'
-
 import { getMyConnectionId } from '@/core/lib/multiplayer'
 import type { GameOffer } from '@/core/types/game-offers.types'
+
+import type { GameStore } from '../../../../types'
 
 export interface OfferSentPayload {
   offer: GameOffer
@@ -26,14 +26,14 @@ export function handleOnOfferSent(
       offers: [...state.offers, offer],
     }))
 
-    state.pushNotification?.({
-      title: 'Новое предложение!',
-      message: `От ${offer.fromPlayerName}`,
-      type: 'info',
+    state.pushNotification({
       data: {
         offerId: offer.id,
         type: 'offer_received',
       },
+      message: `От ${offer.fromPlayerName}`,
+      title: 'Новое предложение!',
+      type: 'info',
     })
   }
 }
@@ -51,9 +51,9 @@ export function handleOnOfferRejected(
 
   const offer = state.offers.find((o) => o.id === offerId)
   if (offer && offer.fromPlayerId === state.player?.id) {
-    state.pushNotification?.({
-      title: 'Предложение отклонено',
+    state.pushNotification({
       message: `${offer.toPlayerName} отклонил ваше предложение`,
+      title: 'Предложение отклонено',
       type: 'info',
     })
   }

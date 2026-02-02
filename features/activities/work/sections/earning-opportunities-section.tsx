@@ -2,29 +2,28 @@
 
 import React from 'react'
 
+import type { SkillLevel, StatEffect } from '@/core/types'
+import type { Business } from '@/core/types/business.types'
+import { SectionSeparator } from '@/shared/components/section-separator'
+
 import { BusinessesSection } from '../business/components/businesses-section'
 import { FreelanceSection } from '../components/freelance-section'
 import { StartupsSection } from '../components/startups-section'
 import { VacanciesSection } from '../components/vacancies-section'
 
-import { SkillLevel, StatEffect } from '@/core/types'
-import { Business } from '@/core/types/business.types'
-import { SectionSeparator } from '@/shared/ui/section-separator'
-
 interface FeedbackState {
+  message: string
   show: boolean
   success: boolean
-  message: string
 }
 
 interface EarningOpportunitiesSectionProps {
-  playerCash: number
   onApply: (
     title: string,
     company: string,
     salary: number,
     cost: StatEffect,
-    requirements: Array<{ skill: string; level: number }>,
+    requirements: { skill: string; level: number }[],
   ) => void
   onOpenBusiness: (business: Business, upfrontCost: number) => void
   onTakeOrder: (
@@ -32,17 +31,18 @@ interface EarningOpportunitiesSectionProps {
     title: string,
     payment: number,
     energyCost: number,
-    requirements: Array<{ skill: string; level: SkillLevel }>,
+    requirements: { skill: string; level: SkillLevel }[],
     duration: number,
   ) => void
+  playerCash: number
   setFeedback: React.Dispatch<React.SetStateAction<FeedbackState>>
 }
 
 export function EarningOpportunitiesSection({
-  playerCash,
   onApply,
   onOpenBusiness,
   onTakeOrder,
+  playerCash,
   setFeedback,
 }: EarningOpportunitiesSectionProps) {
   return (
@@ -53,10 +53,14 @@ export function EarningOpportunitiesSection({
         <VacanciesSection onApply={onApply} />
         <StartupsSection />
         <BusinessesSection
-          playerCash={playerCash}
+          onError={(message) => {
+            setFeedback({ message, show: true, success: false })
+          }}
           onOpenBusiness={onOpenBusiness}
-          onSuccess={(message) => setFeedback({ show: true, success: true, message })}
-          onError={(message) => setFeedback({ show: true, success: false, message })}
+          onSuccess={(message) => {
+            setFeedback({ message, show: true, success: true })
+          }}
+          playerCash={playerCash}
         />
         <FreelanceSection onTakeOrder={onTakeOrder} />
       </div>

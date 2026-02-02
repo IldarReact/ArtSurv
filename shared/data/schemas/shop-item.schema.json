@@ -1,13 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
-  "required": [
-    "id",
-    "name",
-    "description",
-    "price",
-    "category"
-  ],
+  "required": ["id", "name", "description", "price", "category"],
   "properties": {
     "id": {
       "type": "string",
@@ -26,15 +20,7 @@
     },
     "category": {
       "type": "string",
-      "enum": [
-        "food",
-        "health",
-        "services",
-        "housing",
-        "transport",
-        "education",
-        "entertainment"
-      ]
+      "enum": ["food", "health", "services", "housing", "transport", "education", "entertainment"]
     },
     "effects": {
       "type": "object",
@@ -69,12 +55,7 @@
     },
     "assetType": {
       "type": "string",
-      "enum": [
-        "stock",
-        "housing",
-        "crypto",
-        "bond"
-      ]
+      "enum": ["stock", "housing", "crypto", "bond"]
     }
   }
 }

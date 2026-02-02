@@ -1,14 +1,15 @@
-import { ROLE_LABELS } from '../../constants'
-
-import { useBusinessActionExecutor } from './action-executor'
-
 import { canMakeDirectChanges } from '@/core/lib/business/partnership-permissions'
 import { useGameStore } from '@/core/model/store'
 import type { Business, EmployeeCandidate, EmployeeRole } from '@/core/types'
-import { EmployeeStars } from '@/core/types/business.types'
+import type { EmployeeStars } from '@/core/types/business.types'
 
-export function useEmployeeActions(business: Business) {
-  const { updateEmployeeInBusiness, pushNotification } = useGameStore()
+import { ROLE_LABELS } from '../../constants'
+import { useBusinessActionExecutor } from './action-executor'
+
+const PROPOSAL_SENT_TITLE = 'Предложение отправлено'
+
+export function useEmployeeActions(business: Business | undefined) {
+  const { pushNotification, updateEmployeeInBusiness } = useGameStore()
   const { executeAction, player } = useBusinessActionExecutor(business)
 
   const handleHire = (
@@ -23,9 +24,10 @@ export function useEmployeeActions(business: Business) {
     onHireEmployee: (businessId: string, candidate: EmployeeCandidate) => void,
     setHireDialogOpen: (isOpen: boolean) => void,
   ) => {
+    if (!business) return
     const isMe =
       candidate.id.startsWith('player_') ||
-      candidate.id === `player_${player?.id || 'local'}` ||
+      candidate.id === `player_${player?.id ?? 'local'}` ||
       candidate.id === player?.id
 
     const isManagerial = ['manager', 'accountant', 'marketer', 'lawyer', 'hr'].includes(
@@ -46,27 +48,27 @@ export function useEmployeeActions(business: Business) {
           onHireEmployee(business.id, candidate)
         }
       },
-      proposalType: isMe ? 'change_role' : 'hire_employee',
+      errorMessage:
+        'У вас недостаточно доли в бизнесе для управления персоналом (требуется минимум 50%)',
+      notificationMessage: isMe
+        ? `Предложение о вашем вступлении в роль ${ROLE_LABELS[candidate.role]} отправлено партнёру`
+        : `Предложение о найме ${candidate.name} отправлено партнёру`,
+      notificationTitle: PROPOSAL_SENT_TITLE,
       proposalData: {
+        employeeId: isMe ? player?.id : undefined,
         employeeName: candidate.name,
         employeeRole: candidate.role,
         employeeSalary: candidate.requestedSalary,
         employeeStars: candidate.stars,
-        isMe: isMe,
-        employeeId: isMe ? player?.id : undefined,
-        skills: candidate.skills,
         experience: candidate.experience,
         humanTraits: candidate.humanTraits,
+        isMe: isMe,
+        skills: candidate.skills,
       },
-      notificationTitle: 'Предложение отправлено',
-      notificationMessage: isMe
-        ? `Предложение о вашем вступлении в роль ${ROLE_LABELS[candidate.role]} отправлено партнёру`
-        : `Предложение о найме ${candidate.name} отправлено партнёру`,
-      errorMessage:
-        'У вас недостаточно доли в бизнесе для управления персоналом (требуется минимум 50%)',
+      proposalType: isMe ? 'change_role' : 'hire_employee',
     })
 
-    if (!business.partners.length || canMakeDirectChanges(business, player?.id || '')) {
+    if (!business.partners.length || canMakeDirectChanges(business, player?.id ?? '')) {
       setHireDialogOpen(false)
     }
   }
@@ -76,17 +78,20 @@ export function useEmployeeActions(business: Business) {
     employeeName: string,
     onFireEmployee: (businessId: string, employeeId: string) => void,
   ) => {
+    if (!business) return
     executeAction({
-      directAction: () => onFireEmployee(business.id, employeeId),
-      proposalType: 'fire_employee',
+      directAction: () => {
+        onFireEmployee(business.id, employeeId)
+      },
+      errorMessage:
+        'У вас недостаточно доли в бизнесе для увольнения сотрудников (требуется минимум 50%)',
+      notificationMessage: `Предложение об увольнении ${employeeName} отправлено партнёру`,
+      notificationTitle: PROPOSAL_SENT_TITLE,
       proposalData: {
         fireEmployeeId: employeeId,
         fireEmployeeName: employeeName,
       },
-      notificationTitle: 'Предложение отправлено',
-      notificationMessage: `Предложение об увольнении ${employeeName} отправлено партнёру`,
-      errorMessage:
-        'У вас недостаточно доли в бизнесе для увольнения сотрудников (требуется минимум 50%)',
+      proposalType: 'fire_employee',
     })
   }
 
@@ -103,6 +108,7 @@ export function useEmployeeActions(business: Business) {
       newStars: EmployeeStars,
     ) => void,
   ) => {
+    if (!business) return
     const newSalary = Math.round(currentSalary * 1.15)
     let newStars = currentStars
     if (currentStars < 5 && experience >= 4) {
@@ -119,23 +125,23 @@ export function useEmployeeActions(business: Business) {
             stars: newStars as EmployeeStars,
           })
         }
-        pushNotification?.({
-          type: 'success',
+        pushNotification({
+          message: `${employeeName} повышен до ${String(newStars)} звёзд!`,
           title: 'Повышение',
-          message: `${employeeName} повышен до ${newStars} звёзд!`,
+          type: 'success',
         })
       },
-      proposalType: 'promote_employee',
-      proposalData: {
-        promoteEmployeeId: employeeId,
-        promoteEmployeeName: employeeName,
-        newSalary,
-        newStars: newStars as EmployeeStars,
-      },
-      notificationTitle: 'Предложение отправлено',
-      notificationMessage: `Предложение о повышении ${employeeName} отправлено партнёру`,
       errorMessage:
         'У вас недостаточно доли в бизнесе для повышения сотрудников (требуется минимум 50%)',
+      notificationMessage: `Предложение о повышении ${employeeName} отправлено партнёру`,
+      notificationTitle: PROPOSAL_SENT_TITLE,
+      proposalData: {
+        newSalary,
+        newStars: newStars as EmployeeStars,
+        promoteEmployeeId: employeeId,
+        promoteEmployeeName: employeeName,
+      },
+      proposalType: 'promote_employee',
     })
   }
 
@@ -151,6 +157,7 @@ export function useEmployeeActions(business: Business) {
       newStars: EmployeeStars,
     ) => void,
   ) => {
+    if (!business) return
     const newSalary = Math.round(currentSalary * 0.85)
     const newStars = Math.max(1, currentStars - 1)
 
@@ -164,23 +171,23 @@ export function useEmployeeActions(business: Business) {
             stars: newStars as EmployeeStars,
           })
         }
-        pushNotification?.({
-          type: 'info',
+        pushNotification({
+          message: `${employeeName} понижен до ${String(newStars)} звёзд.`,
           title: 'Понижение',
-          message: `${employeeName} понижен до ${newStars} звёзд.`,
+          type: 'info',
         })
       },
-      proposalType: 'demote_employee',
+      errorMessage:
+        'У вас недостаточно доли в бизнесе для понижения сотрудников (требуется минимум 50%)',
+      notificationMessage: `Предложение о понижении ${employeeName} отправлено партнёру`,
+      notificationTitle: PROPOSAL_SENT_TITLE,
       proposalData: {
         demoteEmployeeId: employeeId,
         demoteEmployeeName: employeeName,
         newSalary,
         newStars: newStars as EmployeeStars,
       },
-      notificationTitle: 'Предложение отправлено',
-      notificationMessage: `Предложение о понижении ${employeeName} отправлено партнёру`,
-      errorMessage:
-        'У вас недостаточно доли в бизнесе для понижения сотрудников (требуется минимум 50%)',
+      proposalType: 'demote_employee',
     })
   }
 
@@ -190,18 +197,21 @@ export function useEmployeeActions(business: Business) {
     newSalary: number,
     onSetSalary: (businessId: string, employeeId: string, salary: number) => void,
   ) => {
+    if (!business) return
     executeAction({
-      directAction: () => onSetSalary(business.id, employeeId, newSalary),
-      proposalType: 'set_salary',
-      proposalData: {
-        salaryEmployeeId: employeeId,
-        salaryEmployeeName: employeeName,
-        newSalary,
+      directAction: () => {
+        onSetSalary(business.id, employeeId, newSalary)
       },
-      notificationTitle: 'Предложение отправлено',
-      notificationMessage: `Предложение об изменении зарплаты ${employeeName} отправлено партнёру`,
       errorMessage:
         'У вас недостаточно доли в бизнесе для изменения зарплат (требуется минимум 50%)',
+      notificationMessage: `Предложение об изменении зарплаты ${employeeName} отправлено партнёру`,
+      notificationTitle: PROPOSAL_SENT_TITLE,
+      proposalData: {
+        newSalary,
+        salaryEmployeeId: employeeId,
+        salaryEmployeeName: employeeName,
+      },
+      proposalType: 'set_salary',
     })
   }
 
@@ -213,6 +223,7 @@ export function useEmployeeActions(business: Business) {
       effortPercent: number
     }>,
   ) => {
+    if (!business) return
     updateEmployeeInBusiness(business.id, employeeId, data)
   }
 
@@ -220,27 +231,30 @@ export function useEmployeeActions(business: Business) {
     role: EmployeeRole,
     onUnassignRole: (businessId: string, role: EmployeeRole) => void,
   ) => {
+    if (!business) return
     executeAction({
-      directAction: () => onUnassignRole(business.id, role),
-      proposalType: 'fire_employee',
+      directAction: () => {
+        onUnassignRole(business.id, role)
+      },
+      errorMessage: 'У вас недостаточно доли в бизнесе для изменения состава персонала',
+      notificationMessage: `Предложение о вашем уходе из роли ${ROLE_LABELS[role]} отправлено партнёру`,
+      notificationTitle: PROPOSAL_SENT_TITLE,
       proposalData: {
-        fireEmployeeId: `player_${player?.id}`,
-        fireEmployeeName: player?.name,
+        fireEmployeeId: `player_${String(player?.id)}`,
+        fireEmployeeName: player?.name ?? '',
         isMe: true,
       },
-      notificationTitle: 'Предложение отправлено',
-      notificationMessage: `Предложение о вашем уходе из роли ${ROLE_LABELS[role]} отправлено партнёру`,
-      errorMessage: 'У вас недостаточно доли в бизнесе для изменения состава персонала',
+      proposalType: 'fire_employee',
     })
   }
 
   return {
-    handleHire,
-    handleFireEmployee,
-    handlePromoteEmployee,
     handleDemoteEmployee,
+    handleFireEmployee,
+    handleHire,
+    handlePromoteEmployee,
     handleSetSalary,
-    handleUpdateEmployee,
     handleUnassignRole,
+    handleUpdateEmployee,
   }
 }

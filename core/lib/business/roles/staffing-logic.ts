@@ -1,7 +1,6 @@
 import type { Business, EmployeeRole } from '../../../types/business.types'
 import type { Skill } from '../../../types/skill.types'
 import { getRoleConfig } from '../employee-roles.config'
-
 import { isRoleFilled, getTotalEmployeesCount } from './role-utils'
 
 /**
@@ -22,10 +21,12 @@ export function canPlayerTakeRole(role: EmployeeRole, playerSkills: Skill[]): bo
   if (!skillName) return true // Если нет привязанного навыка (странно, но допустимо)
 
   const playerSkill = playerSkills.find((s) => s.name === skillName)
-  const currentLevel = playerSkill?.level || 0
+  const currentLevel = playerSkill?.level ?? 0
 
   return currentLevel >= config.minSkillLevel
 }
+
+const COMPLEX_BUSINESS_THRESHOLD = 15
 
 /**
  * Проверить, выполнены ли минимальные требования к персоналу
@@ -40,15 +41,13 @@ export function checkMinimumStaffing(business: Business): {
 } {
   // Базовые обязательные роли (для маленьких бизнесов только менеджер)
   const globalRequiredRoles: EmployeeRole[] =
-    business.maxEmployees > 15 ? ['manager', 'accountant'] : ['manager']
+    business.maxEmployees > COMPLEX_BUSINESS_THRESHOLD ? ['manager', 'accountant'] : ['manager']
   const specificRequiredRoles = business.employeeRoles
     .filter((r) => r.priority === 'required')
     .map((r) => r.role)
-  const allRequiredRoles = Array.from(
-    new Set([...globalRequiredRoles, ...specificRequiredRoles]),
-  ) as EmployeeRole[]
+  const allRequiredRoles = Array.from(new Set([...globalRequiredRoles, ...specificRequiredRoles]))
 
-  const minEmployees = business.minEmployees || 0
+  const minEmployees = business.minEmployees
 
   // Проверить обязательные роли
   const missingRoles: EmployeeRole[] = []
@@ -76,10 +75,10 @@ export function checkMinimumStaffing(business: Business): {
   return {
     isValid,
     missingRoles,
-    totalEmployees,
     requiredEmployees: minEmployees,
-    workerCount,
     requiredWorkers: minEmployees,
+    totalEmployees,
+    workerCount,
   }
 }
 
@@ -87,7 +86,7 @@ export function checkMinimumStaffing(business: Business): {
  * Получить список ролей, которые игрок должен выполнять автоматически
  * (если нет сотрудников на этих ролях)
  */
-export function getAutoAssignedManagerialRoles(business: Business): EmployeeRole[] {
+export function getAutoAssignedManagerialRoles(): EmployeeRole[] {
   // Теперь роли не назначаются автоматически. Игрок должен выбрать слот вручную.
   return []
 }

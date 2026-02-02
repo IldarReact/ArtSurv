@@ -1,8 +1,7 @@
-"use client"
-
+'use client'
 
 // DEPRECATED: This component uses old store structure
-// Use features/end/ui/game-end.tsx instead
+// Use features/end/components/game-end.tsx instead
 export function GameEndScreen() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">

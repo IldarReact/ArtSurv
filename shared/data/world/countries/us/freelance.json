@@ -1,5 +1,22 @@
 [
   {
+    "id": "fl_us_finance_audit",
+    "title": "Финансовый аудит малого бизнеса",
+    "category": "finance",
+    "payment": 15000,
+    "duration": 2,
+    "cost": {
+      "energy": -40,
+      "sanity": -10
+    },
+    "requirements": [
+      {
+        "skillId": "finance",
+        "minLevel": 3
+      }
+    ]
+  },
+  {
     "id": "fl_us_ios",
     "title": "SwiftUI приложение для фитнес-стартапа",
     "category": "tech",
@@ -11,7 +28,7 @@
     },
     "requirements": [
       {
-        "skillId": "swift",
+        "skillId": "programming",
         "minLevel": 4
       }
     ]
@@ -27,8 +44,8 @@
     },
     "requirements": [
       {
-        "skillId": "marketing",
-        "minLevel": 3
+        "skillId": "business",
+        "minLevel": 2
       }
     ]
   }

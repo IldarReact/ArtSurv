@@ -11,11 +11,7 @@
       "happiness": 15,
       "sanity": 10
     },
-    "tags": [
-      "spouse",
-      "teacher",
-      "brazilian"
-    ]
+    "tags": ["spouse", "teacher", "brazilian"]
   },
   {
     "id": "br_mother",
@@ -29,10 +25,7 @@
       "happiness": 8,
       "sanity": -5
     },
-    "tags": [
-      "mother-in-law",
-      "retired"
-    ]
+    "tags": ["mother-in-law", "retired"]
   },
   {
     "id": "br_friend_pedro",
@@ -45,10 +38,7 @@
     "passiveEffects": {
       "happiness": 6
     },
-    "tags": [
-      "best_friend",
-      "programmer"
-    ]
+    "tags": ["best_friend", "programmer"]
   },
   {
     "id": "br_dog_rex",
@@ -62,10 +52,7 @@
       "happiness": 20,
       "sanity": 12
     },
-    "tags": [
-      "dog",
-      "guard"
-    ]
+    "tags": ["dog", "guard"]
   },
   {
     "id": "br_colleague_ana",
@@ -78,9 +65,6 @@
     "passiveEffects": {
       "intelligence": 3
     },
-    "tags": [
-      "coworker",
-      "mentor"
-    ]
+    "tags": ["coworker", "mentor"]
   }
 ]

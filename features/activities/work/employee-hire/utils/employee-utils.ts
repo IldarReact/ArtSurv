@@ -1,7 +1,7 @@
-import { SKILL_STAR_DIVISOR, MONTHS_PER_QUARTER } from '../../shared-constants'
-
 import { canPlayerTakeRole } from '@/core/lib/business'
-import type { EmployeeCandidate, Player, EmployeeStars, Skill, EmployeeSkills } from '@/core/types'
+import type { EmployeeCandidate, Player, EmployeeStars } from '@/core/types'
+
+import { SKILL_STAR_DIVISOR, MONTHS_PER_QUARTER } from '../../shared-constants'
 
 export function getSkillStarsCount(value: number): number {
   return Math.round(value / SKILL_STAR_DIVISOR)
@@ -27,35 +27,36 @@ export function createPlayerCandidate(
 ): EmployeeCandidate {
   // Если это локальный игрок, используем его реальные данные
   if (playerData.isLocal && localPlayerStats) {
-    const skills = localPlayerStats.personal.skills || []
+    const skills = localPlayerStats.personal.skills
     const stars = skills.length > 0 ? Math.max(1, ...skills.map((s) => s.level)) : 1
 
     return {
-      id: `player_${playerData.clientId}`,
-      name: playerData.name,
-      role: defaultRole,
-      stars: stars as EmployeeStars,
       experience: 24, // Можно тоже вычислять, если есть данные
-      requestedSalary: customSalary,
-      skills: skills.reduce((acc: EmployeeSkills, s: Skill) => ({ ...acc, [s.id]: s.level }), {
-        efficiency: 100,
-      } as EmployeeSkills),
       humanTraits: [], // Можно подтянуть из трейтов игрока
+      id: `player_${playerData.clientId}`,
       meetsRequirements: canPlayerTakeRole(defaultRole, skills),
+      name: playerData.name,
+      requestedSalary: customSalary,
+      role: defaultRole,
+      skills: {
+        efficiency: 100,
+        ...Object.fromEntries(skills.map((s) => [s.id, s.level])),
+      },
+      stars: stars as EmployeeStars,
     }
   }
 
   // Для других игроков пока оставляем заглушку или базовые данные
   return {
+    experience: 24,
+    humanTraits: ['ambitious', 'creative'],
     id: `player_${playerData.clientId}`,
     name: playerData.name,
-    role: defaultRole,
-    stars: 3,
-    experience: 24,
     requestedSalary: customSalary,
+    role: defaultRole,
     skills: {
       efficiency: 80,
     },
-    humanTraits: ['ambitious', 'creative'],
+    stars: 3,
   }
 }

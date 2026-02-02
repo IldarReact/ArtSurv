@@ -8,8 +8,24 @@ import type {
 import type { GameOffer, OfferType, OfferDetails } from '@/core/types/game-offers.types'
 
 export interface GameOffersSlice {
+  acceptOffer: (offerId: string) => void
+
+  cancelOffer: (offerId: string) => void
+
+  cleanupExpiredOffers: () => void
+  // Helpers
+  getIncomingOffers: () => GameOffer[]
+  getOutgoingOffers: () => GameOffer[]
   offers: GameOffer[]
 
+  onJobOfferAccepted: (event: JobOfferAcceptedEvent) => void
+  onOfferRejected: (event: OfferRejectedEvent) => void
+
+  onOfferSent: (event: OfferSentEvent) => void
+  // Event Handlers
+  onPartnershipAccepted: (event: PartnershipAcceptedEvent) => void
+  onPartnershipUpdated: (event: PartnershipUpdatedEvent) => void
+  rejectOffer: (offerId: string) => void
   // Actions
   sendOffer: (
     type: OfferType,
@@ -18,20 +34,4 @@ export interface GameOffersSlice {
     details: OfferDetails,
     message?: string,
   ) => void
-
-  acceptOffer: (offerId: string) => void
-  rejectOffer: (offerId: string) => void
-  cancelOffer: (offerId: string) => void
-  cleanupExpiredOffers: () => void
-
-  // Helpers
-  getIncomingOffers: () => GameOffer[]
-  getOutgoingOffers: () => GameOffer[]
-
-  // Event Handlers
-  onPartnershipAccepted: (event: PartnershipAcceptedEvent) => void
-  onPartnershipUpdated: (event: PartnershipUpdatedEvent) => void
-  onJobOfferAccepted: (event: JobOfferAcceptedEvent) => void
-  onOfferSent: (event: OfferSentEvent) => void
-  onOfferRejected: (event: OfferRejectedEvent) => void
 }

@@ -104,7 +104,14 @@ export type { Notification } from './notification.types'
 export type { PersonalLife } from './personal.types'
 
 // Game state types
-export type { GameStatus, GameOverReason, Player, HistoryEntry, GameState } from './game.types'
+export type {
+  GameStatus,
+  GameOverReason,
+  Player,
+  HistoryEntry,
+  GameState,
+  ActivityType,
+} from './game.types'
 
 // Inflation
 export type { InflationNotification } from '@/core/lib/calculations/inflation-engine'

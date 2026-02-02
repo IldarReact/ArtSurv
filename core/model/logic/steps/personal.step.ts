@@ -1,5 +1,8 @@
-import type { TurnStep } from '../turn/turn-step'
 import { processPersonal } from '../turns/personal-processor'
+import type { TurnStep } from './step.types'
+
+const PREGNANCY_HAPPINESS_BONUS = 5
+const PREGNANCY_ENERGY_PENALTY = 10
 
 export const personalStep: TurnStep = (ctx, state) => {
   const res = processPersonal(state.player.personal, state.player.age, ctx.turn, ctx.year)
@@ -11,33 +14,31 @@ export const personalStep: TurnStep = (ctx, state) => {
 
   // Apply pregnancy modifiers
   if (state.player.personal.pregnancy) {
-    state.statModifiers.happiness = (state.statModifiers.happiness || 0) + 5
-    state.statModifiers.energy = (state.statModifiers.energy || 0) - 10
+    state.statModifiers.happiness = (state.statModifiers.happiness ?? 0) + PREGNANCY_HAPPINESS_BONUS
+    state.statModifiers.energy = (state.statModifiers.energy ?? 0) - PREGNANCY_ENERGY_PENALTY
   }
 
   // Apply family passive effects
   state.player.personal.familyMembers.forEach((member) => {
-    if (member.passiveEffects) {
-      const h = member.passiveEffects.happiness
-      if (typeof h === 'number' && Number.isFinite(h)) {
-        state.statModifiers.happiness = (state.statModifiers.happiness || 0) + h
-      }
-      const he = member.passiveEffects.health
-      if (typeof he === 'number' && Number.isFinite(he)) {
-        state.statModifiers.health = (state.statModifiers.health || 0) + he
-      }
-      const e = member.passiveEffects.energy
-      if (typeof e === 'number' && Number.isFinite(e)) {
-        state.statModifiers.energy = (state.statModifiers.energy || 0) + e
-      }
-      const s = member.passiveEffects.sanity
-      if (typeof s === 'number' && Number.isFinite(s)) {
-        state.statModifiers.sanity = (state.statModifiers.sanity || 0) + s
-      }
-      const i = member.passiveEffects.intelligence
-      if (typeof i === 'number' && Number.isFinite(i)) {
-        state.statModifiers.intelligence = (state.statModifiers.intelligence || 0) + i
-      }
+    const h = member.passiveEffects.happiness
+    if (typeof h === 'number' && Number.isFinite(h)) {
+      state.statModifiers.happiness = (state.statModifiers.happiness ?? 0) + h
+    }
+    const he = member.passiveEffects.health
+    if (typeof he === 'number' && Number.isFinite(he)) {
+      state.statModifiers.health = (state.statModifiers.health ?? 0) + he
+    }
+    const e = member.passiveEffects.energy
+    if (typeof e === 'number' && Number.isFinite(e)) {
+      state.statModifiers.energy = (state.statModifiers.energy ?? 0) + e
+    }
+    const s = member.passiveEffects.sanity
+    if (typeof s === 'number' && Number.isFinite(s)) {
+      state.statModifiers.sanity = (state.statModifiers.sanity ?? 0) + s
+    }
+    const i = member.passiveEffects.intelligence
+    if (typeof i === 'number' && Number.isFinite(i)) {
+      state.statModifiers.intelligence = (state.statModifiers.intelligence ?? 0) + i
     }
   })
 

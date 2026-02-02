@@ -1,8 +1,10 @@
+import { validateBusinessUnfreeze } from '@/core/lib/business'
+import type { Business } from '@/core/types'
+
 import type { GameStore } from '../../../../types'
 
-import { applyStats } from '@/core/helpers/apply-stats'
-import { validateBusinessUnfreeze } from '@/core/lib/business'
-import type { Business, Employee } from '@/core/types'
+const REPUTATION_LOSS_ON_FREEZE = 20
+const CLOSE_BUSINESS_RETURN_RATE = 0.5
 
 export const handleCloseBusiness = (
   get: () => GameStore,
@@ -15,21 +17,14 @@ export const handleCloseBusiness = (
   const business = state.player.businesses.find((b: Business) => b.id === businessId)
   if (!business) return
 
-  const returnValue = Math.round(business.currentValue * 0.5)
-  const updatedStats = applyStats(state.player.stats, { money: returnValue })
-  const updatedPersonalStats = applyStats(state.player.personal.stats, { money: returnValue })
+  const returnValue = Math.round(business.currentValue * CLOSE_BUSINESS_RETURN_RATE)
 
-  set({
-    player: {
-      ...state.player,
-      stats: updatedStats,
-      personal: {
-        ...state.player.personal,
-        stats: updatedPersonalStats,
-      },
-      businesses: state.player.businesses.filter((b: Business) => b.id !== businessId),
-    },
-  })
+  // Используем транзакцию для возврата денег
+  state.performTransaction({ money: returnValue }, { title: `Закрытие бизнеса: ${business.name}` })
+
+  state.updatePlayer((prev) => ({
+    businesses: prev.businesses.filter((b: Business) => b.id !== businessId),
+  }))
 }
 
 export const handleFreezeBusiness = (
@@ -43,42 +38,28 @@ export const handleFreezeBusiness = (
   const business = state.player.businesses.find((b: Business) => b.id === businessId)
   if (!business) return
 
-  const compensation = business.employees.reduce(
-    (sum: number, emp: Employee) => sum + emp.salary,
-    0,
-  )
-  const currentMoney = state.player.stats.money
-  const newMoney = currentMoney - compensation
-
-  const updatedBusinesses = state.player.businesses.map((b: Business) =>
-    b.id === businessId
-      ? {
-          ...b,
-          state: 'frozen' as const,
-          employees: [],
-          reputation: Math.max(0, b.reputation - 20),
-          inventory: b.inventory ? { ...b.inventory, currentStock: 0 } : b.inventory,
-        }
-      : b,
-  )
-
-  const updatedStats = { ...state.player.stats, money: newMoney }
-  const updatedPersonalStats = {
-    ...state.player.personal.stats,
-    money: state.player.personal.stats.money - compensation,
+  let compensation = 0
+  for (const emp of business.employees) {
+    compensation += emp.salary
   }
 
-  set({
-    player: {
-      ...state.player,
-      stats: updatedStats,
-      personal: {
-        ...state.player.personal,
-        stats: updatedPersonalStats,
-      },
-      businesses: updatedBusinesses,
-    },
-  })
+  if (!state.performTransaction({ money: -compensation }, { title: 'Заморозка бизнеса' })) {
+    return
+  }
+
+  state.updatePlayer((prev) => ({
+    businesses: prev.businesses.map((b: Business) =>
+      b.id === businessId
+        ? {
+            ...b,
+            employees: [],
+            inventory: { ...b.inventory, currentStock: 0 },
+            reputation: Math.max(0, b.reputation - REPUTATION_LOSS_ON_FREEZE),
+            state: 'frozen' as const,
+          }
+        : b,
+    ),
+  }))
 }
 
 export const handleUnfreezeBusiness = (
@@ -94,49 +75,42 @@ export const handleUnfreezeBusiness = (
 
   const validation = validateBusinessUnfreeze(state.player.stats.money, business.initialCost)
   if (!validation.isValid) {
-    const errorMessage = validation.error || 'Недостаточно средств для разморозки'
-    console.warn(errorMessage)
-    state.pushNotification?.({
-      type: 'error',
-      title: 'Ошибка разморозки',
+    const errorMessage = validation.error ?? 'Недостаточно средств для разморозки'
+    state.pushNotification({
       message: errorMessage,
+      title: 'Ошибка разморозки',
+      type: 'error',
     })
     return
   }
 
-  const updatedBusinesses = state.player.businesses.map((b: Business) =>
-    b.id === businessId
-      ? {
-          ...b,
-          state: 'opening' as const,
-          openingProgress: {
-            ...b.openingProgress,
-            id: b.openingProgress.id || `opening_${b.id}`,
-            title: b.openingProgress.title || `Разморозка: ${b.name}`,
-            totalDuration: 1,
-            remainingDuration: 1,
-            quartersLeft: 1,
-          },
-        }
-      : b,
-  )
+  if (
+    !state.performTransaction({ money: -validation.unfreezeCost }, { title: 'Разморозка бизнеса' })
+  ) {
+    return
+  }
 
-  const updatedStats = applyStats(state.player.stats, { money: -validation.unfreezeCost })
-  const updatedPersonalStats = applyStats(state.player.personal.stats, {
-    money: -validation.unfreezeCost,
-  })
-
-  set({
-    player: {
-      ...state.player,
-      stats: updatedStats,
-      personal: {
-        ...state.player.personal,
-        stats: updatedPersonalStats,
-      },
-      businesses: updatedBusinesses,
-    },
-  })
+  state.updatePlayer((prev) => ({
+    businesses: prev.businesses.map((b: Business) =>
+      b.id === businessId
+        ? {
+            ...b,
+            openingProgress: {
+              id: b.openingProgress?.id ?? `opening_${b.id}`,
+              investedAmount: b.openingProgress?.investedAmount ?? b.initialCost,
+              quartersLeft: 1,
+              remainingDuration: 1,
+              title: `Разморозка: ${b.name}`,
+              totalCost: b.openingProgress?.totalCost ?? b.initialCost,
+              totalDuration: 1,
+              totalQuarters: 1,
+              upfrontCost: b.openingProgress?.upfrontCost ?? 0,
+            },
+            state: 'opening' as const,
+          }
+        : b,
+    ),
+  }))
 }
 
 export const handleDepositToBusinessWallet = (
@@ -152,34 +126,17 @@ export const handleDepositToBusinessWallet = (
   const i = state.player.businesses.findIndex((b: Business) => b.id === businessId)
   if (i === -1) return
 
-  const business = state.player.businesses[i]
-  if (!business) return
-
-  if (state.player.stats.money < amount) {
-    console.warn(
-      `[Business Wallet] Недостаточно средств у игрока для пополнения: требуется $${amount}`,
-    )
+  if (!state.performTransaction({ money: -amount }, { title: 'Пополнение кошелька бизнеса' })) {
     return
   }
 
-  const updatedStats = applyStats(state.player.stats, { money: -amount })
-  const updatedPersonalStats = applyStats(state.player.personal.stats, { money: -amount })
-
-  const updatedBusinesses = [...state.player.businesses]
-  updatedBusinesses[i] = {
-    ...business,
-    walletBalance: (business.walletBalance || 0) + amount,
-  }
-
-  set({
-    player: {
-      ...state.player,
-      stats: updatedStats,
-      personal: {
-        ...state.player.personal,
-        stats: updatedPersonalStats,
-      },
-      businesses: updatedBusinesses,
-    },
+  state.updatePlayer((prev) => {
+    const updatedBusinesses = [...prev.businesses]
+    const business = updatedBusinesses[i]
+    updatedBusinesses[i] = {
+      ...business,
+      walletBalance: (business.walletBalance ?? 0) + amount,
+    }
+    return { businesses: updatedBusinesses }
   })
 }

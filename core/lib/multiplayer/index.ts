@@ -1,21 +1,32 @@
 // core/lib/multiplayer/index.ts
-import { createClient, type Room, type User } from '@liveblocks/client'
+import { createClient, type JsonObject, type Room } from '@liveblocks/client'
 
-import { Player } from '@/features/multiplayer/multiplayer-hub'
 import type { GameEvent } from '@/core/types/events.types'
 
-type Presence = {
-  name: string
-  isReady: boolean
-  turnReady: boolean
-  isHost: boolean
-  gameStarted: boolean
-  selectedArchetype: string | null
+import type { OnlinePlayer as Player } from './multiplayer.types'
+
+interface Presence extends JsonObject {
   color: string
+  gameStarted: boolean
+  isHost: boolean
+  isReady: boolean
+  name: string
+  selectedArchetype: string | null
+  turnReady: boolean
 }
 
-// Using unknown for Storage, UserMeta, and GameEvent for events
-type RoomInstance = Room<Presence, Record<string, any>, Record<string, any>, any>
+const RADIX_36 = 36
+const ID_SLICE_START = 2
+const ID_SLICE_END = 10
+const NAME_SLICE_START = -4
+
+type RoomInstance = Room<
+  Presence,
+  JsonObject,
+  JsonObject,
+  GameEvent,
+  Record<string, string | number | boolean | undefined>
+>
 
 let client: ReturnType<typeof createClient> | null = null
 let roomInstance: RoomInstance | null = null
@@ -24,9 +35,9 @@ function getClient() {
   if (!client) {
     const publicKey = process.env.NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY
     if (!publicKey) {
-      console.warn(
-        'NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY is not set. Multiplayer features are disabled.',
-      )
+      // console.warn(
+      //   'NEXT_PUBLIC_LIVEBLOCKS_PUBLIC_KEY is not set. Multiplayer features are disabled.',
+      // )
       return null
     }
     client = createClient({
@@ -36,8 +47,8 @@ function getClient() {
   return client
 }
 
-export function initMultiplayer(inputRoomId?: string, isCreator: boolean = false): string {
-  const id = inputRoomId || Math.random().toString(36).slice(2, 10)
+export function initMultiplayer(inputRoomId?: string, isCreator = false): string {
+  const id = inputRoomId ?? Math.random().toString(RADIX_36).slice(ID_SLICE_START, ID_SLICE_END)
 
   if (typeof window !== 'undefined') {
     const url = new URL(window.location.href)
@@ -45,29 +56,25 @@ export function initMultiplayer(inputRoomId?: string, isCreator: boolean = false
     window.history.replaceState({}, '', url.toString())
   }
 
-  const randomColor = `hsl(${Math.random() * 360}, 70%, 60%)`
-  const randomName = `Игрок ${Date.now().toString().slice(-4)}`
+  const HSL_MAX_HUE = 360
+  const randomColor = `hsl(${String(Math.random() * HSL_MAX_HUE)}, 70%, 60%)`
+  const randomName = `Игрок ${String(Date.now()).slice(NAME_SLICE_START)}`
 
   const clientInstance = getClient()
   if (!clientInstance) {
-    console.info('[Multiplayer] Liveblocks client not available — multiplayer disabled')
+    // console.info('[Multiplayer] Liveblocks client not available — multiplayer disabled')
     return id
   }
 
-  const { room } = clientInstance.enterRoom<
-    Presence,
-    Record<string, any>,
-    Record<string, any>,
-    any
-  >(id, {
+  const { room } = clientInstance.enterRoom<Presence, JsonObject, JsonObject, GameEvent>(id, {
     initialPresence: {
-      name: randomName,
-      isReady: false,
-      turnReady: false,
-      isHost: isCreator,
-      gameStarted: false,
-      selectedArchetype: null,
       color: randomColor,
+      gameStarted: false,
+      isHost: isCreator,
+      isReady: false,
+      name: randomName,
+      selectedArchetype: null,
+      turnReady: false,
     },
   })
 
@@ -78,10 +85,10 @@ export function initMultiplayer(inputRoomId?: string, isCreator: boolean = false
 
 export const isMultiplayerActive = () => !!roomInstance
 
-export const isHost = () => {
+export const isHost = (): boolean => {
   if (!roomInstance) return false
   const self = roomInstance.getSelf()
-  return self?.presence.isHost || false
+  return self?.presence.isHost ?? false
 }
 
 export const getMyConnectionId = () => {
@@ -96,29 +103,29 @@ export function getOnlinePlayers(): Player[] {
   const others = roomInstance.getOthers()
   const self = roomInstance.getSelf()
 
-  const players: Player[] = others.map((other: User<Presence, Record<string, unknown>>) => ({
+  const players: Player[] = others.map((other) => ({
     clientId: String(other.connectionId),
-    name: other.presence.name || 'Игрок',
-    color: other.presence.color || '#94a3b8',
-    isReady: other.presence.isReady || false,
-    turnReady: other.presence.turnReady || false,
-    isHost: other.presence.isHost || false,
-    gameStarted: other.presence.gameStarted || false,
-    selectedArchetype: other.presence.selectedArchetype || null,
+    color: other.presence.color,
+    gameStarted: other.presence.gameStarted,
+    isHost: other.presence.isHost,
     isLocal: false,
+    isReady: other.presence.isReady,
+    name: other.presence.name,
+    selectedArchetype: other.presence.selectedArchetype,
+    turnReady: other.presence.turnReady,
   }))
 
   if (self) {
     players.unshift({
       clientId: String(self.connectionId),
-      name: self.presence.name || 'Игрок',
-      color: self.presence.color || '#94a3b8',
-      isReady: self.presence.isReady || false,
-      turnReady: self.presence.turnReady || false,
-      isHost: self.presence.isHost || false,
-      gameStarted: self.presence.gameStarted || false,
-      selectedArchetype: self.presence.selectedArchetype || null,
+      color: self.presence.color,
+      gameStarted: self.presence.gameStarted,
+      isHost: self.presence.isHost,
       isLocal: true,
+      isReady: self.presence.isReady,
+      name: self.presence.name,
+      selectedArchetype: self.presence.selectedArchetype,
+      turnReady: self.presence.turnReady,
     })
   }
 
@@ -148,58 +155,63 @@ export function setSelectedArchetype(archetype: string | null) {
 export function startGame() {
   if (!roomInstance) return
   if (!isHost()) {
-    console.warn('Only host can start the game')
+    // console.warn('Only host can start the game')
     return
   }
   roomInstance.updatePresence({ gameStarted: true })
 }
 
-export function subscribeToReadyStatus(
+function subscribeToPlayersReady(
+  readyField: 'isReady' | 'turnReady',
   callback: (readyCount: number, totalPlayers: number, allReady: boolean) => void,
-) {
-  if (!roomInstance) return () => {}
+  includeSelf = true,
+): () => void {
+  if (!roomInstance)
+    return () => {
+      /* no-op */
+    }
 
   const handler = () => {
     const players = getOnlinePlayers()
-    const readyCount = players.filter((p: Player) => p.isReady).length
+    const readyCount = players.filter((p) => p[readyField]).length
     const totalPlayers = players.length
-    const allReady = totalPlayers > 1 && readyCount === totalPlayers
+    const MIN_PLAYERS_FOR_READY = 1
+    const allReady = totalPlayers > MIN_PLAYERS_FOR_READY && readyCount === totalPlayers
 
     callback(readyCount, totalPlayers, allReady)
   }
 
-  const unsubscribe = roomInstance.subscribe('others', handler)
-  handler()
-
-  return unsubscribe
-}
-
-export function subscribeToTurnReadyStatus(
-  callback: (readyCount: number, totalPlayers: number, allReady: boolean) => void,
-) {
-  if (!roomInstance) return () => {}
-
-  const handler = () => {
-    const players = getOnlinePlayers()
-    const readyCount = players.filter((p: Player) => p.turnReady).length
-    const totalPlayers = players.length
-    const allReady = totalPlayers > 1 && readyCount === totalPlayers
-
-    callback(readyCount, totalPlayers, allReady)
-  }
-
-  const unsubscribe = roomInstance.subscribe('others', handler)
-  const unsubscribeSelf = roomInstance.subscribe('my-presence', handler)
+  const unsubscribeOthers = roomInstance.subscribe('others', handler)
+  const unsubscribeSelf = includeSelf
+    ? roomInstance.subscribe('my-presence', handler)
+    : () => {
+        /* no-op */
+      }
   handler()
 
   return () => {
-    unsubscribe()
+    unsubscribeOthers()
     unsubscribeSelf()
   }
 }
 
-export function subscribeToGameStart(callback: () => void) {
-  if (!roomInstance) return () => {}
+export function subscribeToReadyStatus(
+  callback: (readyCount: number, totalPlayers: number, allReady: boolean) => void,
+): () => void {
+  return subscribeToPlayersReady('isReady', callback, false)
+}
+
+export function subscribeToTurnReadyStatus(
+  callback: (readyCount: number, totalPlayers: number, allReady: boolean) => void,
+): () => void {
+  return subscribeToPlayersReady('turnReady', callback, true)
+}
+
+export function subscribeToGameStart(callback: () => void): () => void {
+  if (!roomInstance)
+    return () => {
+      /* no-op */
+    }
 
   const handler = () => {
     const players = getOnlinePlayers()
@@ -219,9 +231,14 @@ export function subscribeToGameStart(callback: () => void) {
   }
 }
 
-export function syncTurnAdvance(callback: () => void) {
-  if (!roomInstance) return () => {}
-  return () => {}
+export function syncTurnAdvance() {
+  if (!roomInstance)
+    return () => {
+      /* no-op */
+    }
+  return () => {
+    /* no-op */
+  }
 }
 
 export function triggerTurnAdvance() {
@@ -233,24 +250,33 @@ export function broadcastEvent(event: GameEvent) {
   roomInstance.broadcastEvent(event)
 }
 
-export function subscribeToEvents(callback: (event: GameEvent) => void) {
-  if (!roomInstance) return () => {}
-  return roomInstance.subscribe('event', ({ event }: { event: GameEvent }) => callback(event))
+export function subscribeToEvents(callback: (event: GameEvent) => void): () => void {
+  if (!roomInstance)
+    return () => {
+      /* no-op */
+    }
+  return roomInstance.subscribe('event', ({ event }: { event: GameEvent }) => {
+    callback(event)
+  })
 }
 
 export const getSharedState = () => ({
+  getStorage: () => null,
+  setStorage: () => {
+    // Не используем storage
+  },
   subscribeToPresenceChanges: (cb: () => void) => {
-    if (!roomInstance) return () => {}
+    if (!roomInstance)
+      return () => {
+        /* no-op */
+      }
     return roomInstance.subscribe('others', cb)
   },
   subscribeToStorageChanges: (cb: () => void) => {
-    if (!roomInstance) return () => {}
+    if (!roomInstance)
+      return () => {
+        /* no-op */
+      }
     return roomInstance.subscribe('others', cb)
-  },
-  getStorage: () => {
-    return null
-  },
-  setStorage: () => {
-    // Не используем storage
   },
 })

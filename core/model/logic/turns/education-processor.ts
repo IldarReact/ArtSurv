@@ -12,10 +12,12 @@ import type {
 interface EducationResult {
   activeCourses: ActiveCourse[]
   activeUniversity: ActiveUniversity[]
-  updatedSkills: Skill[]
   notifications: Notification[]
   protectedSkills: string[]
+  updatedSkills: Skill[]
 }
+
+const MAX_SKILL_LEVEL = 5
 
 /**
  * Generic handler for education progress (courses or university)
@@ -35,7 +37,7 @@ function handleEducationProgress<
   progress.completed.forEach((item) => {
     const levelsGained = Math.ceil(item.totalDuration)
     const skillIdx = updatedSkills.findIndex((s) => s.name === item.skillName)
-    const itemName = item.courseName || item.programName || item.title
+    const itemName = item.courseName ?? item.programName ?? item.title
     const isUni = type === 'uni'
     const successTitle = isUni ? 'Диплом получен' : 'Курс завершен'
     const successMsg = isUni
@@ -43,36 +45,36 @@ function handleEducationProgress<
       : `Вы завершили курс "${itemName}"`
 
     if (skillIdx === -1) {
-      const newLevel = Math.min(5, levelsGained) as SkillLevel
+      const newLevel = Math.min(MAX_SKILL_LEVEL, levelsGained) as SkillLevel
       updatedSkills.push({
-        id: `skill_${Date.now()}_${Math.random()}`,
-        name: item.skillName,
-        level: newLevel,
-        progress: 0,
-        lastPracticedTurn: currentTurn,
+        id: `skill_${String(Date.now())}_${String(Math.random())}`,
         isBeingStudied: false,
+        lastPracticedTurn: currentTurn,
+        level: newLevel,
+        name: item.skillName,
+        progress: 0,
       })
       notifications.push({
-        id: `${type}_end_${Date.now()}_${Math.random()}`,
-        type: 'success',
-        title: successTitle,
-        message: `${successMsg} и получили навык ${item.skillName} (${newLevel} зв.)!`,
         date: formatGameDate(currentYear, currentTurn),
+        id: `${type}_end_${String(Date.now())}_${String(Math.random())}`,
         isRead: false,
+        message: `${successMsg} и получили навык ${item.skillName} (${String(newLevel)} зв.)!`,
+        title: successTitle,
+        type: 'success',
       })
     } else {
       const skill = { ...updatedSkills[skillIdx] }
-      skill.level = Math.min(5, skill.level + levelsGained) as SkillLevel
+      skill.level = Math.min(MAX_SKILL_LEVEL, skill.level + levelsGained) as SkillLevel
       skill.progress = 0
       skill.lastPracticedTurn = currentTurn
       updatedSkills[skillIdx] = skill
       notifications.push({
-        id: `${type}_end_${Date.now()}_${Math.random()}`,
-        type: 'success',
-        title: successTitle,
-        message: `${successMsg}. Навык ${skill.name} повышен до ${skill.level} зв.!`,
         date: formatGameDate(currentYear, currentTurn),
+        id: `${type}_end_${String(Date.now())}_${String(Math.random())}`,
         isRead: false,
+        message: `${successMsg}. Навык ${skill.name} повышен до ${String(skill.level)} зв.!`,
+        title: successTitle,
+        type: 'success',
       })
     }
   })
@@ -115,8 +117,8 @@ export function processEducation(
   return {
     activeCourses: courseRes.active,
     activeUniversity: uniRes.active,
-    updatedSkills,
     notifications: [...courseRes.notifications, ...uniRes.notifications],
     protectedSkills: Array.from(protectedSkills),
+    updatedSkills,
   }
 }

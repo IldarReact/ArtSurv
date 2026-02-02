@@ -1,7 +1,4 @@
-import type { TurnContext } from './turn-context'
-import type { TurnState } from './turn-state'
-
-export type TurnStep = (ctx: TurnContext, state: TurnState) => void
+export type { TurnStep } from '../steps/step.types'
 
 import {
   buffsStep,
@@ -9,21 +6,26 @@ import {
   economyStep,
   educationStep,
   financialStep,
+  freelanceStep,
   inflationStep,
   jobsStep,
   lifestyleStep,
   marketStep,
+  personalStep,
   thresholdsStep,
-} from '../steps/'
+} from '../steps/index'
+import type { TurnStep } from '../steps/step.types'
 
 export const STEPS: TurnStep[] = [
   economyStep,
   marketStep,
   educationStep,
   jobsStep,
+  freelanceStep,
   businessStep,
   buffsStep,
   lifestyleStep,
+  personalStep,
   thresholdsStep,
   financialStep,
   inflationStep,

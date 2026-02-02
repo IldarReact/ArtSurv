@@ -9,12 +9,12 @@
 import type { StatEffect } from '@/core/types/stats.types'
 
 export interface BusinessOpeningValidation {
-  isValid: boolean
-  error?: string
   details: {
     hasEnoughMoney: boolean
     hasEnoughEnergy: boolean
   }
+  error?: string
+  isValid: boolean
 }
 
 /**
@@ -39,16 +39,16 @@ export function validateBusinessOpening(
   const hasEnoughEnergy = !creationCost.energy || playerEnergy >= Math.abs(creationCost.energy)
 
   return {
-    isValid: hasEnoughMoney && hasEnoughEnergy,
+    details: {
+      hasEnoughEnergy,
+      hasEnoughMoney,
+    },
     error: !hasEnoughMoney
       ? 'Недостаточно денег для открытия бизнеса'
       : !hasEnoughEnergy
         ? 'Недостаточно энергии для открытия бизнеса'
         : undefined,
-    details: {
-      hasEnoughMoney,
-      hasEnoughEnergy,
-    },
+    isValid: hasEnoughMoney && hasEnoughEnergy,
   }
 }
 
@@ -62,13 +62,15 @@ export function validateBusinessOpening(
  * @returns Validation result with details
  */
 export interface EmployeeHireValidation {
-  isValid: boolean
-  error?: string
   details: {
     hasEnoughMoney: boolean
     hasCapacity: boolean
   }
+  error?: string
+  isValid: boolean
 }
+
+const EMPLOYEE_CAPACITY_MULTIPLIER = 5
 
 export function validateEmployeeHire(
   playerMoney: number,
@@ -77,20 +79,20 @@ export function validateEmployeeHire(
   maxEmployees: number,
 ): EmployeeHireValidation {
   // Применяем 5x расширение лимита персонала (logic-only per user request)
-  const expandedMaxEmployees = maxEmployees * 5
+  const expandedMaxEmployees = maxEmployees * EMPLOYEE_CAPACITY_MULTIPLIER
 
   const hasEnoughMoney = true // Зарплата выплачивается ежеквартально, не авансом
   const hasCapacity = currentEmployeeCount < expandedMaxEmployees
 
   return {
-    isValid: hasCapacity,
-    error: !hasCapacity
-      ? `Достигнут лимит сотрудников (${currentEmployeeCount}/${expandedMaxEmployees})`
-      : undefined,
     details: {
-      hasEnoughMoney,
       hasCapacity,
+      hasEnoughMoney,
     },
+    error: !hasCapacity
+      ? `Достигнут лимит сотрудников (${String(currentEmployeeCount)}/${String(expandedMaxEmployees)})`
+      : undefined,
+    isValid: hasCapacity,
   }
 }
 
@@ -102,23 +104,25 @@ export function validateEmployeeHire(
  * @returns Validation result
  */
 export interface BusinessUnfreezeValidation {
-  isValid: boolean
   error?: string
+  isValid: boolean
   unfreezeCost: number
 }
+
+const UNFREEZE_COST_PERCENT = 0.3
 
 export function validateBusinessUnfreeze(
   playerMoney: number,
   businessInitialCost: number,
 ): BusinessUnfreezeValidation {
-  const unfreezeCost = Math.round(businessInitialCost * 0.3)
+  const unfreezeCost = Math.round(businessInitialCost * UNFREEZE_COST_PERCENT)
   const hasEnoughMoney = playerMoney >= unfreezeCost
 
   return {
-    isValid: hasEnoughMoney,
     error: !hasEnoughMoney
-      ? `Недостаточно денег для разморозки бизнеса (требуется ${unfreezeCost})`
+      ? `Недостаточно денег для разморозки бизнеса (требуется ${String(unfreezeCost)})`
       : undefined,
+    isValid: hasEnoughMoney,
     unfreezeCost,
   }
 }

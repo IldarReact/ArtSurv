@@ -20,18 +20,18 @@ export const STARS_COLORS: Record<number, string> = {
 
 // Salary configuration
 export const SALARY_CONFIG = {
-  MIN: 1000,
-  MAX: 1_000_000,
-  STEP: 1000,
   DEFAULT: 5000,
+  MAX: 1_000_000,
+  MIN: 1000,
+  STEP: 1000,
 } as const
 
 // KPI configuration
 export const KPI_CONFIG = {
-  MIN: 0,
-  MAX: 50,
-  STEP: 5,
   DEFAULT: 0,
+  MAX: 50,
+  MIN: 0,
+  STEP: 5,
   THRESHOLD: 80,
 } as const
 

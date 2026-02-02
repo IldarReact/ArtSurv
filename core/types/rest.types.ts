@@ -1,7 +1,7 @@
 export interface RestActivity {
-  id: string
-  title: string
-  energyCost: number
+  bg: string
+  color: string
+  cost: number
   effects: {
     happiness?: number
     health?: number
@@ -9,8 +9,8 @@ export interface RestActivity {
     intelligence?: number
     energy?: number
   }
-  cost: number
+  energyCost: number
   icon: string
-  color: string
-  bg: string
+  id: string
+  title: string
 }

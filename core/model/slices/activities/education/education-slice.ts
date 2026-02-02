@@ -1,194 +1,146 @@
 import type { StateCreator } from 'zustand'
 
+import type { ActiveCourse, ActiveUniversity, Player } from '@/core/types'
+import type { StatEffect } from '@/core/types/stats.types'
+
 import type { GameStore, EducationSlice } from '../../types'
 
-import { formatGameDate } from '@/core/lib/quarter'
-import type { ActiveCourse, ActiveUniversity } from '@/core/types'
-import type { StatEffect } from '@/core/types/stats.types'
+function calculateCurrentEnergyCost(player: Player): number {
+  let total = 0
+  for (const c of player.personal.activeCourses) {
+    total += Math.abs(c.costPerTurn?.energy ?? 0)
+  }
+  for (const c of player.personal.activeUniversity) {
+    total += Math.abs(c.costPerTurn?.energy ?? 0)
+  }
+  for (const j of player.jobs) {
+    total += Math.abs(j.cost.energy ?? 0)
+  }
+  return total
+}
+
+interface EducationBaseParams {
+  cost: number
+  costPerTurn: StatEffect
+  duration: number
+  name: string
+  skillBonus: string
+}
+
+function validateAndPrepareEducation(
+  get: () => GameStore,
+  params: EducationBaseParams,
+  transactionTitle: string,
+) {
+  const state = get()
+  const player = state.player
+  if (!player) return null
+
+  const currentEnergyCost = calculateCurrentEnergyCost(player)
+  const requiredEnergyPerTurn = Math.abs(params.costPerTurn.energy ?? 0)
+  const ENROLL_ENERGY_COST = 3
+
+  // Проверка доступности энергии на будущее (рекуррентные затраты)
+  if (player.stats.energy - currentEnergyCost < requiredEnergyPerTurn) {
+    state.pushNotification({
+      message: 'У вас недостаточно свободной энергии для обучения. Завершите другие дела.',
+      title: 'Недостаточно энергии',
+      type: 'info',
+    })
+    return null
+  }
+
+  // Списываем деньги и энергию за само действие (запись/поступление) через одну транзакцию
+  if (
+    !state.performTransaction(
+      { energy: -ENROLL_ENERGY_COST, money: -params.cost },
+      { title: transactionTitle },
+    )
+  ) {
+    return null
+  }
+
+  const normalizedSkillName = params.skillBonus.split('(')[0].trim()
+  return {
+    normalizedSkillName,
+    player,
+    state,
+  }
+}
 
 export const createEducationSlice: StateCreator<GameStore, [], [], EducationSlice> = (
   set,
   get,
 ) => ({
-  studyCourse: (
-    courseName: string,
-    cost: number,
-    costPerTurn: StatEffect,
-    skillBonus: string,
-    duration: number,
-  ) => {
-    const state = get()
-    if (!state.player) return
+  applyToUniversity: (programName, cost, costPerTurn, skillBonus, duration) => {
+    const prepared = validateAndPrepareEducation(
+      get,
+      { cost, costPerTurn, duration, name: programName, skillBonus },
+      'Поступление в университет',
+    )
+    if (!prepared) return
 
-    // ✅ Денежная проверка
-    // Удалено, так как выполняется в performTransaction
-
-    // ✅ Подсчет текущих затрат энергии
-    const currentEnergyCost =
-      (state.player.personal.activeCourses || []).reduce(
-        (acc, c) => acc + Math.abs(c.costPerTurn?.energy || 0),
-        0,
-      ) +
-      (state.player.personal.activeUniversity || []).reduce(
-        (acc, c) => acc + Math.abs(c.costPerTurn?.energy || 0),
-        0,
-      ) +
-      state.player.jobs.reduce((acc, j) => acc + Math.abs(j.cost?.energy || 0), 0)
-
-    const requiredEnergy = Math.abs(costPerTurn.energy || 0)
-
-    if (state.player.stats.energy - currentEnergyCost < requiredEnergy) {
-      set((state) => ({
-        notifications: [
-          {
-            id: `err_${Date.now()}`,
-            type: 'info',
-            title: 'Недостаточно энергии',
-            message: 'У вас недостаточно свободной энергии для обучения. Завершите другие дела.',
-            date: formatGameDate(state.year, state.turn),
-            isRead: false,
-          },
-          ...state.notifications,
-        ],
-      }))
-      return
-    }
-
-    // ✅ Списываем деньги через централизованный метод
-    if (!get().performTransaction({ money: -cost }, { title: 'Оплата курса' })) {
-      return
-    }
-
-    const normalizedSkillName = skillBonus.split('(')[0].trim()
-
-    const newCourse: ActiveCourse = {
-      id: `course_${Date.now()}`,
-      title: courseName,
-      courseName,
-      skillName: normalizedSkillName,
-      skillBonus: 0,
-      totalDuration: duration,
-      remainingDuration: duration,
-      costPerTurn,
-      startedTurn: state.turn,
-    }
-
-    set((state) => ({
-      player: state.player
-        ? {
-            ...state.player,
-
-            // Stats updated by performTransaction
-
-            personal: {
-              ...state.player.personal,
-              activeCourses: [...state.player.personal.activeCourses, newCourse],
-            },
-          }
-        : null,
-
-      notifications: [
-        {
-          id: `course_${Date.now()}`,
-          type: 'info',
-          title: 'Запись на курс',
-          message: `Вы записались на курс "${courseName}".`,
-          date: formatGameDate(state.year, state.turn),
-          isRead: false,
-        },
-        ...state.notifications,
-      ],
-    }))
-  },
-
-  applyToUniversity: (
-    programName: string,
-    cost: number,
-    costPerTurn: StatEffect,
-    skillBonus: string,
-    duration: number,
-  ) => {
-    const state = get()
-    if (!state.player) return
-
-    // ✅ Денежная проверка
-    // Удалено, так как выполняется в performTransaction
-
-    // ✅ Подсчет текущих затрат энергии
-    const currentEnergyCost =
-      (state.player.personal.activeCourses || []).reduce(
-        (acc, c) => acc + Math.abs(c.costPerTurn?.energy || 0),
-        0,
-      ) +
-      (state.player.personal.activeUniversity || []).reduce(
-        (acc, c) => acc + Math.abs(c.costPerTurn?.energy || 0),
-        0,
-      ) +
-      state.player.jobs.reduce((acc, j) => acc + Math.abs(j.cost?.energy || 0), 0)
-
-    const requiredEnergy = Math.abs(costPerTurn.energy || 0)
-
-    if (state.player.stats.energy - currentEnergyCost < requiredEnergy) {
-      set((state) => ({
-        notifications: [
-          {
-            id: `err_${Date.now()}`,
-            type: 'info',
-            title: 'Недостаточно энергии',
-            message: 'У вас недостаточно свободной энергии для обучения. Завершите другие дела.',
-            date: formatGameDate(state.year, state.turn),
-            isRead: false,
-          },
-          ...state.notifications,
-        ],
-      }))
-      return
-    }
-
-    // ✅ Списываем деньги через централизованный метод
-    if (!get().performTransaction({ money: -cost }, { title: 'Оплата обучения' })) {
-      return
-    }
-
-    const normalizedSkillName = skillBonus.split('(')[0].trim()
+    const { normalizedSkillName, state } = prepared
 
     const newUni: ActiveUniversity = {
-      id: `uni_${Date.now()}`,
-      title: programName,
-      programName,
-      skillName: normalizedSkillName,
-      skillBonus: 0,
-      totalDuration: duration,
-      remainingDuration: duration,
       costPerTurn,
+      id: `uni_${String(Date.now())}`,
+      programName,
+      remainingDuration: duration,
+      skillBonus: 0,
+      skillName: normalizedSkillName,
       startedTurn: state.turn,
+      title: programName,
+      totalDuration: duration,
     }
 
-    set((state) => ({
-      player: state.player
-        ? {
-            ...state.player,
-
-            // Stats updated by performTransaction
-
-            personal: {
-              ...state.player.personal,
-              activeUniversity: [...state.player.personal.activeUniversity, newUni],
-            },
-          }
-        : null,
-
-      notifications: [
-        {
-          id: `uni_${Date.now()}`,
-          type: 'info',
-          title: 'Поступление',
-          message: `Вы поступили на программу "${programName}". Учеба займет ${duration} кв.`,
-          date: formatGameDate(state.year, state.turn),
-          isRead: false,
-        },
-        ...state.notifications,
-      ],
+    get().updatePlayer((prev) => ({
+      personal: {
+        ...prev.personal,
+        activeUniversity: [...prev.personal.activeUniversity, newUni],
+      },
     }))
+
+    get().pushNotification({
+      message: `Вы поступили на программу "${programName}". Учеба займет ${String(duration)} кв.`,
+      title: 'Поступление',
+      type: 'success',
+    })
+  },
+
+  studyCourse: (courseName, cost, costPerTurn, skillBonus, duration) => {
+    const prepared = validateAndPrepareEducation(
+      get,
+      { cost, costPerTurn, duration, name: courseName, skillBonus },
+      'Запись на курсы',
+    )
+    if (!prepared) return
+
+    const { normalizedSkillName, state } = prepared
+
+    const newCourse: ActiveCourse = {
+      costPerTurn,
+      courseName,
+      id: `course_${String(Date.now())}`,
+      remainingDuration: duration,
+      skillBonus: 0,
+      skillName: normalizedSkillName,
+      startedTurn: state.turn,
+      title: courseName,
+      totalDuration: duration,
+    }
+
+    get().updatePlayer((prev) => ({
+      personal: {
+        ...prev.personal,
+        activeCourses: [...prev.personal.activeCourses, newCourse],
+      },
+    }))
+
+    get().pushNotification({
+      message: `Вы записались на курс "${courseName}".`,
+      title: 'Запись на курс',
+      type: 'success',
+    })
   },
 })

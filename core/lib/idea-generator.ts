@@ -1,6 +1,68 @@
 import { getIdeaTemplates, getIdeaReplacements } from '@/core/lib/data-loaders/static-data-loader'
 import type { Skill } from '@/core/types'
-import type { BusinessIdea, RiskLevel } from '@/core/types/idea.types'
+import type {
+  BusinessIdea,
+  RiskLevel,
+  IdeaTemplate,
+  IdeaReplacements,
+} from '@/core/types/idea.types'
+
+/**
+ * Выбирает подходящий шаблон на основе навыков игрока
+ */
+function selectTemplate(templates: IdeaTemplate[], playerSkills: Skill[]): IdeaTemplate {
+  let template = templates[Math.floor(Math.random() * templates.length)]
+
+  // Если у игрока есть программирование, больше шансов на tech
+  const programmingSkill = playerSkills.find((s) => s.name === 'Программирование')
+  const MIN_PROG_LEVEL = 3
+  const PROG_CHANCE = 0.6
+  if (programmingSkill && programmingSkill.level >= MIN_PROG_LEVEL && Math.random() < PROG_CHANCE) {
+    template = templates.find((t) => t.type === 'tech') ?? template
+  }
+
+  // Если у игрока есть менеджмент, больше шансов на service
+  const managementSkill = playerSkills.find((s) => s.name === 'Менеджмент')
+  const MIN_MGMT_LEVEL = 2
+  const MGMT_CHANCE = 0.5
+  if (managementSkill && managementSkill.level >= MIN_MGMT_LEVEL && Math.random() < MGMT_CHANCE) {
+    template = templates.find((t) => t.type === 'service') ?? template
+  }
+
+  return template
+}
+
+/**
+ * Применяет замены в тексте шаблона
+ */
+function applyReplacements(
+  name: string,
+  description: string,
+  replacements: IdeaReplacements,
+): { description: string; name: string } {
+  const mapping: Record<string, keyof IdeaReplacements> = {
+    '{category}': 'categories',
+    '{field}': 'fields',
+    '{niche}': 'niches',
+    '{product}': 'products',
+  }
+
+  let finalName = name
+  let finalDescription = description
+
+  for (const [placeholder, jsonKey] of Object.entries(mapping)) {
+    if (finalName.includes(placeholder) || finalDescription.includes(placeholder)) {
+      const options = replacements[jsonKey]
+      if (options.length > 0) {
+        const replacement = options[Math.floor(Math.random() * options.length)]
+        finalName = finalName.replace(new RegExp(placeholder, 'g'), replacement)
+        finalDescription = finalDescription.replace(new RegExp(placeholder, 'g'), replacement)
+      }
+    }
+  }
+
+  return { description: finalDescription, name: finalName }
+}
 
 /**
  * Генерирует бизнес-идею на основе навыков игрока
@@ -8,55 +70,21 @@ import type { BusinessIdea, RiskLevel } from '@/core/types/idea.types'
 export function generateBusinessIdea(
   playerSkills: Skill[],
   currentTurn: number,
-  globalMarketValue: number = 1.0
+  globalMarketValue = 1.0,
 ): BusinessIdea {
-  const IDEA_TEMPLATES = getIdeaTemplates();
-  const REPLACEMENTS = getIdeaReplacements();
+  const IDEA_TEMPLATES = getIdeaTemplates()
+  const REPLACEMENTS = getIdeaReplacements()
 
   // Выбираем шаблон на основе навыков
-  let template = IDEA_TEMPLATES[Math.floor(Math.random() * IDEA_TEMPLATES.length)]
-
-  // Если у игрока есть программирование, больше шансов на tech
-  const programmingSkill = playerSkills.find(s => s.name === 'Программирование')
-  if (programmingSkill && programmingSkill.level >= 3 && Math.random() < 0.6) {
-    template = IDEA_TEMPLATES.find(t => t.type === 'tech') || template
-  }
-
-  // Если у игрока есть менеджмент, больше шансов на service
-  const managementSkill = playerSkills.find(s => s.name === 'Менеджмент')
-  if (managementSkill && managementSkill.level >= 2 && Math.random() < 0.5) {
-    template = IDEA_TEMPLATES.find(t => t.type === 'service') || template
-  }
+  const template = selectTemplate(IDEA_TEMPLATES, playerSkills)
 
   // Генерируем название и описание
-  const nameTemplate = template.nameTemplates[Math.floor(Math.random() * template.nameTemplates.length)]
-  const descTemplate = template.descriptionTemplates[Math.floor(Math.random() * template.descriptionTemplates.length)]
+  const nameTemplate =
+    template.nameTemplates[Math.floor(Math.random() * template.nameTemplates.length)]
+  const descTemplate =
+    template.descriptionTemplates[Math.floor(Math.random() * template.descriptionTemplates.length)]
 
-  let name = nameTemplate
-  let description = descTemplate
-
-  // Используем replacements из JSON
-  // Приводим ключи к нижнему регистру для соответствия с JSON (categories -> {category})
-  // В JSON ключи: categories, niches, fields, products
-  // В шаблонах: {category}, {niche}, {field}, {product}
-
-  const mapping: Record<string, string> = {
-    '{category}': 'categories',
-    '{niche}': 'niches',
-    '{field}': 'fields',
-    '{product}': 'products'
-  }
-
-  for (const [placeholder, jsonKey] of Object.entries(mapping)) {
-    if (name.includes(placeholder) || description.includes(placeholder)) {
-      const options = REPLACEMENTS[jsonKey]
-      if (options && options.length > 0) {
-        const replacement = options[Math.floor(Math.random() * options.length)]
-        name = name.replace(new RegExp(placeholder, 'g'), replacement)
-        description = description.replace(new RegExp(placeholder, 'g'), replacement)
-      }
-    }
-  }
+  const { description, name } = applyReplacements(nameTemplate, descTemplate, REPLACEMENTS)
 
   // Определяем риск
   const riskLevels: RiskLevel[] = ['low', 'medium', 'high', 'very_high']
@@ -66,37 +94,60 @@ export function generateBusinessIdea(
   const riskLevel = riskLevels[riskIndex]
 
   // Определяем потенциал (зависит от риска и рынка)
-  const baseReturn = template.returnRange[0] + Math.random() * (template.returnRange[1] - template.returnRange[0])
-  const riskMultiplier = riskIndex * 0.2 + 0.8 // 0.8 для low, 1.4 для very_high
+  const baseReturn =
+    template.returnRange[0] + Math.random() * (template.returnRange[1] - template.returnRange[0])
+
+  const RISK_POTENTIAL_STEP = 0.2
+  const RISK_POTENTIAL_BASE = 0.8
+  const riskMultiplier = riskIndex * RISK_POTENTIAL_STEP + RISK_POTENTIAL_BASE // 0.8 для low, 1.4 для very_high
   const potentialReturn = baseReturn * riskMultiplier * globalMarketValue
 
   // Определяем спрос (зависит от рынка и типа)
-  const baseDemand = 50 + Math.random() * 30
-  const marketDemand = Math.min(100, baseDemand * globalMarketValue)
+  const DEMAND_BASE = 50
+  const DEMAND_RANDOM_RANGE = 30
+  const MAX_DEMAND = 100
+  const baseDemand = DEMAND_BASE + Math.random() * DEMAND_RANDOM_RANGE
+  const marketDemand = Math.min(MAX_DEMAND, baseDemand * globalMarketValue)
 
   // Инвестиции
   const minInvestment = template.investmentRange[0]
   const maxInvestment = template.investmentRange[1]
 
   // Срок актуальности (больше для низкого риска)
-  const expiresIn = riskLevel === 'low' ? 0 : riskLevel === 'medium' ? 8 : riskLevel === 'high' ? 4 : 2
+  const EXPIRES_LOW = 0
+  const EXPIRES_MEDIUM = 8
+  const EXPIRES_HIGH = 4
+  const EXPIRES_VERY_HIGH = 2
+
+  const expiresIn =
+    riskLevel === 'low'
+      ? EXPIRES_LOW
+      : riskLevel === 'medium'
+        ? EXPIRES_MEDIUM
+        : riskLevel === 'high'
+          ? EXPIRES_HIGH
+          : EXPIRES_VERY_HIGH
+
+  const ID_SUBSTRING_START = 2
+  const ID_SUBSTRING_END = 11
+  const RANDOM_BASE_36 = 36
 
   return {
-    id: `idea_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    name,
     description,
-    type: template.type,
-    requiredSkills: template.requiredSkills,
-    minInvestment,
-    maxInvestment,
-    riskLevel,
-    potentialReturn,
-    marketDemand,
-    stage: 'idea',
     developmentProgress: 0,
-    investedAmount: 0,
+    expiresIn,
     generatedTurn: currentTurn,
-    expiresIn
+    id: `idea_${String(Date.now())}_${Math.random().toString(RANDOM_BASE_36).substring(ID_SUBSTRING_START, ID_SUBSTRING_END)}`,
+    investedAmount: 0,
+    marketDemand,
+    maxInvestment,
+    minInvestment,
+    name,
+    potentialReturn,
+    requiredSkills: template.requiredSkills,
+    riskLevel,
+    stage: 'idea',
+    type: template.type,
   }
 }
 
@@ -104,8 +155,8 @@ export function generateBusinessIdea(
  * Проверяет, соответствует ли игрок требованиям идеи
  */
 export function canDevelopIdea(idea: BusinessIdea, playerSkills: Skill[]): boolean {
-  return idea.requiredSkills.every(req => {
-    const playerSkill = playerSkills.find(s => s.id === req.skillId)
+  return idea.requiredSkills.every((req) => {
+    const playerSkill = playerSkills.find((s) => s.id === req.skillId)
     return playerSkill && playerSkill.level >= req.minLevel
   })
 }
@@ -114,11 +165,16 @@ export function canDevelopIdea(idea: BusinessIdea, playerSkills: Skill[]): boole
  * Рассчитывает стоимость развития идеи до следующей стадии
  */
 export function calculateDevelopmentCost(idea: BusinessIdea): number {
+  const COST_IDEA = 0.1
+  const COST_LAUNCHED = 0
+  const COST_MVP = 0.7
+  const COST_PROTOTYPE = 0.2
+
   const stageCosts: Record<typeof idea.stage, number> = {
-    'idea': idea.minInvestment * 0.1, // 10% для прототипа
-    'prototype': idea.minInvestment * 0.2, // 20% для MVP
-    'mvp': idea.minInvestment * 0.7, // 70% для запуска
-    'launched': 0
+    idea: idea.minInvestment * COST_IDEA, // 10% для прототипа
+    launched: COST_LAUNCHED,
+    mvp: idea.minInvestment * COST_MVP, // 70% для запуска
+    prototype: idea.minInvestment * COST_PROTOTYPE, // 20% для MVP
   }
 
   return stageCosts[idea.stage]
@@ -128,27 +184,39 @@ export function calculateDevelopmentCost(idea: BusinessIdea): number {
  * Рассчитывает время развития (в кварталах)
  */
 export function calculateDevelopmentTime(idea: BusinessIdea, playerSkills: Skill[]): number {
+  const TIME_IDEA = 2
+  const TIME_LAUNCHED = 0
+  const TIME_MVP = 2
+  const TIME_PROTOTYPE = 3
+
   const baseTimes: Record<typeof idea.stage, number> = {
-    'idea': 2, // 2 квартала до прототипа
-    'prototype': 3, // 3 квартала до MVP
-    'mvp': 2, // 2 квартала до запуска
-    'launched': 0
+    idea: TIME_IDEA, // 2 квартала до прототипа
+    launched: TIME_LAUNCHED,
+    mvp: TIME_MVP, // 2 квартала до запуска
+    prototype: TIME_PROTOTYPE, // 3 квартала до MVP
   }
 
   let time = baseTimes[idea.stage]
 
   // Навыки ускоряют развитие
-  const relevantSkills = playerSkills.filter(s =>
-    idea.requiredSkills.some(req => req.skillId === s.id)
+  const relevantSkills = playerSkills.filter((s) =>
+    idea.requiredSkills.some((req) => req.skillId === s.id),
   )
 
-  const avgSkillLevel = relevantSkills.length > 0
-    ? relevantSkills.reduce((sum, s) => sum + s.level, 0) / relevantSkills.length
-    : 0
+  let avgSkillLevel = 0
+  if (relevantSkills.length > 0) {
+    let skillSum = 0
+    for (const s of relevantSkills) {
+      skillSum += s.level
+    }
+    avgSkillLevel = skillSum / relevantSkills.length
+  }
 
   // Каждый уровень навыка сокращает время на 10%
-  const skillReduction = avgSkillLevel * 0.1
-  time = Math.max(1, Math.round(time * (1 - skillReduction)))
+  const SKILL_REDUCTION_PER_LEVEL = 0.1
+  const MIN_TIME = 1
+  const skillReduction = avgSkillLevel * SKILL_REDUCTION_PER_LEVEL
+  time = Math.max(MIN_TIME, Math.round(time * (1 - skillReduction)))
 
   return time
 }

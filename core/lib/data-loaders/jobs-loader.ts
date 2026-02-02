@@ -1,6 +1,5 @@
 import { JobSchema } from '@/core/schemas/game.schema'
 import type { Job } from '@/core/types/job.types'
-
 // Country imports
 import brJobs from '@/shared/data/world/countries/brazil/jobs.json'
 import geJobs from '@/shared/data/world/countries/germany/jobs.json'
@@ -14,8 +13,13 @@ function loadJobs(data: unknown[], source: string): Job[] {
     if (result.success) {
       validated.push(result.data as Job)
     } else {
-      console.error(`Invalid job in ${source}:`, item, result.error.format())
-      throw new Error(`Job data validation failed for ${source}`)
+      // eslint-disable-next-line no-console
+      console.error(
+        `Invalid job in ${source}:`,
+        (item as { id?: string }).id ?? 'unknown',
+        result.error.format(),
+      )
+      throw new Error(`Job data validation failed for ${source}. Check console for details.`)
     }
   }
 
@@ -23,30 +27,31 @@ function loadJobs(data: unknown[], source: string): Job[] {
 }
 
 // Country Data Registry
-const COUNTRY_JOBS: Record<string, Job[]> = {
-  us: loadJobs(usJobs, 'us/jobs.json'),
-  germany: loadJobs(geJobs, 'germany/jobs.json'),
+const COUNTRY_JOBS: Record<string, Job[] | undefined> = {
   brazil: loadJobs(brJobs, 'brazil/jobs.json'),
+  germany: loadJobs(geJobs, 'germany/jobs.json'),
+  us: loadJobs(usJobs, 'us/jobs.json'),
 }
 
 // Get jobs for specific country
 function getCountryJobs(countryId: string): Job[] {
-  if (!COUNTRY_JOBS[countryId]) {
-    console.error(`No jobs data found for country: ${countryId}`)
+  const jobs = COUNTRY_JOBS[countryId]
+  if (!jobs) {
+    // console.error(`No jobs data found for country: ${countryId}`)
     return []
   }
-  return COUNTRY_JOBS[countryId]
+  return jobs
 }
 
 // Export for backward compatibility (defaults to US)
-export const ALL_JOBS = COUNTRY_JOBS.us || []
+export const ALL_JOBS = COUNTRY_JOBS.us ?? []
 
-export function getJobById(id: string, countryId: string = 'us'): Job | undefined {
+export function getJobById(id: string, countryId = 'us'): Job | undefined {
   const jobs = getCountryJobs(countryId)
   return jobs.find((j) => j.id === id)
 }
 
-export function getJobsByCategory(category: string, countryId: string = 'us'): Job[] {
+export function getJobsByCategory(category: string, countryId = 'us'): Job[] {
   const jobs = getCountryJobs(countryId)
   return jobs.filter((j) => j.category === category)
 }
@@ -61,12 +66,12 @@ export function getAllJobsForCountry(countryId: string): Job[] {
  */
 export function getStartingJob(
   countryId: string,
-  characterSkills: { id: string; level: number }[] = [],
+  _characterSkills: { id: string; level: number }[] = [],
 ): Job | null {
   const jobs = getCountryJobs(countryId)
 
   if (jobs.length === 0) {
-    console.error(`No jobs available for country: ${countryId}`)
+    // console.error(`No jobs available for country: ${countryId}`)
     return null
   }
 

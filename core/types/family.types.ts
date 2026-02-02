@@ -1,55 +1,38 @@
 // Family and personal life types
 
-import { Progressable } from './progress.types'
-import { StatEffect } from './stats.types'
+import type { Progressable } from './progress.types'
+import type { StatEffect } from './stats.types'
 
 export interface TimedBuff extends Progressable {
-  id: string
-  source: string
-  effects: StatEffect
+  description: string
   /** @deprecated use remainingDuration */
   duration: number
-  description: string
+  effects: StatEffect
+  id: string
+  source: string
 }
 
 export interface PotentialPartner {
-  id: string
-  name: string
   age: number
-  occupation: string
-  income: number // Quarterly
   avatar?: string
+  id: string
+  income: number // Quarterly
+  name: string
+  occupation: string
 }
 
 export interface Pregnancy extends Progressable {
-  /** @deprecated use remainingDuration */
-  turnsLeft: number // 3 turns (9 months)
   isTwins: boolean
   motherId: string // ID of the mother (wife or player if female)
+  /** @deprecated use remainingDuration */
+  turnsLeft: number // 3 turns (9 months)
 }
 
 export interface FamilyMember {
-  id: string
-  name: string
-  type: 'wife' | 'husband' | 'child' | 'pet' | 'parent'
   age: number
-  relationLevel: number // 0-100
-  income: number // Quarterly income contribution
-  expenses: number // Quarterly expenses
-  passiveEffects: StatEffect // Passive effects per turn
   avatar?: string
-  goals?: LifeGoal[] // Personal goals of the family member
   employedInBusinessId?: string // ID бизнеса, где работает
-  occupation?: string // Название работы (если работает не в бизнесе игрока)
-  jobId?: string // ID работы из jobs.json для отображения деталей
-
-  // Lifestyle preferences (references to shop items)
-  foodPreference?: string // ID товара из категории 'food'
-  transportPreference?: string // ID товара из категории 'transport'
-
-  // Traits
-  traits?: string[] // IDs from human-traits.json
-
+  expenses: number // Quarterly expenses
   // Detailed expenses
   expensesBreakdown?: {
     food: number
@@ -60,20 +43,31 @@ export interface FamilyMember {
     other: number
     total: number
   }
+  // Lifestyle preferences (references to shop items)
+  foodPreference?: string // ID товара из категории 'food'
+  goals?: LifeGoal[] // Personal goals of the family member
+  id: string
+  income: number // Quarterly income contribution
+  jobId?: string // ID работы из jobs.json для отображения деталей
+  loyalty: number // 0-100, семейная лояльность
+  name: string
+  occupation?: string // Название работы (если работает не в бизнесе игрока)
+  passiveEffects: StatEffect // Passive effects per turn
+
+  relationLevel: number // 0-100
+  // Traits
+  traits?: string[] // IDs from human-traits.json
+
+  transportPreference?: string // ID товара из категории 'transport'
+
+  type: 'wife' | 'husband' | 'child' | 'pet' | 'parent' | 'friend' | 'colleague'
 }
 
 export interface LifeGoal {
-  id: string
-  title: string
   description: string
-  type: 'dream' | 'goal'
-  progress: number
-  target: number
-  reward: {
-    perTurnReward: StatEffect
-    durationTurns: number // How long the reward lasts
-  }
+  id: string
   isCompleted: boolean
+  progress: number
   requirements?: {
     cash?: number
     salary?: number
@@ -83,23 +77,30 @@ export interface LifeGoal {
     hasHouse?: boolean
     hasFamily?: boolean
   }
+  reward: {
+    perTurnReward: StatEffect
+    durationTurns: number // How long the reward lasts
+  }
+  target: number
+  title: string
+  type: 'dream' | 'goal'
 }
 
 export interface StatModifier {
-  money?: number
-  source: string
+  energy?: number
   happiness?: number
   health?: number
-  energy?: number
-  sanity?: number
   intelligence?: number
+  money?: number
+  sanity?: number
+  source: string
 }
 
 export interface StatModifiers {
-  money: StatModifier[]
+  energy: StatModifier[]
   happiness: StatModifier[]
   health: StatModifier[]
-  energy: StatModifier[]
-  sanity: StatModifier[]
   intelligence: StatModifier[]
+  money: StatModifier[]
+  sanity: StatModifier[]
 }

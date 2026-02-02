@@ -1,27 +1,27 @@
-"use client"
+'use client'
 
-import { Users, DollarSign, CheckCircle, XCircle, Globe, User } from "lucide-react"
-import React from "react"
+import { Users, DollarSign, CheckCircle, XCircle, Globe, User } from 'lucide-react'
+import React from 'react'
 
-import { getOnlinePlayers } from "@/core/lib/multiplayer"
-import { Player } from "@/features/multiplayer/multiplayer-hub"
-import { Button } from "@/shared/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/dialog"
+import { getOnlinePlayers } from '@/core/lib/multiplayer'
+import type { Player } from '@/features/multiplayer/multiplayer-hub'
+import { Button } from '@/shared/components/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/dialog'
 
 interface PartnerSelectionDialogProps {
+  businessCost: number
+  businessName: string
   isOpen: boolean
   onClose: () => void
-  businessName: string
-  businessCost: number
   onSelectPartner: (partnerId: string, partnerName: string, playerShare: number) => void
 }
 
 export function PartnerSelectionDialog({
+  businessCost,
+  businessName,
   isOpen,
   onClose,
-  businessName,
-  businessCost,
-  onSelectPartner
+  onSelectPartner,
 }: PartnerSelectionDialogProps) {
   const [onlinePlayers, setOnlinePlayers] = React.useState<Player[]>([])
   const [selectedPlayer, setSelectedPlayer] = React.useState<Player | null>(null)
@@ -29,7 +29,7 @@ export function PartnerSelectionDialog({
 
   React.useEffect(() => {
     if (isOpen) {
-      setOnlinePlayers(getOnlinePlayers().filter(p => !p.isLocal))
+      setOnlinePlayers(getOnlinePlayers().filter((p) => !p.isLocal))
       setSelectedPlayer(null)
       setPlayerShare(50)
     }
@@ -46,7 +46,7 @@ export function PartnerSelectionDialog({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog onOpenChange={onClose} open={isOpen}>
       <DialogContent className="bg-zinc-900/98 backdrop-blur-xl border-white/20 text-white w-[95vw] md:w-[85vw] max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl md:text-3xl flex items-center gap-3 text-white">
@@ -54,7 +54,8 @@ export function PartnerSelectionDialog({
             Открыть бизнес с партнером
           </DialogTitle>
           <p className="text-white/80 text-base mt-2">
-            Выберите партнера для совместного открытия: <span className="font-bold text-emerald-400">{businessName}</span>
+            Выберите партнера для совместного открытия:{' '}
+            <span className="font-bold text-emerald-400">{businessName}</span>
           </p>
         </DialogHeader>
 
@@ -76,13 +77,16 @@ export function PartnerSelectionDialog({
                   const isSelected = selectedPlayer?.clientId === player.clientId
 
                   return (
-                    <div
-                      key={player.clientId}
+                    <button
                       className={`
-                        relative bg-white/5 border rounded-xl p-4 cursor-pointer transition-all
+                        relative bg-white/5 border rounded-xl p-4 cursor-pointer transition-all text-left w-full
                         ${isSelected ? 'border-purple-500/50 bg-purple-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/8'}
                       `}
-                      onClick={() => setSelectedPlayer(player)}
+                      key={player.clientId}
+                      onClick={() => {
+                        setSelectedPlayer(player)
+                      }}
+                      type="button"
                     >
                       {isSelected && (
                         <div className="absolute top-3 right-3">
@@ -99,7 +103,7 @@ export function PartnerSelectionDialog({
                           <p className="text-xs text-white/50">ID: {player.clientId.slice(0, 8)}</p>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   )
                 })}
               </div>
@@ -122,13 +126,15 @@ export function PartnerSelectionDialog({
                     <span className="text-2xl font-bold text-purple-400">{playerShare}%</span>
                   </label>
                   <input
-                    type="range"
-                    min="10"
-                    max="90"
-                    step="5"
-                    value={playerShare}
-                    onChange={(e) => setPlayerShare(parseInt(e.target.value))}
                     className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-400"
+                    max="90"
+                    min="10"
+                    onChange={(e) => {
+                      setPlayerShare(parseInt(e.target.value))
+                    }}
+                    step="5"
+                    type="range"
+                    value={playerShare}
                   />
                   <div className="flex justify-between text-xs text-white/40">
                     <span>10%</span>
@@ -140,12 +146,16 @@ export function PartnerSelectionDialog({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white/5 rounded-xl p-4 border border-white/10">
                     <p className="text-sm text-white/60 mb-1">Ваша инвестиция</p>
-                    <p className="text-2xl font-bold text-green-400">${playerInvestment.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-green-400">
+                      ${playerInvestment.toLocaleString()}
+                    </p>
                     <p className="text-xs text-white/40 mt-1">{playerShare}% владения</p>
                   </div>
                   <div className="bg-white/5 rounded-xl p-4 border border-white/10">
                     <p className="text-sm text-white/60 mb-1">Инвестиция {selectedPlayer.name}</p>
-                    <p className="text-2xl font-bold text-blue-400">${partnerInvestment.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-blue-400">
+                      ${partnerInvestment.toLocaleString()}
+                    </p>
                     <p className="text-xs text-white/40 mt-1">{100 - playerShare}% владения</p>
                   </div>
                 </div>
@@ -174,17 +184,17 @@ export function PartnerSelectionDialog({
           {/* Кнопки действий */}
           <div className="flex gap-3 pt-4 border-t border-white/10">
             <Button
+              className="flex-1 border-white/10 hover:bg-white/10 text-white"
               onClick={onClose}
               variant="outline"
-              className="flex-1 border-white/10 hover:bg-white/10 text-white"
             >
               <XCircle className="w-4 h-4 mr-2" />
               Отмена
             </Button>
             <Button
-              onClick={handleConfirm}
-              disabled={!selectedPlayer}
               className="flex-1 bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!selectedPlayer}
+              onClick={handleConfirm}
             >
               <CheckCircle className="w-4 h-4 mr-2" />
               Открыть за ${playerInvestment.toLocaleString()}

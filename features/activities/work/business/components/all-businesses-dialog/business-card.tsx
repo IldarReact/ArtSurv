@@ -1,58 +1,60 @@
 import { Users, DollarSign, Zap, CheckCircle, AlertCircle, Store } from 'lucide-react'
 import React from 'react'
 
+import { getRoleConfig } from '@/core/lib/business/employee-roles.config'
+import type { BusinessTemplate } from '@/core/lib/data-loaders/businesses-loader'
+import { Badge } from '@/shared/components/badge'
+import { Button } from '@/shared/components/button'
+
 import { getBusinessTypeLabel, getRoleIcon } from '../../utils/business-ui-mappers'
 
-import { getRoleConfig } from '@/core/lib/business/employee-roles.config'
-import { BusinessTemplate } from '@/core/lib/data-loaders/businesses-loader'
-import { Badge } from '@/shared/ui/badge'
-import { Button } from '@/shared/ui/button'
-
 interface BusinessCardProps {
-  template: BusinessTemplate
-  upfrontCost: number
   canAfford: boolean
-  isSelected: boolean
-  incomeRange: string
   expenses: string
-  onSelect: () => void
+  incomeRange: string
+  isSelected: boolean
   onOpen: (template: BusinessTemplate) => void
   onOpenWithPartner?: (template: BusinessTemplate) => void
+  onSelect: () => void
   showPartnerButton: boolean
+  template: BusinessTemplate
+  upfrontCost: number
 }
 
 export function BusinessCard({
-  template,
-  upfrontCost,
   canAfford,
-  isSelected,
-  incomeRange,
   expenses,
-  onSelect,
+  incomeRange,
+  isSelected,
   onOpen,
   onOpenWithPartner,
+  onSelect,
   showPartnerButton,
+  template,
+  upfrontCost,
 }: BusinessCardProps) {
   const typeLabel = getBusinessTypeLabel(template.initialCost)
 
   return (
     <div
       className={`
-        bg-white/5 border rounded-2xl overflow-hidden transition-all cursor-pointer
+        w-full text-left bg-white/5 border rounded-2xl overflow-hidden transition-all
         ${isSelected ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-white/10 hover:border-white/20'}
-        ${!canAfford && 'opacity-60'}
+        ${!canAfford ? 'opacity-60' : ''}
       `}
+      data-testid={`business-card-${template.id}`}
       onClick={onSelect}
     >
       {/* Image */}
       <div className="relative h-48">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={
-            template.imageUrl ||
-            'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop'
-          }
           alt={template.name}
           className="w-full h-full object-cover"
+          src={
+            template.imageUrl ??
+            'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=600&fit=crop'
+          }
         />
         <div className="absolute top-3 left-3">
           <Badge className="bg-black/70 backdrop-blur-md text-white border-white/20">
@@ -101,13 +103,13 @@ export function BusinessCard({
           <div className="bg-white/5 rounded-lg p-3">
             <span className="text-xs text-white/60 block mb-1">Сотрудников</span>
             <span className="text-white font-bold text-sm flex items-center gap-1">
-              <Users className="w-3 h-3" /> до {template.maxEmployees || 5}
+              <Users className="w-3 h-3" /> до {template.maxEmployees}
             </span>
           </div>
           <div className="bg-white/5 rounded-lg p-3">
             <span className="text-xs text-white/60 block mb-1">Энергия</span>
             <span className="text-amber-400 font-bold text-sm flex items-center gap-1">
-              <Zap className="w-3 h-3" /> -{template.energyCost || 15}/кв
+              <Zap className="w-3 h-3" /> -{template.energyCost ?? 15}/кв
             </span>
           </div>
         </div>
@@ -119,13 +121,16 @@ export function BusinessCard({
             Рекомендуемые сотрудники
           </h4>
           <div className="space-y-2">
-            {(template.employeeRoles || []).map((req, idx) => (
-              <div key={idx} className="flex items-start gap-2">
+            {template.employeeRoles.map((req, index) => (
+              <div
+                className="flex items-start gap-2"
+                key={`${template.id}-role-${req.role}-${String(index)}`}
+              >
                 <div className="mt-0.5">{getRoleIcon(req.role, req.priority)}</div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-white/90 font-medium">
-                      {getRoleConfig(req.role)?.name || req.role}
+                      {getRoleConfig(req.role)?.name ?? req.role}
                     </span>
                     {req.priority === 'required' && (
                       <Badge className="bg-red-500/20 text-red-300 border-red-500/30 text-xs px-1.5 py-0">
@@ -133,9 +138,7 @@ export function BusinessCard({
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-white/70 mt-0.5 line-clamp-1">
-                    {req.description || getRoleConfig(req.role)?.description}
-                  </p>
+                  <p className="text-xs text-white/70 mt-0.5 line-clamp-1">{req.description}</p>
                 </div>
               </div>
             ))}
@@ -145,11 +148,7 @@ export function BusinessCard({
         {/* Action Button */}
         <div className="flex flex-col gap-3">
           <Button
-            onClick={(e) => {
-              e.stopPropagation()
-              onOpen(template)
-            }}
-            disabled={!canAfford}
+            data-testid={`business-card-open-button-${template.id}`}
             className={`
               w-full h-12 font-bold text-base
               ${
@@ -158,6 +157,11 @@ export function BusinessCard({
                   : 'bg-white/5 text-white/40 cursor-not-allowed'
               }
             `}
+            disabled={!canAfford}
+            onClick={(e) => {
+              e.stopPropagation()
+              onOpen(template)
+            }}
           >
             {canAfford ? (
               <>
@@ -174,12 +178,12 @@ export function BusinessCard({
 
           {showPartnerButton && onOpenWithPartner && (
             <Button
+              className="w-full h-12 border-purple-500/30 hover:bg-purple-500/10 text-white font-bold text-base"
               onClick={(e) => {
                 e.stopPropagation()
                 onOpenWithPartner(template)
               }}
               variant="outline"
-              className="w-full h-12 border-purple-500/30 hover:bg-purple-500/10 text-white font-bold text-base"
             >
               <Store className="w-5 h-5 mr-2 text-purple-400" />
               Открыть с партнером

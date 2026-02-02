@@ -3,44 +3,38 @@
 import { TrendingUp, TrendingDown, Users, Info } from 'lucide-react'
 import React from 'react'
 
+import { calculateBusinessFinancials, getTotalEmployeesCount } from '@/core/lib/business'
+import { Button } from '@/shared/components/button'
+import { InfoCard } from '@/shared/components/info-card'
+
 import { BusinessManagementDialog } from './business-management-dialog'
 import type { BusinessManagementProps } from './types'
 
-import { calculateBusinessFinancials, getTotalEmployeesCount } from '@/core/lib/business'
-import { Button } from '@/shared/ui/button'
-import { InfoCard } from '@/shared/ui/info-card'
-
 const BUSINESS_IMAGES: Record<string, string> = {
-  retail: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=800&h=600&fit=crop',
-  service: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?w=800&h=600&fit=crop',
   cafe: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800&h=600&fit=crop',
-  tech: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
   manufacturing:
     'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&h=600&fit=crop',
+  retail: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=800&h=600&fit=crop',
+  service: 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?w=800&h=600&fit=crop',
+  tech: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
 }
 
 export function BusinessManagement({
   business,
-  playerCash,
   proposalsCount = 0,
-  onHireEmployee,
-  onFireEmployee,
-  onChangePrice,
-  onSetQuantity,
-  onOpenBranch,
-  onJoinAsEmployee,
-  onLeaveJob,
-  onUnassignRole,
-}: BusinessManagementProps) {
+}: Pick<BusinessManagementProps, 'business' | 'proposalsCount'>) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
-  const { income, expenses, profit } = calculateBusinessFinancials(business, true)
-  const image = BUSINESS_IMAGES[business.type] || BUSINESS_IMAGES['retail']
+  const { expenses, income, profit } = calculateBusinessFinancials(business, true)
+  const image = BUSINESS_IMAGES[business.type] ?? BUSINESS_IMAGES.retail
 
   // Рассчитываем общее количество сотрудников, включая игрока
   const totalEmployees = getTotalEmployeesCount(business)
 
   return (
-    <div className="max-w-md mx-auto md:mx-0 w-full relative">
+    <div
+      className="max-w-md mx-auto md:mx-0 w-full relative"
+      data-testid={`business-card-${business.id}`}
+    >
       {/* Notification Badge */}
       {proposalsCount > 0 && (
         <div className="absolute -top-2 -right-2 z-10 bg-linear-to-br from-orange-500 to-red-600 text-white text-xs font-bold rounded-full min-w-24px h-24px flex items-center justify-center px-2 shadow-lg border-2 border-white/20 animate-pulse">
@@ -49,36 +43,33 @@ export function BusinessManagement({
       )}
 
       <InfoCard
-        title={business.name}
-        subtitle={business.type}
-        value={`${profit >= 0 ? '+' : ''}$${profit.toLocaleString()}/кв`}
-        imageUrl={image}
         details={[
           {
+            color: 'text-emerald-400',
+            icon: <TrendingUp className="w-4 h-4" />,
             label: 'Доход',
             value: `+$${income.toLocaleString()}`,
-            icon: <TrendingUp className="w-4 h-4" />,
-            color: 'text-emerald-400',
           },
           {
+            color: 'text-rose-400',
+            icon: <TrendingDown className="w-4 h-4" />,
             label: 'Расходы',
             value: `-$${expenses.toLocaleString()}`,
-            icon: <TrendingDown className="w-4 h-4" />,
-            color: 'text-rose-400',
           },
           {
-            label: 'Сотрудники',
-            value: `${totalEmployees}/${business.maxEmployees}`,
-            icon: <Users className="w-4 h-4" />,
             color: 'text-blue-400',
+            icon: <Users className="w-4 h-4" />,
+            label: 'Сотрудники',
+            value: `${String(totalEmployees)}/${String(business.maxEmployees)}`,
           },
           {
-            label: 'Участие',
-            value: `Э: -${Math.round(business.lastRoleEnergyCost || 0)} | Р: -${Math.round(business.lastRoleSanityCost || 0)}`,
-            icon: <Info className="w-4 h-4" />,
             color: 'text-amber-400',
+            icon: <Info className="w-4 h-4" />,
+            label: 'Участие',
+            value: `Э: -${String(Math.round(business.lastRoleEnergyCost ?? 0))} | Р: -${String(Math.round(business.lastRoleSanityCost ?? 0))}`,
           },
         ]}
+        imageUrl={image}
         modalContent={
           <div className="space-y-6">
             <div>
@@ -126,8 +117,11 @@ export function BusinessManagement({
 
             <div className="flex gap-3 pt-4">
               <Button
-                onClick={() => setIsDialogOpen(true)}
                 className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/10"
+                onClick={() => {
+                  setIsDialogOpen(true)
+                }}
+                data-testid="manage-business-button"
               >
                 <Users className="w-4 h-4 mr-2" />
                 Управление персоналом
@@ -135,12 +129,15 @@ export function BusinessManagement({
             </div>
           </div>
         }
+        subtitle={business.type}
+        title={business.name}
+        value={`${profit >= 0 ? '+' : ''}$${profit.toLocaleString()}/кв`}
       />
 
       <BusinessManagementDialog
         businessId={business.id}
-        open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
+        open={isDialogOpen}
       />
     </div>
   )

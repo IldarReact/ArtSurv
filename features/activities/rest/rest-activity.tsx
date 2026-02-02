@@ -1,5 +1,6 @@
 'use client'
 
+import type { LucideIcon } from 'lucide-react'
 import {
   Heart,
   Brain,
@@ -17,52 +18,53 @@ import { getInflatedPrice } from '@/core/lib/calculations/price-helpers'
 import { getRestActivitiesForCountry } from '@/core/lib/data-loaders/rest-loader'
 import { useGameStore } from '@/core/model/store'
 import type { RestActivity as IRestActivity } from '@/core/types'
-import { Button } from '@/shared/ui/button'
-import { Card } from '@/shared/ui/card'
-import type { LucideIcon } from 'lucide-react'
+import { Button } from '@/shared/components/button'
+import { Card } from '@/shared/components/card'
 
 const ICON_MAP: Record<string, LucideIcon> = {
-  Heart,
-  Brain,
   Activity,
-  Music,
   Book,
+  Brain,
   Coffee,
   Gamepad2,
+  Heart,
   Mountain,
+  Music,
   Palette,
   Zap,
 }
 
 export function RestActivity(): React.JSX.Element | null {
-  const { player, applyStatChanges, countries } = useGameStore()
+  const { countries, performTransaction, player } = useGameStore()
 
   if (!player) return null
 
-  const activities = getRestActivitiesForCountry(player.countryId || 'us')
-  const energy = player.personal.stats.energy
-  const money = player.stats.money
+  const { energy } = player.personal.stats
+  const { money } = player.stats
+
+  const activities = getRestActivitiesForCountry(player.countryId)
   const currentCountry = countries[player.countryId]
 
   const applyRest = (activity: IRestActivity, inflatedCost: number) => {
-    if (energy < activity.energyCost) return
-    if (money < inflatedCost) return
-
-    applyStatChanges({
-      energy: -activity.energyCost,
-      money: -inflatedCost,
-      ...activity.effects,
-    })
+    performTransaction(
+      {
+        energy: -activity.energyCost,
+        money: -inflatedCost,
+        ...activity.effects,
+      },
+      { title: activity.title },
+    )
   }
 
   return (
     <div className="min-h-screen pb-20 relative">
       {/* Background */}
       <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-0" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="https://images.unsplash.com/photo-1517816428104-a9f8f5d9c1a0?w=1920&h=1080&fit=crop"
         alt="Rest background"
         className="fixed inset-0 w-full h-full object-cover z-[-1]"
+        src="https://images.unsplash.com/photo-1517816428104-a9f8f5d9c1a0?w=1920&h=1080&fit=crop"
       />
 
       <div className="relative z-10 container mx-auto p-6 max-w-7xl">
@@ -80,18 +82,18 @@ export function RestActivity(): React.JSX.Element | null {
         {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {activities.map((activity) => {
-            const Icon = ICON_MAP[activity.icon] || Activity
+            const Icon = ICON_MAP[activity.icon] ?? Activity
             // Применить инфляцию (категория services ×0.9)
             const inflatedCost =
-              currentCountry && activity.cost > 0
+              activity.cost > 0
                 ? getInflatedPrice(activity.cost, currentCountry, 'services')
                 : activity.cost
             const canDo = energy >= activity.energyCost && money >= inflatedCost
 
             return (
               <Card
-                key={activity.id}
                 className="group bg-black/40 backdrop-blur-md border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 hover:bg-black/50 transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-1"
+                key={activity.id}
               >
                 {/* Header with Icon */}
                 <div
@@ -127,23 +129,24 @@ export function RestActivity(): React.JSX.Element | null {
                         const icons = {
                           happiness: Heart,
                           health: Activity,
-                          sanity: Brain,
                           intelligence: Brain,
+                          sanity: Brain,
                         }
-                        const EffectIcon = icons[key as keyof typeof icons] || Activity
-                        const value = val as number
+                        const EffectIcon =
+                          key in icons ? icons[key as keyof typeof icons] : Activity
+                        const value = val
                         const color = value > 0 ? 'text-green-400' : 'text-red-400'
                         const labels = {
                           happiness: 'Счастье',
                           health: 'Здоровье',
-                          sanity: 'Рассудок',
                           intelligence: 'Интеллект',
+                          sanity: 'Рассудок',
                         }
 
                         return (
                           <div
-                            key={key}
                             className="flex items-center gap-2 bg-white/5 rounded-lg p-1.5 px-2"
+                            key={key}
                           >
                             <EffectIcon className={`w-3.5 h-3.5 ${color}`} />
                             <span className="text-xs font-medium text-white/90">
@@ -163,7 +166,9 @@ export function RestActivity(): React.JSX.Element | null {
                         : 'bg-white/10 text-white/40 border border-white/10'
                     }`}
                     disabled={!canDo}
-                    onClick={() => applyRest(activity, inflatedCost)}
+                    onClick={() => {
+                      applyRest(activity, inflatedCost)
+                    }}
                   >
                     {canDo
                       ? 'Заняться'

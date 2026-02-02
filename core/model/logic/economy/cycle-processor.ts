@@ -4,10 +4,10 @@ import type { EconomicCycle, EconomicPhase, EconomicEvent } from '@/core/types/e
  * Configuration for Economic Cycles
  */
 const CYCLE_CONFIG = {
-  growth: { minDuration: 8, maxDuration: 16, baseModifier: 1.2 },
-  peak: { minDuration: 2, maxDuration: 4, baseModifier: 1.5 },
-  recession: { minDuration: 4, maxDuration: 8, baseModifier: 0.6 },
-  recovery: { minDuration: 4, maxDuration: 6, baseModifier: 0.9 },
+  growth: { baseModifier: 1.2, maxDuration: 16, minDuration: 8 },
+  peak: { baseModifier: 1.5, maxDuration: 4, minDuration: 2 },
+  recession: { baseModifier: 0.6, maxDuration: 8, minDuration: 4 },
+  recovery: { baseModifier: 0.9, maxDuration: 6, minDuration: 4 },
 }
 
 /**
@@ -15,7 +15,9 @@ const CYCLE_CONFIG = {
  */
 function getRandomDuration(phase: EconomicPhase): number {
   const config = CYCLE_CONFIG[phase]
-  return Math.floor(Math.random() * (config.maxDuration - config.minDuration + 1)) + config.minDuration
+  return (
+    Math.floor(Math.random() * (config.maxDuration - config.minDuration + 1)) + config.minDuration
+  )
 }
 
 /**
@@ -23,10 +25,14 @@ function getRandomDuration(phase: EconomicPhase): number {
  */
 function getNextPhase(currentPhase: EconomicPhase): EconomicPhase {
   switch (currentPhase) {
-    case 'growth': return 'peak'
-    case 'peak': return 'recession'
-    case 'recession': return 'recovery'
-    case 'recovery': return 'growth'
+    case 'growth':
+      return 'peak'
+    case 'peak':
+      return 'recession'
+    case 'recession':
+      return 'recovery'
+    case 'recovery':
+      return 'growth'
   }
 }
 
@@ -36,12 +42,17 @@ function getNextPhase(currentPhase: EconomicPhase): EconomicPhase {
 function calculateMarketModifier(phase: EconomicPhase, intensity: number): number {
   const config = CYCLE_CONFIG[phase]
   // Random fluctuation +/- 10%
-  const fluctuation = 0.9 + Math.random() * 0.2
+  const BASE_FLUCTUATION = 0.9
+  const FLUCTUATION_RANGE = 0.2
+  const fluctuation = BASE_FLUCTUATION + Math.random() * FLUCTUATION_RANGE
+
+  const INTENSITY_BOOST = 0.3
+  const INTENSITY_REDUCTION = 0.2
 
   // Intensity makes peaks higher and recessions deeper
   let modifier = config.baseModifier
-  if (phase === 'peak') modifier += intensity * 0.3
-  if (phase === 'recession') modifier -= intensity * 0.2
+  if (phase === 'peak') modifier += intensity * INTENSITY_BOOST
+  if (phase === 'recession') modifier -= intensity * INTENSITY_REDUCTION
 
   return Number((modifier * fluctuation).toFixed(2))
 }
@@ -52,25 +63,25 @@ function calculateMarketModifier(phase: EconomicPhase, intensity: number): numbe
  */
 export function processEconomicCycle(
   currentCycle: EconomicCycle | undefined,
-  turn: number
+  turn: number,
 ): {
-  cycle: EconomicCycle,
+  cycle: EconomicCycle
   newEvent: EconomicEvent | null
 } {
   // Initialize if missing
   if (!currentCycle) {
     return {
       cycle: {
-        phase: 'growth',
         durationLeft: getRandomDuration('growth'),
         intensity: 0.5,
-        marketModifier: 1.0
+        marketModifier: 1.0,
+        phase: 'growth',
       },
-      newEvent: null
+      newEvent: null,
     }
   }
 
-  let { phase, durationLeft, intensity } = currentCycle
+  let { durationLeft, intensity, phase } = currentCycle
   let newEvent: EconomicEvent | null = null
 
   // Decrease duration
@@ -78,46 +89,60 @@ export function processEconomicCycle(
 
   // Check for phase change
   if (durationLeft <= 0) {
-    const oldPhase = phase
     phase = getNextPhase(phase)
     durationLeft = getRandomDuration(phase)
 
+    const MIN_INTENSITY = 0.3
+    const INTENSITY_RANGE = 0.7
+
     // Randomize intensity for new phase
-    intensity = 0.3 + Math.random() * 0.7 // 0.3 - 1.0
+    intensity = MIN_INTENSITY + Math.random() * INTENSITY_RANGE // 0.3 - 1.0
 
     // Trigger Crisis Event when entering Recession
     if (phase === 'recession') {
+      const GDP_GROWTH_CHANGE = -5
+      const INFLATION_BASE = 5
+      const INFLATION_RANGE = 5
+      const SALARY_MODIFIER = 0.9
+      const UNEMPLOYMENT_BASE = 3
+      const UNEMPLOYMENT_RANGE = 3
+
       newEvent = {
-        id: `crisis_${turn}_${Date.now()}`,
-        type: 'crisis',
-        title: 'Экономический Кризис',
         description: 'Экономика вошла в фазу рецессии. Спрос падает, безработица растет.',
-        turn: turn,
         duration: durationLeft,
         effects: {
-          inflationChange: 5 + Math.floor(Math.random() * 5), // +5-10% inflation
-          unemploymentChange: 3 + Math.floor(Math.random() * 3), // +3-6% unemployment
-          gdpGrowthChange: -5,
-          salaryModifierChange: 0.9
-        }
+          gdpGrowthChange: GDP_GROWTH_CHANGE,
+          inflationChange: INFLATION_BASE + Math.floor(Math.random() * INFLATION_RANGE), // +5-10% inflation
+          salaryModifierChange: SALARY_MODIFIER,
+          unemploymentChange: UNEMPLOYMENT_BASE + Math.floor(Math.random() * UNEMPLOYMENT_RANGE), // +3-6% unemployment
+        },
+        id: `crisis_${String(turn)}_${String(Date.now())}`,
+        title: 'Экономический Кризис',
+        turn: turn,
+        type: 'crisis',
       }
     }
 
     // Trigger Boom Event when entering Peak
     if (phase === 'peak') {
+      const GDP_GROWTH_CHANGE = 4
+      const INFLATION_CHANGE = 2
+      const SALARY_MODIFIER = 1.1
+      const UNEMPLOYMENT_CHANGE = -2
+
       newEvent = {
-        id: `boom_${turn}_${Date.now()}`,
-        type: 'boom',
-        title: 'Экономический Бум',
         description: 'Экономика на пике! Высокий спрос и рост зарплат.',
-        turn: turn,
         duration: durationLeft,
         effects: {
-          inflationChange: 2,
-          unemploymentChange: -2,
-          gdpGrowthChange: 4,
-          salaryModifierChange: 1.1
-        }
+          gdpGrowthChange: GDP_GROWTH_CHANGE,
+          inflationChange: INFLATION_CHANGE,
+          salaryModifierChange: SALARY_MODIFIER,
+          unemploymentChange: UNEMPLOYMENT_CHANGE,
+        },
+        id: `boom_${String(turn)}_${String(Date.now())}`,
+        title: 'Экономический Бум',
+        turn: turn,
+        type: 'boom',
       }
     }
   }
@@ -126,11 +151,11 @@ export function processEconomicCycle(
 
   return {
     cycle: {
-      phase,
       durationLeft,
       intensity,
-      marketModifier
+      marketModifier,
+      phase,
     },
-    newEvent
+    newEvent,
   }
 }

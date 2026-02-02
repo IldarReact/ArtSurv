@@ -1,5 +1,3 @@
-import { WORLD_COUNTRIES } from './economy-loader'
-
 import {
   EmployeeDataSchema,
   IdeaTemplateSchema,
@@ -12,17 +10,17 @@ import businessEvents from '@/shared/data/business/business-events.json'
 import ideaTemplates from '@/shared/data/business/idea-templates.json'
 import _employeeData from '@/shared/data/employees/employee-data.json'
 import crisisOptions from '@/shared/data/events/crisis-options.json'
-
 // Country Candidates
 import brazilCandidates from '@/shared/data/world/countries/brazil/candidates.json'
 import germanyCandidates from '@/shared/data/world/countries/germany/candidates.json'
 import usCandidates from '@/shared/data/world/countries/us/candidates.json'
 import countryArchetypes from '@/shared/data/world/country-archetypes.json'
 
+import { WORLD_COUNTRIES } from './economy-loader'
+
 // --- Employee Data Validation ---
 const employeeDataResult = EmployeeDataSchema.safeParse(_employeeData)
 if (!employeeDataResult.success) {
-  console.error('Critical: Invalid employee data:', employeeDataResult.error.format())
   throw new Error('Static data validation failed: employee-data.json')
 }
 const employeeData: EmployeeData = employeeDataResult.data
@@ -36,18 +34,16 @@ const COUNTRY_CANDIDATES: Record<string, { firstNames: string[]; lastNames: stri
 // --- Idea Templates Validation ---
 const ideaTemplatesResult = IdeaTemplateSchema.array().safeParse(ideaTemplates.templates)
 if (!ideaTemplatesResult.success) {
-  console.error('Critical: Invalid idea templates:', ideaTemplatesResult.error.format())
   throw new Error('Static data validation failed: idea-templates.json (templates)')
 }
 const ideaReplacementsResult = IdeaReplacementsSchema.safeParse(ideaTemplates.replacements)
 if (!ideaReplacementsResult.success) {
-  console.error('Critical: Invalid idea replacements:', ideaReplacementsResult.error.format())
   throw new Error('Static data validation failed: idea-templates.json (replacements)')
 }
 
 const ideaTemplatesData = {
-  templates: ideaTemplatesResult.data as IdeaTemplate[],
   replacements: ideaReplacementsResult.data as IdeaReplacements,
+  templates: ideaTemplatesResult.data as IdeaTemplate[],
 }
 
 // Types
@@ -55,36 +51,29 @@ const ideaTemplatesData = {
 // --- Employees Data ---
 export const getEmployeeData = () => employeeData
 
-export const getRoleDescription = (role: EmployeeRole) => {
-  return employeeData.roleDescriptions[role]
-}
+export const getRoleDescription = (role: EmployeeRole) => employeeData.roleDescriptions[role]
 
-export const getRoleModifiers = (role: EmployeeRole) => {
-  return employeeData.roleModifiers[role]
-}
+export const getRoleModifiers = (role: EmployeeRole) => employeeData.roleModifiers[role]
 
-export const getBaseSalary = (role: EmployeeRole) => {
-  return employeeData.baseSalaries[role]
-}
+export const getBaseSalary = (role: EmployeeRole) => employeeData.baseSalaries[role]
 
-export const getStarMultiplier = (stars: EmployeeStars) => {
+export const getStarMultiplier = (stars: EmployeeStars) =>
   // stars is 1-based, array is 0-based
-  return employeeData.starMultipliers[stars - 1] || 1.0
-}
+  employeeData.starMultipliers[stars - 1] ?? 1.0
 
 export const getRandomFirstName = (countryId?: string) => {
   const countryData = countryId ? COUNTRY_CANDIDATES[countryId] : null
-  const names = countryData?.firstNames || employeeData.firstNames
+  const names = countryData?.firstNames ?? employeeData.firstNames
   return names[Math.floor(Math.random() * names.length)]
 }
 
 export const getRandomLastName = (countryId?: string) => {
   const countryData = countryId ? COUNTRY_CANDIDATES[countryId] : null
-  const names = countryData?.lastNames || employeeData.lastNames
+  const names = countryData?.lastNames ?? employeeData.lastNames
   return names[Math.floor(Math.random() * names.length)]
 }
 
-export const getRandomHumanTraits = (count: number = 1) => {
+export const getRandomHumanTraits = (count = 1) => {
   const traits = employeeData.humanTraits
   const result: string[] = []
   const available = [...traits]

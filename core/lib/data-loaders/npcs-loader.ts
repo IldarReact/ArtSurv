@@ -5,12 +5,12 @@ import brNpcs from '@/shared/data/world/countries/brazil/npcs.json'
 import geNpcs from '@/shared/data/world/countries/germany/npcs.json'
 import usNpcs from '@/shared/data/world/countries/us/npcs.json'
 
-function loadNpcs(data: unknown[], source: string): FamilyMember[] {
+function loadNpcs(data: unknown[], _source: string): FamilyMember[] {
   return data
     .map((item) => {
       const result = FamilyMemberSchema.safeParse(item)
       if (!result.success) {
-        console.error(`Invalid NPC in ${source}:`, item, result.error.format())
+        // console.error(`Invalid NPC in ${source}:`, item, result.error.format())
         return null
       }
       return result.data as FamilyMember

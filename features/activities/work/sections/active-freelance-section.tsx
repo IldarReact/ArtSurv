@@ -5,23 +5,29 @@ import React from 'react'
 
 import { useInflatedPrices } from '@/core/hooks'
 import type { ActiveFreelanceGig } from '@/core/types'
-import { Progress } from '@/shared/ui/progress'
-import { SectionSeparator } from '@/shared/ui/section-separator'
+import { Progress } from '@/shared/components/progress'
+import { SectionSeparator } from '@/shared/components/section-separator'
 
 interface ActiveFreelanceSectionProps {
   gigs: ActiveFreelanceGig[]
+  onComplete?: (gigId: string) => void
 }
 
-export function ActiveFreelanceSection({ gigs }: ActiveFreelanceSectionProps) {
+export function ActiveFreelanceSection({
+  gigs,
+  onComplete: _onComplete,
+}: ActiveFreelanceSectionProps) {
   // Map gigs to priceable items
   const gigsWithPrices = gigs.map((gig) => ({
     ...gig,
-    price: gig.payment,
     category: 'services' as const,
+    price: gig.payment,
   }))
-  const inflatedGigs = useInflatedPrices(gigsWithPrices) as Array<
-    ActiveFreelanceGig & { inflatedPrice: number; title: string; id: string }
-  >
+  const inflatedGigs = useInflatedPrices(gigsWithPrices) as (ActiveFreelanceGig & {
+    inflatedPrice: number
+    title: string
+    id: string
+  })[]
 
   if (gigs.length === 0) {
     return null
@@ -36,8 +42,8 @@ export function ActiveFreelanceSection({ gigs }: ActiveFreelanceSectionProps) {
 
           return (
             <div
-              key={gig.id}
               className="bg-white/5 border border-white/10 rounded-xl p-4 flex flex-col justify-between"
+              key={gig.id}
             >
               <div>
                 <div className="flex justify-between items-start mb-2">
@@ -54,7 +60,7 @@ export function ActiveFreelanceSection({ gigs }: ActiveFreelanceSectionProps) {
                       {gig.totalDuration - gig.remainingDuration} / {gig.totalDuration} кв.
                     </span>
                   </div>
-                  <Progress value={progress} className="h-1" />
+                  <Progress className="h-1" value={progress} />
                 </div>
               </div>
 

@@ -4,13 +4,51 @@ import { getQuarterlyInflatedSalary } from '../../calculations/price-helpers'
 import { BUSINESS_BALANCE } from '../../data-loaders/business-balance-loader'
 import { calculateEmployeeKPI } from '../employee-calculations'
 
+const PERCENT_DIVISOR = 100
+const DEFAULT_EFFORT = 100
+const DEFAULT_PRODUCTIVITY = 100
+const PLAYER_STAFF_COUNT = 1
+const REDUCTION_BASE = 1
+
 export interface OpExResult {
-  totalOpEx: number
+  minFixedCosts: number
   reducedEmployeesCost: number
+  reducedInsurance: number
   reducedRent: number
   reducedUtilities: number
-  reducedInsurance: number
-  minFixedCosts: number
+  totalOpEx: number
+}
+
+interface EmployeeLike {
+  effortPercent?: number
+  experience?: number
+  productivity?: number
+  salary: number
+}
+
+function calculateStaffMemberCost(
+  member: EmployeeLike,
+  economy: CountryEconomy | undefined,
+): number {
+  const salary = member.salary
+  if (Number.isNaN(salary)) return 0
+
+  const experience = member.experience ?? 0
+
+  const indexedSalary = economy ? getQuarterlyInflatedSalary(salary, economy, experience) : salary
+
+  const effort = member.effortPercent ?? DEFAULT_EFFORT
+  const effortFactor = effort / PERCENT_DIVISOR
+  const scaledSalary = indexedSalary * effortFactor
+
+  const prod = member.productivity ?? DEFAULT_PRODUCTIVITY
+  const kpi = calculateEmployeeKPI({
+    ...member,
+    productivity: prod,
+    salary: scaledSalary,
+  })
+
+  return scaledSalary + kpi
 }
 
 export function calculateOpEx(
@@ -21,95 +59,54 @@ export function calculateOpEx(
   const { staffing } = BUSINESS_BALANCE
 
   // 1. Employee Costs
-  let baseEmployeesCost = (business.employees || []).reduce((sum, emp) => {
-    const salary = typeof emp.salary === 'number' ? emp.salary : 0
-    const quarterlySalary = !isNaN(salary) ? salary : 0
-    const experience =
-      typeof emp.experience === 'number' && !isNaN(emp.experience) ? emp.experience : 0
-
-    const indexedSalary = economy
-      ? getQuarterlyInflatedSalary(quarterlySalary, economy, experience)
-      : quarterlySalary
-
-    const effort = typeof emp.effortPercent === 'number' ? emp.effortPercent : 100
-    const effortFactor = (isNaN(effort) ? 100 : effort) / 100
-    const scaledSalary = indexedSalary * effortFactor
-    const quarterlyKpi = calculateEmployeeKPI({ ...emp, salary: scaledSalary })
-
-    return sum + (scaledSalary + (isNaN(quarterlyKpi) ? 0 : quarterlyKpi))
-  }, 0)
+  let baseEmployeesCost = 0
+  for (const emp of business.employees) {
+    baseEmployeesCost += calculateStaffMemberCost(emp, economy)
+  }
 
   // Add player salary
   if (business.playerEmployment) {
-    const pSalary =
-      typeof business.playerEmployment.salary === 'number' ? business.playerEmployment.salary : 0
-    const quarterlySalary = !isNaN(pSalary) ? pSalary : 0
-    const pExp =
-      typeof business.playerEmployment.experience === 'number'
-        ? business.playerEmployment.experience
-        : 0
-    const experience = !isNaN(pExp) ? pExp : 0
-
-    const indexedSalary = economy
-      ? getQuarterlyInflatedSalary(quarterlySalary, economy, experience)
-      : quarterlySalary
-
-    const pEffort =
-      typeof business.playerEmployment.effortPercent === 'number'
-        ? business.playerEmployment.effortPercent
-        : 100
-    const effortFactor = (isNaN(pEffort) ? 100 : pEffort) / 100
-    const scaledSalary = indexedSalary * effortFactor
-
-    const pProd =
-      typeof business.playerEmployment.productivity === 'number'
-        ? business.playerEmployment.productivity
-        : 100
-    const playerKpi = calculateEmployeeKPI({
-      salary: scaledSalary,
-      productivity: isNaN(pProd) ? 100 : pProd,
-    })
-
-    baseEmployeesCost += scaledSalary + (isNaN(playerKpi) ? 0 : playerKpi)
+    baseEmployeesCost += calculateStaffMemberCost(business.playerEmployment, economy)
   }
 
-  baseEmployeesCost = isNaN(baseEmployeesCost) ? 0 : baseEmployeesCost
-  const payrollTaxes = baseEmployeesCost * (staffing.payrollTaxRate / 100)
+  const payrollTaxes = baseEmployeesCost * (staffing.payrollTaxRate / PERCENT_DIVISOR)
   const employeesCost = baseEmployeesCost + payrollTaxes
 
   // 2. Fixed Costs
-  // Balance: Rent and utilities should scale with ACTUAL employees more than MAX capacity
-  // This prevents new businesses with high capacity from going bankrupt instantly
-  const actualStaffCount = (business.employees?.length || 0) + (business.playerEmployment ? 1 : 0)
-  const capacityFactor = business.maxEmployees * 0.2 // Base facility cost (20% of max)
-  const staffingFactor = actualStaffCount * 0.8 // Scaling cost based on actual staff (80%)
+  const actualStaffCount =
+    business.employees.length + (business.playerEmployment ? PLAYER_STAFF_COUNT : 0)
+  const CAPACITY_WEIGHT = 0.2
+  const STAFFING_WEIGHT = 0.8
+  const capacityFactor = business.maxEmployees * CAPACITY_WEIGHT
+  const staffingFactor = actualStaffCount * STAFFING_WEIGHT
   const effectiveScalingCount = capacityFactor + staffingFactor
 
   const rent = staffing.baseRentPerEmployee * effectiveScalingCount
   const utilities = staffing.baseUtilitiesPerEmployee * effectiveScalingCount
-  const insurance = business.hasInsurance ? business.insuranceCost || 0 : 0
+  const insurance = business.hasInsurance ? business.insuranceCost : 0
   const MIN_FIXED_COSTS = staffing.minFixedCosts
 
   // 3. Reductions
-  const reductionFactor = expenseReductionPct > 0 ? Math.max(0, 1 - expenseReductionPct / 100) : 1
+  const reductionFactor =
+    expenseReductionPct > 0
+      ? Math.max(0, REDUCTION_BASE - expenseReductionPct / PERCENT_DIVISOR)
+      : 1
 
-  const reducedEmployeesCost = Math.round(
-    (isNaN(employeesCost) ? 0 : employeesCost) * reductionFactor,
-  )
-  const reducedRent = Math.round((isNaN(rent) ? 0 : rent) * reductionFactor)
-  const reducedUtilities = Math.round((isNaN(utilities) ? 0 : utilities) * reductionFactor)
-  const reducedInsurance = Math.round((isNaN(insurance) ? 0 : insurance) * reductionFactor)
+  const reducedEmployeesCost = Math.round(employeesCost * reductionFactor)
+  const reducedRent = Math.round(rent * reductionFactor)
+  const reducedUtilities = Math.round(utilities * reductionFactor)
+  const reducedInsurance = Math.round(insurance * reductionFactor)
   const reducedMinFixedCosts = Math.round(MIN_FIXED_COSTS * reductionFactor)
 
   const totalOpEx =
     reducedEmployeesCost + reducedRent + reducedUtilities + reducedInsurance + reducedMinFixedCosts
 
   return {
-    totalOpEx,
+    minFixedCosts: reducedMinFixedCosts,
     reducedEmployeesCost,
+    reducedInsurance,
     reducedRent,
     reducedUtilities,
-    reducedInsurance,
-    minFixedCosts: reducedMinFixedCosts,
+    totalOpEx,
   }
 }

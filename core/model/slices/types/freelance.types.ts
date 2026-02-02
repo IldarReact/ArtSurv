@@ -3,7 +3,7 @@ import type { SkillRequirement } from '@/core/types/skill.types'
 import type { StatEffect } from '@/core/types/stats.types'
 
 export interface FreelanceSlice {
-  pendingFreelanceApplications: FreelanceApplication[]
+  acceptFreelanceGig: (applicationId: string) => void
 
   // Actions
   applyForFreelance: (
@@ -14,6 +14,6 @@ export interface FreelanceSlice {
     requirements: SkillRequirement[],
     duration: number,
   ) => void
-  acceptFreelanceGig: (applicationId: string) => void
   completeFreelanceGig: (gigId: string) => void
+  pendingFreelanceApplications: FreelanceApplication[]
 }

@@ -2,32 +2,33 @@
 
 import React from 'react'
 
-import { AllBusinessesDialog } from './all-businesses-dialog'
-
 import { useEconomy } from '@/core/hooks'
 import { createBusinessPurchase } from '@/core/lib/business/purchase-logic'
 import { getInflatedPrice } from '@/core/lib/calculations/price-helpers'
 import type { BusinessTemplate } from '@/core/lib/data-loaders/businesses-loader'
 import { useGameStore } from '@/core/model/store'
+import type { Business } from '@/core/types'
+
+import { AllBusinessesDialog } from './all-businesses-dialog'
 
 interface BusinessesSectionProps {
-  playerCash: number
-  onOpenBusiness: (
-    business: import('@/core/types/business.types').Business,
-    upfrontCost: number,
-  ) => void
-  onSuccess: (message: string) => void
   onError: (message: string) => void
+  onOpenBusiness: (business: Business, upfrontCost: number) => void
+  onSuccess: (message: string) => void
+  playerCash: number
 }
 
 export function BusinessesSection({
-  playerCash,
+  onError,
   onOpenBusiness,
   onSuccess,
-  onError,
+  playerCash,
 }: BusinessesSectionProps) {
-  const { sendOffer, turn: currentTurn, player } = useGameStore()
-  const playerEnergy = player?.stats?.energy || 0
+  const player = useGameStore((state) => state.player)
+  const sendOffer = useGameStore((state) => state.sendOffer)
+  const currentTurn = useGameStore((state) => state.turn)
+
+  const playerEnergy = player?.stats.energy ?? 0
   const economy = useEconomy()
 
   const handleOpenWithPartner = (
@@ -47,17 +48,17 @@ export function BusinessesSection({
 
     const { cost: playerInvestment } = createBusinessPurchase(
       {
+        description: template.description ?? '',
+        employeeRoles: template.employeeRoles,
         id: template.id,
+        initialCost: template.initialCost,
+        maxEmployees: template.maxEmployees,
+        minEmployees: template.minEmployees,
+        monthlyExpenses: template.monthlyExpenses,
+        monthlyIncome: template.monthlyIncome,
         name: template.name,
         type: template.type,
-        description: template.description || '',
-        initialCost: template.initialCost,
-        monthlyIncome: template.monthlyIncome,
-        monthlyExpenses: template.monthlyExpenses,
-        maxEmployees: template.maxEmployees || 25,
-        minEmployees: template.minEmployees || 1,
-        employeeRoles: template.employeeRoles || [],
-        upfrontPaymentPercentage: template.upfrontPaymentPercentage || 20,
+        upfrontPaymentPercentage: template.upfrontPaymentPercentage ?? 20,
       },
       inflatedCost,
       currentTurn,
@@ -80,16 +81,16 @@ export function BusinessesSection({
       partnerId,
       partnerName,
       {
-        businessId: `biz_${Date.now()}`,
-        businessType: template.type,
+        businessDescription: template.description ?? '',
+        businessId: `biz_${String(Date.now())}`,
         businessName: template.name,
-        businessDescription: template.description || '',
-        totalCost: inflatedCost,
-        partnerShare: 100 - playerShare,
+        businessType: template.type,
+        employeeRoles: template.employeeRoles,
         partnerInvestment: partnerInvestment,
-        yourShare: playerShare,
+        partnerShare: 100 - playerShare,
+        totalCost: inflatedCost,
         yourInvestment: playerInvestment,
-        employeeRoles: template.employeeRoles || [],
+        yourShare: playerShare,
       },
       `Предлагаю открыть ${template.name} вместе!`,
     )
@@ -99,12 +100,12 @@ export function BusinessesSection({
 
   return (
     <AllBusinessesDialog
-      playerCash={playerCash}
-      playerEnergy={playerEnergy}
+      onError={onError}
       onOpenBusiness={onOpenBusiness}
       onOpenWithPartner={handleOpenWithPartner}
       onSuccess={onSuccess}
-      onError={onError}
+      playerCash={playerCash}
+      playerEnergy={playerEnergy}
     />
   )
 }

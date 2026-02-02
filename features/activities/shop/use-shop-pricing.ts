@@ -5,8 +5,8 @@ import type { ShopItem } from '@/core/types/shop.types'
 import { isRecurringItem } from '@/core/types/shop.types'
 
 interface ShopPricing {
-  displayPrice: number
   canAfford: boolean
+  displayPrice: number
   isRecurring: boolean
 }
 
@@ -15,8 +15,8 @@ export function useShopPricing(item: ShopItem, playerMoney: number): ShopPricing
   const isRecurring = useMemo(() => isRecurringItem(item), [item])
 
   return {
-    displayPrice,
     canAfford: playerMoney >= displayPrice,
+    displayPrice,
     isRecurring,
   }
 }

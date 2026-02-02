@@ -2,15 +2,14 @@ import type { Business, EmployeeRole, PlayerBusinessImpact } from '../../../type
 import type { Skill } from '../../../types/skill.types'
 import type { StatEffect } from '../../../types/stats.types'
 import { getRoleConfig, isManagerialRole, isOperationalRole } from '../employee-roles.config'
-
 import { getPlayerActiveRoles } from './role-utils'
 
 /**
  * Информация о росте навыка
  */
 export interface SkillGrowthInfo {
-  skillName: string
   progress: number
+  skillName: string
 }
 
 /**
@@ -34,19 +33,19 @@ export function calculatePlayerRoleEffects(business: Business): StatEffect {
     const effects = config.playerEffects
 
     if (isManagerialRole(role)) {
-      managerialEffect.energy = (managerialEffect.energy || 0) + (effects.energy || 0)
-      managerialEffect.sanity = (managerialEffect.sanity || 0) + (effects.sanity || 0)
-      managerialEffect.happiness = (managerialEffect.happiness || 0) + (effects.happiness || 0)
-      managerialEffect.health = (managerialEffect.health || 0) + (effects.health || 0)
+      managerialEffect.energy = (managerialEffect.energy ?? 0) + (effects.energy ?? 0)
+      managerialEffect.sanity = (managerialEffect.sanity ?? 0) + (effects.sanity ?? 0)
+      managerialEffect.happiness = (managerialEffect.happiness ?? 0) + (effects.happiness ?? 0)
+      managerialEffect.health = (managerialEffect.health ?? 0) + (effects.health ?? 0)
       managerialEffect.intelligence =
-        (managerialEffect.intelligence || 0) + (effects.intelligence || 0)
+        (managerialEffect.intelligence ?? 0) + (effects.intelligence ?? 0)
     } else if (isOperationalRole(role)) {
-      operationalEffect.energy = (operationalEffect.energy || 0) + (effects.energy || 0)
-      operationalEffect.sanity = (operationalEffect.sanity || 0) + (effects.sanity || 0)
-      operationalEffect.happiness = (operationalEffect.happiness || 0) + (effects.happiness || 0)
-      operationalEffect.health = (operationalEffect.health || 0) + (effects.health || 0)
+      operationalEffect.energy = (operationalEffect.energy ?? 0) + (effects.energy ?? 0)
+      operationalEffect.sanity = (operationalEffect.sanity ?? 0) + (effects.sanity ?? 0)
+      operationalEffect.happiness = (operationalEffect.happiness ?? 0) + (effects.happiness ?? 0)
+      operationalEffect.health = (operationalEffect.health ?? 0) + (effects.health ?? 0)
       operationalEffect.intelligence =
-        (operationalEffect.intelligence || 0) + (effects.intelligence || 0)
+        (operationalEffect.intelligence ?? 0) + (effects.intelligence ?? 0)
     }
   })
 
@@ -54,27 +53,31 @@ export function calculatePlayerRoleEffects(business: Business): StatEffect {
   const effortFactor = Math.max(0.1, Math.min(1, effortPercent / 100))
 
   const totalEffect: StatEffect = {
-    energy: (managerialEffect.energy || 0) * effortFactor + (operationalEffect.energy || 0),
-    sanity: (managerialEffect.sanity || 0) * effortFactor + (operationalEffect.sanity || 0),
+    energy: (managerialEffect.energy ?? 0) * effortFactor + (operationalEffect.energy ?? 0),
     happiness:
-      (managerialEffect.happiness || 0) * effortFactor + (operationalEffect.happiness || 0),
-    health: (managerialEffect.health || 0) * effortFactor + (operationalEffect.health || 0),
+      (managerialEffect.happiness ?? 0) * effortFactor + (operationalEffect.happiness ?? 0),
+    health: (managerialEffect.health ?? 0) * effortFactor + (operationalEffect.health ?? 0),
     intelligence:
-      (managerialEffect.intelligence || 0) * effortFactor + (operationalEffect.intelligence || 0),
+      (managerialEffect.intelligence ?? 0) * effortFactor + (operationalEffect.intelligence ?? 0),
+    sanity: (managerialEffect.sanity ?? 0) * effortFactor + (operationalEffect.sanity ?? 0),
   }
 
   return totalEffect
 }
 
+function getEffortFactor(business: Business): number {
+  const effortPercent = business.playerEmployment?.effortPercent ?? 100
+  return Math.max(0.1, Math.min(1, effortPercent / 100))
+}
+
 /**
- * Получить информацию о росте навыков игрока за работу в ролях
+ * Рассчитать рост навыков игрока в зависимости от его ролей в бизнесе
  */
 export function getPlayerRoleSkillGrowth(business: Business): SkillGrowthInfo[] {
   const activeRoles = getPlayerActiveRoles(business)
   const skillGrowth: SkillGrowthInfo[] = []
 
-  const effortPercent = business.playerEmployment?.effortPercent ?? 100
-  const effortFactor = Math.max(0.1, Math.min(1, effortPercent / 100))
+  const effortFactor = getEffortFactor(business)
 
   activeRoles.forEach((role) => {
     const config = getRoleConfig(role)
@@ -82,8 +85,8 @@ export function getPlayerRoleSkillGrowth(business: Business): SkillGrowthInfo[] 
       // Scale skill growth by effort factor for managerial roles
       const factor = isManagerialRole(role) ? effortFactor : 1
       skillGrowth.push({
-        skillName: config.skillGrowth.name,
         progress: Math.round(config.skillGrowth.progressPerQuarter * factor),
+        skillName: config.skillGrowth.name,
       })
     }
   })
@@ -104,15 +107,14 @@ export function getPlayerRoleBusinessImpact(
     efficiencyBase: 0,
     efficiencyMultiplier: 0,
     expenseReduction: 0,
-    salesBonus: 0,
-    reputationBonus: 0,
-    taxReduction: 0,
     legalProtection: 0,
+    reputationBonus: 0,
+    salesBonus: 0,
     staffProductivityBonus: 0,
+    taxReduction: 0,
   }
 
-  const effortPercent = business.playerEmployment?.effortPercent ?? 100
-  const effortFactor = Math.max(0.1, Math.min(1, effortPercent / 100))
+  const effortFactor = getEffortFactor(business)
 
   activeRoles.forEach((role) => {
     const config = getRoleConfig(role)
@@ -123,7 +125,7 @@ export function getPlayerRoleBusinessImpact(
 
     // Найти соответствующий навык игрока
     const skillName = config.skillGrowth?.name
-    const playerSkill = skillName ? playerSkills.find((s) => s.name === skillName) || null : null
+    const playerSkill = skillName ? (playerSkills.find((s) => s.name === skillName) ?? null) : null
 
     const roleImpact = config.businessImpact
 
@@ -166,17 +168,17 @@ export function getPlayerRoleBusinessImpact(
 export function getSingleRoleImpact(
   role: EmployeeRole,
   playerSkills: Skill[],
-  effortPercent: number = 100,
+  effortPercent = 100,
 ): PlayerBusinessImpact {
   const impact: PlayerBusinessImpact = {
     efficiencyBase: 0,
     efficiencyMultiplier: 0,
     expenseReduction: 0,
-    salesBonus: 0,
-    reputationBonus: 0,
-    taxReduction: 0,
     legalProtection: 0,
+    reputationBonus: 0,
+    salesBonus: 0,
     staffProductivityBonus: 0,
+    taxReduction: 0,
   }
 
   const config = getRoleConfig(role)
@@ -184,7 +186,7 @@ export function getSingleRoleImpact(
 
   const factor = isManagerialRole(role) ? Math.max(0.1, Math.min(1, effortPercent / 100)) : 1
   const skillName = config.skillGrowth?.name
-  const playerSkill = skillName ? playerSkills.find((s) => s.name === skillName) || null : null
+  const playerSkill = skillName ? (playerSkills.find((s) => s.name === skillName) ?? null) : null
 
   const roleImpact = config.businessImpact
 

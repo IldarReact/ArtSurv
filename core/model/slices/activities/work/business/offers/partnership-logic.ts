@@ -1,25 +1,25 @@
-import type { GameStore } from '../../../../types'
-
 import { createPartnerBusiness } from '@/core/lib/business/create-partner-business'
 import { broadcastEvent } from '@/core/lib/multiplayer'
 import { PartnershipOfferSchema } from '@/core/schemas/game.schema'
 import type { PartnershipOffer } from '@/core/types'
-import type { BusinessType } from '@/core/types/business.types'
+import type { BusinessType, BusinessRoleTemplate } from '@/core/types/business.types'
+
+import type { GameStore } from '../../../../types'
 
 export interface PartnershipAcceptedPayload {
+  businessDescription: string
   businessId: string
-  partnerId: string
-  partnerName: string
+  businessId_actual?: string
   businessName: string
   businessType: BusinessType
-  businessDescription: string
-  totalCost: number
-  partnerShare: number
+  employeeRoles: BusinessRoleTemplate[]
+  partnerId: string
   partnerInvestment: number
-  yourShare: number
+  partnerName: string
+  partnerShare: number
+  totalCost: number
   yourInvestment: number
-  businessId_actual?: string
-  employeeRoles: import('@/core/types/business.types').BusinessRoleTemplate[]
+  yourShare: number
 }
 
 export function handleAcceptPartnership(
@@ -31,11 +31,10 @@ export function handleAcceptPartnership(
 
   const result = PartnershipOfferSchema.safeParse(offerData)
   if (!result.success) {
-    console.error('Invalid partnership offer data:', result.error.format())
-    state.pushNotification?.({
-      type: 'error',
-      title: 'Ошибка данных',
+    state.pushNotification({
       message: 'Получено некорректное предложение о партнерстве',
+      title: 'Ошибка данных',
+      type: 'error',
     })
     return
   }
@@ -43,80 +42,76 @@ export function handleAcceptPartnership(
 
   // Проверяем, хватает ли у игрока денег
   if (state.player.stats.money < offer.details.partnerInvestment) {
-    console.warn('Недостаточно денег для принятия партнерства')
     return
   }
 
   // 1. Создаем бизнес для принимающего игрока
+  const isInitiator = false
   const acceptingBusiness = createPartnerBusiness(
     {
       details: {
+        businessDescription: offer.details.businessDescription,
+        businessId: offer.details.businessId,
         businessName: offer.details.businessName,
         businessType: offer.details.businessType as BusinessType,
-        businessDescription: offer.details.businessDescription,
+        employeeRoles: offer.details.employeeRoles,
         totalCost: offer.details.totalCost,
         yourInvestment: offer.details.partnerInvestment,
         yourShare: offer.details.partnerShare,
-        businessId: offer.details.businessId,
-        employeeRoles: offer.details.employeeRoles,
       },
       fromPlayerId: offer.fromPlayerId,
       fromPlayerName: offer.fromPlayerName,
     },
     state.turn,
     state.player.id,
-    false, // isInitiator = false для принимающего игрока
+    isInitiator,
   )
 
   // 2. Вычитаем деньги у принимающего игрока
-  if (state.performTransaction) {
-    state.performTransaction(
-      { money: -offer.details.partnerInvestment },
-      { title: 'Партнёрская инвестиция' },
-    )
-  } else if (state.applyStatChanges) {
-    state.applyStatChanges({ money: -offer.details.partnerInvestment })
-  }
+  state.performTransaction(
+    { money: -offer.details.partnerInvestment },
+    { title: 'Партнёрская инвестиция' },
+  )
 
   // 3. Добавляем бизнес принимающему игроку
   set((state) => {
     if (!state.player) return state
     return {
+      offers: state.offers.map((o) => (o.id === offer.id ? { ...o, status: 'accepted' } : o)),
       player: {
         ...state.player,
         businesses: [...state.player.businesses, acceptingBusiness],
       },
-      offers: state.offers.map((o) => (o.id === offer.id ? { ...o, status: 'accepted' } : o)),
     }
   })
 
   // 4. Уведомляем инициатора
   const payload: PartnershipAcceptedPayload = {
+    businessDescription: acceptingBusiness.description,
     businessId: acceptingBusiness.id,
-    partnerId: state.player.id,
-    partnerName: state.player.name,
+    businessId_actual: acceptingBusiness.id,
     businessName: acceptingBusiness.name,
     businessType: acceptingBusiness.type,
-    businessDescription: acceptingBusiness.description,
-    totalCost: offer.details.totalCost,
-    partnerShare: offer.details.partnerShare,
-    partnerInvestment: offer.details.partnerInvestment,
-    yourShare: offer.details.yourShare,
-    yourInvestment: offer.details.yourInvestment,
-    businessId_actual: acceptingBusiness.id,
     employeeRoles: offer.details.employeeRoles,
+    partnerId: state.player.id,
+    partnerInvestment: offer.details.partnerInvestment,
+    partnerName: state.player.name,
+    partnerShare: offer.details.partnerShare,
+    totalCost: offer.details.totalCost,
+    yourInvestment: offer.details.yourInvestment,
+    yourShare: offer.details.yourShare,
   }
 
   broadcastEvent({
-    type: 'PARTNERSHIP_ACCEPTED',
     payload,
+    type: 'PARTNERSHIP_ACCEPTED',
   })
 
   // 5. Уведомляем принимающего игрока
-  state.pushNotification?.({
-    type: 'success',
-    title: 'Партнёрство создано',
+  state.pushNotification({
     message: `Вы стали партнером с ${offer.fromPlayerName} в бизнесе "${offer.details.businessName}"`,
+    title: 'Партнёрство создано',
+    type: 'success',
   })
 }
 
@@ -128,42 +123,38 @@ export function handleOnPartnershipAccepted(
   if (!state.player) return
 
   // Basic validation for payload since it comes from network
-  if (!payload.businessId || !payload.partnerId || !payload.businessType) {
-    console.error('Invalid partnership accepted payload:', payload)
+  if (!payload.businessId || !payload.partnerId) {
     return
   }
 
   try {
+    const isInitiator = true
     const initiatorBusiness = createPartnerBusiness(
       {
         details: {
+          businessDescription: payload.businessDescription,
+          businessId: payload.businessId,
           businessName: payload.businessName,
           businessType: payload.businessType,
-          businessDescription: payload.businessDescription,
+          employeeRoles: payload.employeeRoles,
           totalCost: payload.totalCost,
           yourInvestment: payload.yourInvestment,
           yourShare: payload.yourShare,
-          businessId: payload.businessId,
-          employeeRoles: payload.employeeRoles,
         },
         fromPlayerId: payload.partnerId,
         fromPlayerName: payload.partnerName,
       },
       state.turn,
       state.player.id,
-      true,
+      isInitiator,
     )
 
     initiatorBusiness.partnerBusinessId = payload.businessId
 
-    if (state.performTransaction) {
-      state.performTransaction(
-        { money: -payload.yourInvestment },
-        { title: 'Партнёрская инвестиция' },
-      )
-    } else if (state.applyStatChanges) {
-      state.applyStatChanges({ money: -payload.yourInvestment })
-    }
+    state.performTransaction(
+      { money: -payload.yourInvestment },
+      { title: 'Партнёрская инвестиция' },
+    )
 
     set((state) => {
       if (!state.player) return state
@@ -176,20 +167,20 @@ export function handleOnPartnershipAccepted(
     })
 
     broadcastEvent({
-      type: 'PARTNERSHIP_UPDATED',
       payload: {
         businessId: payload.businessId,
         partnerBusinessId: initiatorBusiness.id,
       },
       toPlayerId: payload.partnerId,
+      type: 'PARTNERSHIP_UPDATED',
     })
 
-    state.pushNotification?.({
-      type: 'success',
-      title: 'Партнёрство создано',
+    state.pushNotification({
       message: `Вы стали партнером с ${payload.partnerName} в бизнесе "${payload.businessName}"`,
+      title: 'Партнёрство создано',
+      type: 'success',
     })
-  } catch (error) {
-    console.error('Error in onPartnershipAccepted:', error)
+  } catch {
+    // Error handling
   }
 }

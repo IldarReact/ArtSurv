@@ -1,32 +1,32 @@
 import { PiggyBank } from 'lucide-react'
 import { useState } from 'react'
 
-import { Button } from '@/shared/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
-import { Input } from '@/shared/ui/input'
-import { Label } from '@/shared/ui/label'
+import { Button } from '@/shared/components/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/dialog'
+import { Input } from '@/shared/components/input'
+import { Label } from '@/shared/components/label'
 
 interface Props {
-  open: boolean
-  onClose: () => void
-  onConfirm: (amount: number) => void
-  maxAmount: number
   depositRate: number
   keyRate: number
+  maxAmount: number
+  onClose: () => void
+  onConfirm: (amount: number) => void
+  open: boolean
 }
 
 export function OpenDepositDialog({
-  open,
-  onClose,
-  onConfirm,
-  maxAmount,
   depositRate,
   keyRate,
+  maxAmount,
+  onClose,
+  onConfirm,
+  open,
 }: Props) {
   const [amount, setAmount] = useState(50_000)
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog onOpenChange={onClose} open={open}>
       <DialogContent className="bg-zinc-900 border-zinc-800 text-white">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-2xl">
@@ -39,9 +39,11 @@ export function OpenDepositDialog({
           <div>
             <Label>Сумма вклада</Label>
             <Input
+              onChange={(e) => {
+                setAmount(Number(e.target.value))
+              }}
               type="number"
               value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
             />
             <p className="text-sm text-zinc-400 mt-2">Доступно: ${maxAmount.toLocaleString()}</p>
           </div>
@@ -52,10 +54,12 @@ export function OpenDepositDialog({
           </div>
 
           <Button
-            size="lg"
             className="w-full"
             disabled={amount <= 0 || amount > maxAmount}
-            onClick={() => onConfirm(amount)}
+            onClick={() => {
+              onConfirm(amount)
+            }}
+            size="lg"
           >
             Открыть вклад
           </Button>

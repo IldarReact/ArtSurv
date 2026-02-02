@@ -1,71 +1,101 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+import type { GameEvent, GameEventType } from '@/core/types/events.types'
+import type { GameOffer as CoreGameOffer } from '@/core/types/game-offers.types'
+
 import { createBusinessSlice } from '../activities/work/business/business-slice'
 import { createCoreBusinessSlice } from '../activities/work/business/core-business-slice'
 import { createGameOffersSlice } from '../activities/work/business/game-offers-slice'
-import { LocalBusiness, LocalGameOffer, LocalGameState } from '../types'
-
-// Тип для мокового хранилища
-type MockState = {
-  get: () => any
-  set: (patch: any) => void
-  on: (eventType: string, handler: (event: any) => void) => void
-  state: () => any
-}
+import type { GameOffersSlice, LocalGameState, MockState, GameStore } from '../types'
 
 // Мокируем функции
-const mockBroadcastEvent = vi.fn((event) => {
-  console.log('mockBroadcastEvent called with:', event)
+const mockBroadcastEvent = vi.fn((_event: any) => {
+  /* mock */
 })
 
 vi.mock('@/core/lib/multiplayer', () => ({
-  broadcastEvent: (event: any) => mockBroadcastEvent(event),
+  broadcastEvent: (event: unknown) => {
+    mockBroadcastEvent(event)
+  },
 }))
 
 const mockPushNotification = vi.fn()
 
-let eventHandlers: Array<(event: any) => void> = []
+let eventHandlers: ((event: { payload?: unknown; type: string }) => void)[] = []
 
-function handleBroadcastEvent(event: any) {
-  console.log(`[BROADCAST] ${event.type} toPlayerId:`, event.toPlayerId)
-  console.log('[BROADCAST] Sending to all registered handlers')
-  eventHandlers.forEach((handler) => handler(event))
+function handleBroadcastEvent(event: { payload?: { toPlayerId?: string }; type: string }) {
+  eventHandlers.forEach((handler) => {
+    handler(event)
+  })
 }
 
 function createMockState(initial: Partial<LocalGameState> = {}): MockState {
-  const defaultState: LocalGameState = {
+  let state: LocalGameState = {
+    offers: [],
     player: {
+      businesses: [],
       id: '',
       name: '',
       stats: { money: 0 },
-      businesses: [],
     },
-    offers: [],
     turn: 1,
     ...initial,
   }
-  let state = { ...initial }
 
-  const get = () => state
+  const get = () =>
+    ({
+      ...state,
+      performTransaction,
+      pushNotification,
+    }) as unknown as GameStore
 
-  const set = (patch: any) => {
+  const set = (
+    patch: Partial<LocalGameState> | ((s: LocalGameState) => Partial<LocalGameState>),
+  ) => {
     const newState = typeof patch === 'function' ? patch(state) : patch
     state = { ...state, ...newState }
   }
 
-  const on = (eventType: string, handler: (event: any) => void) => {
-    console.log('Registering handler for:', eventType)
+  const on = (
+    _eventType: string,
+    handler: (event: { payload?: unknown; type: string }) => void,
+  ) => {
     eventHandlers.push(handler)
   }
 
-  return { get, set, on, state: () => state }
+  const pushNotification = vi.fn()
+
+  const performTransaction = (cost: { money?: number }, options?: { requireFunds?: boolean }) => {
+    const deltaMoney = cost.money ?? 0
+    const requireFunds = options?.requireFunds ?? true
+
+    if (requireFunds && deltaMoney < 0 && state.player.stats.money < Math.abs(deltaMoney)) {
+      pushNotification({ title: 'Insufficient funds', type: 'error' })
+      return false
+    }
+
+    state.player.stats.money += deltaMoney
+    if (state.player.personal) {
+      state.player.personal.stats.money += deltaMoney
+    }
+    return true
+  }
+
+  return {
+    get,
+    on,
+    performTransaction,
+    pushNotification,
+    set,
+    state: () => state,
+  } as unknown as MockState
 }
 
 describe('partnership flow', () => {
   let player1State: ReturnType<typeof createMockState>
   let player2State: ReturnType<typeof createMockState>
-  let offersSlice1: any
-  let offersSlice2: any
+  let offersSlice1: GameOffersSlice
+  let offersSlice2: GameOffersSlice
 
   beforeEach(() => {
     // Сбрасываем моки перед каждым тестом
@@ -75,239 +105,258 @@ describe('partnership flow', () => {
     eventHandlers = []
 
     // Настраиваем реализацию мока
-    mockBroadcastEvent.mockImplementation(handleBroadcastEvent)
+    mockBroadcastEvent.mockImplementation(handleBroadcastEvent as unknown as (event: any) => void)
 
     // 1. Настраиваем состояние для игрока 1 (отправитель)
     player1State = createMockState({
+      offers: [],
       player: {
-        id: 'player_1', // Changed from 'player1'
+        businesses: [],
+        id: 'player_1',
         name: 'Player 1',
         stats: { money: 1000000 },
-        businesses: [],
       },
-      offers: [],
       turn: 1,
     })
 
     // 2. Настраиваем состояние для игрока 2 (получатель)
     player2State = createMockState({
+      offers: [],
       player: {
-        id: '1', // Changed from 'player2'
+        businesses: [],
+        id: '1',
         name: 'Player 2',
         stats: { money: 1000000 },
-        businesses: [],
       },
-      offers: [],
       turn: 1,
     })
 
     // 3. Создаем срезы для игрока 1
     const coreBusinessSlice1 = createCoreBusinessSlice(
-      player1State.set,
-      player1State.get,
-      {} as any,
+      player1State.set as unknown as Parameters<typeof createCoreBusinessSlice>[0],
+      player1State.get as unknown as Parameters<typeof createCoreBusinessSlice>[1],
+      {} as unknown as Parameters<typeof createCoreBusinessSlice>[2],
     )
 
-    const businessSlice1 = createBusinessSlice(player1State.set, player1State.get, {
-      ...coreBusinessSlice1,
-    } as any)
+    const businessSlice1 = createBusinessSlice(
+      player1State.set as unknown as Parameters<typeof createBusinessSlice>[0],
+      player1State.get as unknown as Parameters<typeof createBusinessSlice>[1],
+      {
+        ...coreBusinessSlice1,
+      } as unknown as Parameters<typeof createBusinessSlice>[2],
+    )
 
-    offersSlice1 = createGameOffersSlice(player1State.set, player1State.get, {
-      ...businessSlice1,
-      applyStatChanges: (changes: any) => {
-        const current = player1State.get()
-        player1State.set({
-          player: {
-            ...current.player,
-            stats: {
-              ...current.player.stats,
-              money: current.player.stats.money + (changes.money || 0),
+    offersSlice1 = createGameOffersSlice(
+      player1State.set as unknown as Parameters<typeof createGameOffersSlice>[0],
+      player1State.get as unknown as Parameters<typeof createGameOffersSlice>[1],
+      {
+        ...businessSlice1,
+        applyStatChanges: (changes: { money?: number }) => {
+          const current = player1State.get()
+          player1State.set({
+            player: {
+              ...current.player,
+              stats: {
+                ...current.player.stats,
+                money: current.player.stats.money + (changes.money ?? 0),
+              },
             },
-          },
-        })
-      },
-      pushNotification: mockPushNotification,
-    } as any)
+          })
+        },
+        pushNotification: mockPushNotification,
+      } as unknown as Parameters<typeof createGameOffersSlice>[2],
+    ) as unknown as GameOffersSlice
     player1State.set({
-      applyStatChanges: (changes: any) => {
+      applyStatChanges: (changes: { money?: number }) => {
         const current = player1State.get()
         player1State.set({
           player: {
             ...current.player,
             stats: {
               ...current.player.stats,
-              money: current.player.stats.money + (changes.money || 0),
+              money: current.player.stats.money + (changes.money ?? 0),
             },
           },
         })
       },
-    })
+    } as Partial<LocalGameState>)
 
     // 4. Создаем срезы для игрока 2
     const coreBusinessSlice2 = createCoreBusinessSlice(
-      player2State.set,
-      player2State.get,
-      {} as any,
+      player2State.set as unknown as Parameters<typeof createCoreBusinessSlice>[0],
+      player2State.get as unknown as Parameters<typeof createCoreBusinessSlice>[1],
+      {} as unknown as Parameters<typeof createCoreBusinessSlice>[2],
     )
 
-    const businessSlice2 = createBusinessSlice(player2State.set, player2State.get, {
-      ...coreBusinessSlice2,
-    } as any)
+    const businessSlice2 = createBusinessSlice(
+      player2State.set as unknown as Parameters<typeof createBusinessSlice>[0],
+      player2State.get as unknown as Parameters<typeof createBusinessSlice>[1],
+      {
+        ...coreBusinessSlice2,
+      } as unknown as Parameters<typeof createBusinessSlice>[2],
+    )
 
-    offersSlice2 = createGameOffersSlice(player2State.set, player2State.get, {
-      ...businessSlice2,
-      applyStatChanges: (changes: any) => {
-        const current = player2State.get()
-        player2State.set({
-          player: {
-            ...current.player,
-            stats: {
-              ...current.player.stats,
-              money: current.player.stats.money + (changes.money || 0),
+    offersSlice2 = createGameOffersSlice(
+      player2State.set as unknown as Parameters<typeof createGameOffersSlice>[0],
+      player2State.get as unknown as Parameters<typeof createGameOffersSlice>[1],
+      {
+        ...businessSlice2,
+        applyStatChanges: (changes: { money?: number }) => {
+          const current = player2State.get()
+          player2State.set({
+            player: {
+              ...current.player,
+              stats: {
+                ...current.player.stats,
+                money: current.player.stats.money + (changes.money ?? 0),
+              },
             },
-          },
-        })
-      },
-      pushNotification: mockPushNotification,
-    } as any)
+          })
+        },
+        pushNotification: mockPushNotification,
+      } as unknown as Parameters<typeof createGameOffersSlice>[2],
+    ) as unknown as GameOffersSlice
     player2State.set({
-      applyStatChanges: (changes: any) => {
+      applyStatChanges: (changes: { money?: number }) => {
         const current = player2State.get()
         player2State.set({
           player: {
             ...current.player,
             stats: {
               ...current.player.stats,
-              money: current.player.stats.money + (changes.money || 0),
+              money: current.player.stats.money + (changes.money ?? 0),
             },
           },
         })
       },
-    })
+    } as Partial<LocalGameState>)
 
     // 5. Настраиваем обработчики событий
-    const handlePlayer1Event = async (event: {
-      type: string
-      payload?: {
-        offer?: LocalGameOffer
-        business?: LocalBusiness
-        partnerId?: string
-        partnerName?: string
-        yourInvestment?: number
-        [key: string]: any
-      }
-    }) => {
+    const handlePlayer1Event = (event: GameEvent | { payload?: any; type: string }) => {
       try {
-        console.log('[Player1] Event received:', event.type, event)
         const currentState = player1State.get()
+        const payload = (event as { payload?: Record<string, any> }).payload
         switch (event.type) {
           case 'OFFER_SENT':
-            if (event.payload?.offer) {
+            if (payload?.offer) {
               player1State.set({
-                offers: [...currentState.offers, event.payload.offer],
+                offers: [...currentState.offers, payload.offer as CoreGameOffer],
               })
             }
             break
           case 'BUSINESS_CREATED':
-            if (event.payload?.business) {
+            if (payload?.business) {
               player1State.set({
                 player: {
                   ...currentState.player,
-                  businesses: [...currentState.player.businesses, event.payload.business],
+                  businesses: [...currentState.player.businesses, payload.business],
                 },
               })
             }
             break
           case 'PARTNERSHIP_ACCEPTED':
-            offersSlice1.onPartnershipAccepted(event)
+            offersSlice1.onPartnershipAccepted(
+              event as unknown as Parameters<typeof offersSlice1.onPartnershipAccepted>[0],
+            )
             break
           case 'PARTNERSHIP_UPDATED':
-            offersSlice1.onPartnershipUpdated(event)
+            offersSlice1.onPartnershipUpdated(
+              event as unknown as Parameters<typeof offersSlice1.onPartnershipUpdated>[0],
+            )
             break
         }
-      } catch (error) {
-        console.error('Error in handlePlayer1Event:', error)
+      } catch (_error) {
+        void _error
+        // Silently ignore or handle error
       }
     }
 
-    const handlePlayer2Event = async (event: any) => {
+    const handlePlayer2Event = (event: GameEvent | { payload?: any; type: string }) => {
       try {
-        console.log('[Player2] Event received:', event.type, event)
         const currentState = player2State.get()
+        const payload = (event as { payload?: Record<string, any> }).payload
 
-        if (event.type === 'OFFER_SENT') {
+        if (event.type === 'OFFER_SENT' && payload?.offer) {
           player2State.set({
-            offers: [...currentState.offers, event.payload.offer],
+            offers: [...currentState.offers, payload.offer as CoreGameOffer],
           })
         }
 
-        if (event.type === 'BUSINESS_CREATED') {
+        if (event.type === 'BUSINESS_CREATED' && payload?.business) {
           player2State.set({
             player: {
               ...currentState.player,
-              businesses: [...(currentState.player.businesses || []), event.payload.business],
+              businesses: [...currentState.player.businesses, payload.business],
             },
           })
         }
 
         if (event.type === 'PARTNERSHIP_UPDATED') {
-          offersSlice2.onPartnershipUpdated(event)
+          offersSlice2.onPartnershipUpdated(
+            event as unknown as Parameters<typeof offersSlice2.onPartnershipUpdated>[0],
+          )
         }
-      } catch (error) {
-        console.error('Error in handlePlayer2Event:', error)
+      } catch (_error) {
+        void _error
+        // Silently ignore or handle error
       }
     }
 
     // Подписываемся на события
-    player1State.on('*', handlePlayer1Event)
-    player2State.on('*', handlePlayer2Event)
+    player1State.on(
+      '*' as GameEventType,
+      handlePlayer1Event as unknown as (event: GameEvent) => void,
+    )
+    player2State.on(
+      '*' as GameEventType,
+      handlePlayer2Event as unknown as (event: GameEvent) => void,
+    )
   })
 
   it('создает партнерство между двумя игроками', async () => {
     // 6. Игрок 1 отправляет оффер партнерства
-    console.log('Sending offer from player1 to player2')
     const testOffer = {
-      id: 'test-offer-1',
-      type: 'business_partnership' as const,
-      fromPlayerId: 'player_1',
-      fromPlayerName: 'Player 1',
-      toPlayerId: 'player2',
-      toPlayerName: 'Player 2',
+      createdTurn: 1,
       details: {
-        businessName: 'Совместный магазин',
-        businessType: 'retail',
         businessDescription: 'Продажа товаров',
-        totalCost: 10000,
+        businessId: 'biz1',
+        businessName: 'Совместный магазин',
+        businessType: 'retail' as const,
+        employeeRoles: [],
         partnerInvestment: 5000,
         partnerShare: 50,
-        yourShare: 50,
+        totalCost: 10000,
         yourInvestment: 5000,
-        businessId: 'biz1',
-        employeeRoles: [],
+        yourShare: 50,
       },
-      status: 'pending' as const,
-      createdTurn: 1,
       expiresInTurns: 10,
+      fromPlayerId: 'player_1',
+      fromPlayerName: 'Player 1',
+      id: 'test-offer-1',
+      status: 'pending' as const,
+      toPlayerId: 'player2',
+      toPlayerName: 'Player 2',
+      type: 'business_partnership' as const,
     }
     // Отправляем предложение
     offersSlice1.sendOffer(
       testOffer.type,
       testOffer.toPlayerId,
       testOffer.toPlayerName,
-      testOffer.details,
+      testOffer.details as unknown as Parameters<typeof offersSlice1.sendOffer>[3],
       'Давайте откроем магазин вместе!',
     )
     // Проверяем, что предложение было отправлено
     expect(mockBroadcastEvent).toHaveBeenCalledWith(
       expect.objectContaining({
-        type: 'OFFER_SENT',
         payload: {
           offer: expect.objectContaining({
-            type: testOffer.type,
             fromPlayerId: testOffer.fromPlayerId,
             toPlayerId: testOffer.toPlayerId,
+            type: testOffer.type,
           }),
         },
+        type: 'OFFER_SENT',
       }),
     )
 
@@ -315,12 +364,11 @@ describe('partnership flow', () => {
     await new Promise((resolve) => setTimeout(resolve, 50))
 
     // 7. Проверяем, что оффер был отправлен
-    console.log('Checking if broadcastEvent was called')
     expect(mockBroadcastEvent).toHaveBeenCalled()
 
     const offerSentEvent = mockBroadcastEvent.mock.calls.find(
-      (call: any) => call[0].type === 'OFFER_SENT',
-    )
+      (call: unknown[]) => (call[0] as { type: string }).type === 'OFFER_SENT',
+    ) as [{ payload?: { offer?: CoreGameOffer }; type: string }] | undefined
     expect(offerSentEvent).toBeDefined()
     const offer = offerSentEvent?.[0].payload?.offer
     expect(offer).toBeDefined()
@@ -331,27 +379,22 @@ describe('partnership flow', () => {
     mockBroadcastEvent.mockClear()
 
     // 9. Игрок 2 принимает оффер
-    console.log('Player2 accepting offer')
     offersSlice2.acceptOffer(offer.id)
 
     // 10. Ждем обработки событий
     await new Promise((resolve) => setTimeout(resolve, 50))
 
     // 11. Проверяем, что события были отправлены
-    console.log('Checking if partnership was accepted')
     expect(mockBroadcastEvent).toHaveBeenCalled()
 
     const acceptanceEvent = mockBroadcastEvent.mock.calls.find(
-      (call: any) => call[0].type === 'PARTNERSHIP_ACCEPTED',
+      (call: unknown[]) => (call[0] as { type: string }).type === 'PARTNERSHIP_ACCEPTED',
     )
     expect(acceptanceEvent).toBeDefined()
 
     // 12. Проверяем состояние игроков
     const player1FinalState = player1State.get()
     const player2FinalState = player2State.get()
-
-    console.log('Player1 final state:', player1FinalState)
-    console.log('Player2 final state:', player2FinalState)
 
     // Проверяем, что у обоих игроков есть по одному бизнесу
     expect(player1FinalState.player.businesses).toHaveLength(1)

@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 
 import { getQuarter } from '../quarter'
-
 import { getCumulativeInflationMultiplier } from './inflation-engine'
 
 describe('Inflation History Order - CRITICAL DEBUG', () => {
@@ -66,9 +65,9 @@ describe('Inflation History Order - CRITICAL DEBUG', () => {
 
   it('EDGE CASE: multiplier correctness', () => {
     const scenarios = [
-      { history: [2.1], expected: 1.021 },
-      { history: [2.3, 2.1], expected: 1.021 * 1.023 },
-      { history: [2.5, 2.3, 2.1], expected: 1.021 * 1.023 * 1.025 },
+      { expected: 1.021, history: [2.1] },
+      { expected: 1.021 * 1.023, history: [2.3, 2.1] },
+      { expected: 1.021 * 1.023 * 1.025, history: [2.5, 2.3, 2.1] },
     ]
 
     for (const s of scenarios) {

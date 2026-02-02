@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
 
+import type { CountryEconomy } from '@/core/types/economy.types'
+
 import {
   generateYearlyInflation,
   calculateKeyRate,
@@ -92,7 +94,7 @@ describe('Inflation Engine', () => {
     })
 
     it('should never return multiplier < 1 (prices never fall)', () => {
-      const history = [2, 2.5, 3, 2.8, 2.2]
+      const history: number[] = [2, 2.5, 3, 2.8, 2.2]
       const multiplier = getCumulativeInflationMultiplier(history, 'housing')
       expect(multiplier).toBeGreaterThanOrEqual(1)
     })
@@ -107,7 +109,7 @@ describe('Inflation Engine', () => {
 
       // BUT we're testing housing (1.5x multiplier)
       // So it should be even higher!
-      const history = [2, 2.5, 3, 2.8, 2.2] // oldest to newest
+      const history: number[] = [2, 2.5, 3, 2.8, 2.2] // oldest to newest
       const multiplier = getCumulativeInflationMultiplier(history, 'housing')
 
       const basePrice = 1200
@@ -142,7 +144,7 @@ describe('Inflation Engine', () => {
       // 1250 * (1 + 4.8*0.5/100) = 1250 * 1.024 = 1280
       // 1280 * (1 + 4.68*0.5/100) = 1280 * 1.0234 = 1310
 
-      const inflationRates = [8.33, 4.8, 4.68]
+      const inflationRates: number[] = [8.33, 4.8, 4.68]
       const multiplier = getCumulativeInflationMultiplier(inflationRates, 'food')
       const basePrice = 1200
       const finalPrice = Math.round(basePrice * multiplier)
@@ -153,7 +155,7 @@ describe('Inflation Engine', () => {
 
     it('should always increase with positive inflation history', () => {
       // Test 10 different inflation patterns
-      const patterns = [
+      const patterns: number[][] = [
         [2, 2, 2],
         [2.5, 2.5, 2.5],
         [3, 3, 3],
@@ -171,7 +173,7 @@ describe('Inflation Engine', () => {
         // CRITICAL: Final price must NEVER be less than base price
         expect(
           finalPrice,
-          `Price fell for inflation pattern ${pattern}: ${basePrice} -> ${finalPrice}`,
+          `Price fell for inflation pattern ${pattern.join(', ')}: ${basePrice} -> ${finalPrice}`,
         ).toBeGreaterThanOrEqual(basePrice)
       }
     })
@@ -198,9 +200,9 @@ describe('Inflation Engine', () => {
   describe('generateYearlyInflation', () => {
     it('should always be within bounds [0.1, 20]', () => {
       const mockEconomy = {
-        inflation: 2.5,
         activeEvents: [],
-      } as any
+        inflation: 2.5,
+      } as unknown as CountryEconomy
 
       for (let i = 0; i < 20; i++) {
         const inflation = generateYearlyInflation(2.5, mockEconomy)
@@ -211,9 +213,9 @@ describe('Inflation Engine', () => {
 
     it('should follow trend (60% damping)', () => {
       const mockEconomy = {
-        inflation: 2.5,
         activeEvents: [],
-      } as any
+        inflation: 2.5,
+      } as unknown as CountryEconomy
 
       const results = []
       for (let i = 0; i < 10; i++) {
@@ -222,7 +224,11 @@ describe('Inflation Engine', () => {
       }
 
       // With damping=0.6, should cluster around 2.5%
-      const average = results.reduce((a, b) => a + b) / results.length
+      let sum = 0
+      for (const val of results) {
+        sum += val
+      }
+      const average = sum / results.length
       expect(Math.abs(average - 2.5)).toBeLessThan(1) // Within 1% of target
     })
   })
@@ -281,22 +287,21 @@ describe('Inflation Engine', () => {
 
         expect(
           final,
-          `ERROR: Price fell from ${base} to ${final} with inflation ${inflation}`,
+          `ERROR: Price fell from ${base} to ${final} with inflation ${inflation.join(', ')}`,
         ).toBeGreaterThanOrEqual(base)
       }
     })
 
     it('should handle 10 years of inflation - prices only increase', () => {
       // Real inflation pattern over 10 years
-      const tenYearInflation = [2.1, 2.3, 2.5, 2.4, 2.2, 2.6, 2.8, 2.5, 2.3, 2.7]
+      const tenYearInflation: number[] = [2.1, 2.3, 2.5, 2.4, 2.2, 2.6, 2.8, 2.5, 2.3, 2.7]
 
       const basePrice = 1000
       let currentPrice = basePrice
       const priceProgression = [currentPrice]
 
       // Simulate year by year
-      for (let year = 0; year < tenYearInflation.length; year++) {
-        const yearInflation = tenYearInflation[year]
+      for (const yearInflation of tenYearInflation) {
         currentPrice = Math.round(currentPrice * (1 + yearInflation / 100))
         priceProgression.push(currentPrice)
       }
@@ -320,7 +325,7 @@ describe('Inflation Engine', () => {
 
     it('should handle 10 years of housing inflation (1.5x multiplier)', () => {
       // Same inflation rates but with housing multiplier
-      const tenYearInflation = [2.1, 2.3, 2.5, 2.4, 2.2, 2.6, 2.8, 2.5, 2.3, 2.7]
+      const tenYearInflation: number[] = [2.1, 2.3, 2.5, 2.4, 2.2, 2.6, 2.8, 2.5, 2.3, 2.7]
 
       const basePrice = 100000
       const multiplier = getCumulativeInflationMultiplier(tenYearInflation, 'housing')
@@ -332,7 +337,7 @@ describe('Inflation Engine', () => {
     })
 
     it('should handle 10 years of food inflation (0.5x multiplier)', () => {
-      const tenYearInflation = [2.1, 2.3, 2.5, 2.4, 2.2, 2.6, 2.8, 2.5, 2.3, 2.7]
+      const tenYearInflation: number[] = [2.1, 2.3, 2.5, 2.4, 2.2, 2.6, 2.8, 2.5, 2.3, 2.7]
 
       const basePrice = 1000
       const multiplier = getCumulativeInflationMultiplier(tenYearInflation, 'food')
@@ -345,7 +350,7 @@ describe('Inflation Engine', () => {
 
     it('EXTREME: 20 years of inflation - still only increases', () => {
       // 20 years of realistic inflation
-      const twentyYearInflation = Array(20).fill(2.5) // Constant 2.5%
+      const twentyYearInflation: number[] = Array(20).fill(2.5) // Constant 2.5%
 
       const basePrice = 10000
       const multiplier = getCumulativeInflationMultiplier(twentyYearInflation, 'default')
@@ -360,14 +365,14 @@ describe('Inflation Engine', () => {
       // Recreate the bug scenario step by step
       // Assuming food category (0.5x multiplier based on the pattern)
 
-      const priceProgression = []
+      const priceProgression: number[] = []
       let currentPrice = 1200
       priceProgression.push(currentPrice)
 
       // Calculate what inflation rates would produce these prices
       // 1200 -> 1250: growth of 50/1200 = 4.17%
       // With 0.5x multiplier: base inflation = 4.17 / 0.5 = 8.33%
-      const inflationRates = [8.33, 4.8, 4.68]
+      const inflationRates: number[] = [8.33, 4.8, 4.68]
 
       for (const rate of inflationRates) {
         currentPrice = Math.round(currentPrice * (1 + (rate * 0.5) / 100))

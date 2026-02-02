@@ -1,21 +1,16 @@
 import { Store, Info } from 'lucide-react'
 
+import { Button } from '@/shared/components/button'
+
 import { formatCurrency } from '../../utils/business-ui-mappers'
-
 import { useBusinessOptions } from './business-options'
-
-import { Button } from '@/shared/ui/button'
 
 export function BusinessOpeningTrigger() {
   const businessOptions = useBusinessOptions()
 
-  const minCost = businessOptions.length > 0
-    ? Math.min(...businessOptions.map(b => b.cost))
-    : 0
+  const minCost = businessOptions.length > 0 ? Math.min(...businessOptions.map((b) => b.cost)) : 0
 
-  const maxCost = businessOptions.length > 0
-    ? Math.max(...businessOptions.map(b => b.cost))
-    : 0
+  const maxCost = businessOptions.length > 0 ? Math.max(...businessOptions.map((b) => b.cost)) : 0
 
   return (
     <div className="cursor-pointer">

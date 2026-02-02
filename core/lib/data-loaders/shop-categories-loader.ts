@@ -7,11 +7,11 @@ import usHealth from '@/shared/data/world/countries/us/shop-categories/health.js
 import usServices from '@/shared/data/world/countries/us/shop-categories/services.json'
 
 const COUNTRY_CATEGORIES: Record<string, ShopItem[]> = {
-  us: [...usHealth, ...usServices] as ShopItem[],
-  ge: [...geHealth, ...geServices] as ShopItem[],
   br: [...brHealth, ...brServices] as ShopItem[],
+  ge: [...geHealth, ...geServices] as ShopItem[],
+  us: [...usHealth, ...usServices] as ShopItem[],
 }
 
-export function getShopCategoryItems(countryId: string = 'us'): ShopItem[] {
+export function getShopCategoryItems(countryId = 'us'): ShopItem[] {
   return COUNTRY_CATEGORIES[countryId] ?? []
 }

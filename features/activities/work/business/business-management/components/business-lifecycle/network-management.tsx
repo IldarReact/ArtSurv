@@ -4,20 +4,16 @@ import { Globe, Plus } from 'lucide-react'
 import React from 'react'
 
 import type { Business } from '@/core/types'
-import { Badge } from '@/shared/ui/badge'
-import { Button } from '@/shared/ui/button'
+import { Badge } from '@/shared/components/badge'
+import { Button } from '@/shared/components/button'
 
 interface NetworkManagementProps {
   business: Business
-  playerCash: number
   onOpenBranch: (id: string) => void
+  playerCash: number
 }
 
-export function NetworkManagement({
-  business,
-  playerCash,
-  onOpenBranch,
-}: NetworkManagementProps) {
+export function NetworkManagement({ business, onOpenBranch, playerCash }: NetworkManagementProps) {
   return (
     <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
       <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
@@ -31,8 +27,8 @@ export function NetworkManagement({
             <div>
               <p className="text-white font-medium flex items-center gap-2">
                 <Badge
-                  variant="outline"
                   className="bg-blue-500/10 text-blue-400 border-blue-500/20"
+                  variant="outline"
                 >
                   {business.isMainBranch ? 'Главный офис' : 'Филиал'}
                 </Badge>
@@ -55,9 +51,11 @@ export function NetworkManagement({
         </div>
 
         <Button
-          onClick={() => onOpenBranch(business.id)}
-          disabled={playerCash < business.initialCost}
           className="bg-blue-600 hover:bg-blue-700 text-white w-full md:w-auto"
+          disabled={playerCash < business.initialCost}
+          onClick={() => {
+            onOpenBranch(business.id)
+          }}
         >
           <Plus className="w-4 h-4 mr-2" />
           Открыть филиал (${business.initialCost.toLocaleString()})

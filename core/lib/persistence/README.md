@@ -3,6 +3,7 @@
 ## Обзор
 
 Система сохранений artsurv использует **zod + superjson + HMAC-SHA256 + версионирование** для создания неубиваемой защиты от:
+
 - ❌ Битых данных (NaN, Infinity, undefined)
 - ❌ Читерства через DevTools
 - ❌ Несовместимости при обновлениях
@@ -42,15 +43,18 @@
 Строгие схемы валидации для всех типов данных:
 
 ```typescript
-export const StatsSchema = z.object({
-  money: z.number().finite().min(0),
-  happiness: z.number().finite().min(0).max(100),
-  energy: z.number().finite().min(0).max(100),
-  // ...
-}).strict()
+export const StatsSchema = z
+  .object({
+    money: z.number().finite().min(0),
+    happiness: z.number().finite().min(0).max(100),
+    energy: z.number().finite().min(0).max(100),
+    // ...
+  })
+  .strict()
 ```
 
 **Защита:**
+
 - ✅ `.finite()` — блокирует NaN и Infinity
 - ✅ `.min()` / `.max()` — ограничивает диапазоны
 - ✅ `.int()` — гарантирует целые числа
@@ -65,7 +69,7 @@ export const StatsSchema = z.object({
 const state = {
   lastSaved: new Date(),
   tags: new Set(['rich', 'happy']),
-  capital: 1000000000000n
+  capital: 1000000000000n,
 }
 
 JSON.stringify(state)
@@ -93,6 +97,7 @@ if (currentChecksum !== saveData.checksum) {
 ```
 
 **Что это даёт:**
+
 - ✅ Любое изменение в DevTools → сейв не загрузится
 - ✅ Криптографически стойкая защита (в отличие от adler32)
 - ✅ Секретный ключ можно вынести в `.env`
@@ -104,13 +109,14 @@ const migrations: Record<number, MigrationFn> = {
   2: (state) => {
     return {
       ...state,
-      newFeature: { enabled: false, value: 0 }
+      newFeature: { enabled: false, value: 0 },
     }
-  }
+  },
 }
 ```
 
 **Как работает:**
+
 1. Ты меняешь структуру данных (добавляешь поле)
 2. Увеличиваешь `CURRENT_VERSION` в `save-manager.ts`
 3. Добавляешь миграцию в `migrations.ts`
@@ -179,10 +185,12 @@ saveManager.clear()
 
 ```typescript
 // core/schemas/game.schema.ts
-export const PlayerStateSchema = z.object({
-  // ... существующие поля
-  newField: z.string().default('default value')
-}).strict()
+export const PlayerStateSchema = z
+  .object({
+    // ... существующие поля
+    newField: z.string().default('default value'),
+  })
+  .strict()
 ```
 
 ### Шаг 2: Увеличить версию
@@ -200,12 +208,14 @@ const migrations: Record<number, MigrationFn> = {
   2: (state) => {
     return {
       ...state,
-      player: state.player ? {
-        ...state.player,
-        newField: 'default value'
-      } : null
+      player: state.player
+        ? {
+            ...state.player,
+            newField: 'default value',
+          }
+        : null,
     }
-  }
+  },
 }
 ```
 
@@ -225,6 +235,7 @@ console.error('❌ Save validation failed:', validation.error.errors)
 ```
 
 **Решение:**
+
 1. Проверь, что все числовые поля — конечные числа
 2. Проверь диапазоны (0-100 для stats)
 3. Проверь, что нет `undefined` в обязательных полях
@@ -236,6 +247,7 @@ console.error('🚨 SAVE FILE CORRUPTED OR MODIFIED')
 ```
 
 **Решение:**
+
 1. Если в dev mode — игнорируй (это нормально при изменении кода)
 2. Если в production — сейв был изменён вручную
 3. Очисти localStorage и начни новую игру
@@ -247,6 +259,7 @@ console.warn('⚠️ Save version mismatch: 1 vs 2')
 ```
 
 **Решение:**
+
 1. Миграция должна запуститься автоматически
 2. Если нет — проверь, что миграция добавлена в `migrations.ts`
 
@@ -254,13 +267,13 @@ console.warn('⚠️ Save version mismatch: 1 vs 2')
 
 ## 🎯 Примеры реальных багов, которые теперь невозможны
 
-| Баг | До | После |
-|-----|-----|-------|
-| `money: Infinity` | ✅ Сохранялось | ❌ Ошибка валидации |
-| `health: -50` | ✅ Сохранялось | ❌ Ошибка валидации |
-| `lastSaved: "2024-01-01"` | ✅ Строка вместо Date | ✅ Настоящий Date |
-| Читерство через DevTools | ✅ Работало | ❌ Checksum mismatch |
-| Старый сейв без нового поля | ❌ Краш | ✅ Автомиграция |
+| Баг                         | До                    | После                |
+| --------------------------- | --------------------- | -------------------- |
+| `money: Infinity`           | ✅ Сохранялось        | ❌ Ошибка валидации  |
+| `health: -50`               | ✅ Сохранялось        | ❌ Ошибка валидации  |
+| `lastSaved: "2024-01-01"`   | ✅ Строка вместо Date | ✅ Настоящий Date    |
+| Читерство через DevTools    | ✅ Работало           | ❌ Checksum mismatch |
+| Старый сейв без нового поля | ❌ Краш               | ✅ Автомиграция      |
 
 ---
 

@@ -2,8 +2,8 @@
 
 import { AlertCircle } from 'lucide-react'
 
-import { Button } from '@/shared/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
+import { Button } from '@/shared/components/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/dialog'
 
 interface TurnLockedModalProps {
   isOpen: boolean
@@ -12,7 +12,7 @@ interface TurnLockedModalProps {
 
 export function TurnLockedModal({ isOpen, onClose }: TurnLockedModalProps) {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog onOpenChange={onClose} open={isOpen}>
       <DialogContent className="bg-linear-to-br from-amber-900/90 to-orange-900/90 border-amber-500/30 text-white max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
@@ -37,7 +37,7 @@ export function TurnLockedModal({ isOpen, onClose }: TurnLockedModalProps) {
             </p>
           </div>
 
-          <Button onClick={onClose} className="w-full bg-amber-600 hover:bg-amber-700 text-white">
+          <Button className="w-full bg-amber-600 hover:bg-amber-700 text-white" onClick={onClose}>
             Понятно
           </Button>
         </div>

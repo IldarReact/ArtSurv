@@ -1,22 +1,29 @@
-import { PiggyBank, Plus } from 'lucide-react'
+import { PiggyBank, Plus, X } from 'lucide-react'
 
-import { Button } from '@/shared/ui/button'
-import { Card } from '@/shared/ui/card'
+import { Button } from '@/shared/components/button'
+import { Card } from '@/shared/components/card'
 
 interface Deposit {
+  currentValue: number
   id: string
   name: string
-  currentValue: number
 }
 
 interface Props {
-  deposits: Deposit[]
   depositRate: number
+  deposits: Deposit[]
   keyRate: number
   onOpenDeposit: () => void
+  onCloseDeposit: (id: string) => void
 }
 
-export function DepositsSection({ deposits, depositRate, keyRate, onOpenDeposit }: Props) {
+export function DepositsSection({
+  depositRate,
+  deposits,
+  keyRate,
+  onCloseDeposit,
+  onOpenDeposit,
+}: Props) {
   return (
     <div className="mb-12">
       <div className="flex items-center justify-between mb-6">
@@ -38,14 +45,30 @@ export function DepositsSection({ deposits, depositRate, keyRate, onOpenDeposit 
       ) : (
         <div className="grid gap-4">
           {deposits.map((d) => (
-            <Card key={d.id} className="bg-emerald-500/5 border-emerald-500/20 p-6">
-              <h3 className="text-xl font-semibold">{d.name}</h3>
-              <p className="text-zinc-400">
-                {depositRate}% • ставка ЦБ {keyRate.toFixed(2)}%
-              </p>
-              <p className="text-3xl font-bold text-emerald-400 mt-2">
-                ${d.currentValue.toLocaleString()}
-              </p>
+            <Card
+              className="bg-emerald-500/5 border-emerald-500/20 p-6 flex justify-between items-center"
+              key={d.id}
+            >
+              <div>
+                <h3 className="text-xl font-semibold">{d.name}</h3>
+                <p className="text-zinc-400">
+                  {depositRate}% • ставка ЦБ {keyRate.toFixed(2)}%
+                </p>
+                <p className="text-3xl font-bold text-emerald-400 mt-2">
+                  ${d.currentValue.toLocaleString()}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  onCloseDeposit(d.id)
+                }}
+                className="text-zinc-500 hover:text-red-400"
+                aria-label="Закрыть"
+              >
+                <X className="w-6 h-6" />
+              </Button>
             </Card>
           ))}
         </div>

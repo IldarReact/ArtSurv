@@ -1,7 +1,7 @@
-import type { TurnStep } from '../turn/turn-step'
-import { processEducation } from '../turns/education-processor'
-
 import { applyStatEffects } from '@/core/lib/stats/apply-effects'
+
+import { processEducation } from '../turns/education-processor'
+import type { TurnStep } from './step.types'
 
 export const educationStep: TurnStep = (ctx, state) => {
   const res = processEducation(
@@ -21,16 +21,16 @@ export const educationStep: TurnStep = (ctx, state) => {
     if (course.costPerTurn) {
       applyStatEffects(state.statModifiers, course.costPerTurn, 'subtract')
     }
-    state.statModifiers.intelligence = (state.statModifiers.intelligence || 0) + 1
+    state.statModifiers.intelligence = (state.statModifiers.intelligence ?? 0) + 1
   })
 
   state.player.personal.activeUniversity.forEach((uni) => {
     if (uni.costPerTurn) {
       applyStatEffects(state.statModifiers, uni.costPerTurn, 'subtract')
     }
-    state.statModifiers.intelligence = (state.statModifiers.intelligence || 0) + 2
+    state.statModifiers.intelligence = (state.statModifiers.intelligence ?? 0) + 2
     if (!uni.costPerTurn?.sanity) {
-      state.statModifiers.sanity = (state.statModifiers.sanity || 0) - 1
+      state.statModifiers.sanity = (state.statModifiers.sanity ?? 0) - 1
     }
   })
 

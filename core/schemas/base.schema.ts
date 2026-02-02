@@ -2,38 +2,48 @@ import { z } from 'zod'
 
 export const StatEffectSchema = z
   .object({
-    money: z.number().finite().optional(),
-    happiness: z.number().finite().optional(),
     energy: z.number().finite().optional(),
+    happiness: z.number().finite().optional(),
     health: z.number().finite().optional(),
-    sanity: z.number().finite().optional(),
     intelligence: z.number().finite().optional(),
+    money: z.number().finite().optional(),
+    sanity: z.number().finite().optional(),
   })
   .strict()
+
+const STAT_MIN = 0
+const STAT_MAX = 100
 
 export const StatsSchema = z
   .object({
+    energy: z.number().finite().min(STAT_MIN).max(STAT_MAX),
+    happiness: z.number().finite().min(STAT_MIN).max(STAT_MAX),
+    health: z.number().finite().min(STAT_MIN).max(STAT_MAX),
+    intelligence: z.number().finite().min(STAT_MIN).max(STAT_MAX),
     money: z.number().finite(),
-    happiness: z.number().finite().min(0).max(100),
-    energy: z.number().finite().min(0).max(100),
-    health: z.number().finite().min(0).max(100),
-    sanity: z.number().finite().min(0).max(100),
-    intelligence: z.number().finite().min(0).max(100),
+    sanity: z.number().finite().min(STAT_MIN).max(STAT_MAX),
   })
   .strict()
 
+const SKILL_LEVEL_0 = 0
+const SKILL_LEVEL_1 = 1
+const SKILL_LEVEL_2 = 2
+const SKILL_LEVEL_3 = 3
+const SKILL_LEVEL_4 = 4
+const SKILL_LEVEL_5 = 5
+
 export const SkillLevelSchema = z.union([
-  z.literal(0),
-  z.literal(1),
-  z.literal(2),
-  z.literal(3),
-  z.literal(4),
-  z.literal(5),
+  z.literal(SKILL_LEVEL_0),
+  z.literal(SKILL_LEVEL_1),
+  z.literal(SKILL_LEVEL_2),
+  z.literal(SKILL_LEVEL_3),
+  z.literal(SKILL_LEVEL_4),
+  z.literal(SKILL_LEVEL_5),
 ])
 
 export const SkillRequirementSchema = z
   .object({
-    skillId: z.string(),
     minLevel: SkillLevelSchema,
+    skillId: z.string(),
   })
   .strict()

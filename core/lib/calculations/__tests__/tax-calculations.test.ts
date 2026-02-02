@@ -1,32 +1,33 @@
 import { describe, it, expect } from 'vitest'
 
-import { calculateQuarterlyTaxes } from '../calculate-quarterly-taxes'
+import type { CountryEconomy } from '@/core/types/economy.types'
+import type { Asset } from '@/core/types/finance.types'
 
-import { CountryEconomy } from '@/core/types/economy.types'
+import { calculateQuarterlyTaxes } from '../quarterly/calculate-quarterly-taxes'
 
 describe('calculateQuarterlyTaxes', () => {
   const mockCountry: CountryEconomy = {
-    id: 'test',
-    name: 'Test Country',
-    taxRate: 10, // 10%
-    corporateTaxRate: 15,
-    inflation: 0,
-    stockMarketInflation: 0,
-    keyRate: 0,
-    interestRate: 0,
-    unemployment: 0,
-    salaryModifier: 1,
-    costOfLivingModifier: 1,
     activeEvents: [],
     archetype: 'poor',
+    corporateTaxRate: 15,
+    costOfLivingModifier: 1,
     gdpGrowth: 0,
+    id: 'test',
+    inflation: 0,
+    interestRate: 0,
+    keyRate: 0,
+    name: 'Test Country',
+    salaryModifier: 1,
+    stockMarketInflation: 0,
+    taxRate: 10, // 10%
+    unemployment: 0,
   }
 
   it('calculates personal income tax correctly', () => {
     const result = calculateQuarterlyTaxes({
-      income: 10000,
       assets: [],
       country: mockCountry,
+      income: 10000,
     })
 
     expect(result.income).toBe(1000) // 10% of 10000
@@ -35,9 +36,11 @@ describe('calculateQuarterlyTaxes', () => {
 
   it('calculates property tax correctly', () => {
     const result = calculateQuarterlyTaxes({
-      income: 0,
-      assets: [{ id: '1', type: 'housing', value: 1000000, currentValue: 1000000 } as any],
+      assets: [
+        { currentValue: 1000000, id: '1', type: 'housing', value: 1000000 } as unknown as Asset,
+      ],
       country: mockCountry,
+      income: 0,
     })
 
     // 0.125% per quarter = 1250
@@ -47,9 +50,9 @@ describe('calculateQuarterlyTaxes', () => {
 
   it('sanitizes NaN and undefined values', () => {
     const result = calculateQuarterlyTaxes({
+      assets: [{ id: '1', type: 'housing', value: undefined } as unknown as Asset],
+      country: { ...mockCountry, taxRate: undefined as unknown as number },
       income: NaN,
-      assets: [{ id: '1', type: 'housing', value: undefined } as any],
-      country: { ...mockCountry, taxRate: undefined as any },
     })
 
     expect(result.income).toBe(0)

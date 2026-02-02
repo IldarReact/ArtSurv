@@ -1,5 +1,6 @@
-import type { GameStateCreator } from '../../../types'
 import type { Business } from '@/core/types/business.types'
+
+import type { GameStateCreator } from '../../../types'
 import type { SharedBusinessSlice } from '../../../types/business.types'
 
 export const createSharedBusinessSlice: GameStateCreator<SharedBusinessSlice> = (set, get) => ({

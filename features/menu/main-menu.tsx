@@ -3,7 +3,7 @@
 import { User, Users } from 'lucide-react'
 
 import { useGameStore } from '@/core/model/store'
-import { Button } from '@/shared/ui/button'
+import { Button } from '@/shared/components/button'
 
 export function MainMenu() {
   const { startSinglePlayer } = useGameStore()
@@ -23,8 +23,8 @@ export function MainMenu() {
 
         <div className="space-y-4">
           <Button
-            onClick={startSinglePlayer}
             className="w-full h-20 text-xl bg-white/10 hover:bg-white/20 border border-white/10 backdrop-blur-sm transition-all group"
+            onClick={startSinglePlayer}
           >
             <User className="w-8 h-8 mr-4 text-blue-400 group-hover:scale-110 transition-transform" />
             <div className="text-left">
@@ -34,8 +34,8 @@ export function MainMenu() {
           </Button>
 
           <Button
-            onClick={handleCreateLobby}
             className="w-full h-20 text-xl bg-white/10 hover:bg-white/20 border border-white/10 backdrop-blur-sm transition-all group"
+            onClick={handleCreateLobby}
           >
             <Users className="w-8 h-8 mr-4 text-emerald-400 group-hover:scale-110 transition-transform" />
             <div className="text-left">

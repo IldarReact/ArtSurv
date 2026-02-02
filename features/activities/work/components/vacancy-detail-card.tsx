@@ -5,38 +5,38 @@ import { useState } from 'react'
 
 import type { Job } from '@/core/types/job.types'
 import { EmployeeCard } from '@/shared/components/business/employee-card'
-import { Button } from '@/shared/ui/button'
+import { Button } from '@/shared/components/button'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/shared/ui/dialog'
+} from '@/shared/components/dialog'
 import { cn } from '@/shared/utils/utils'
 
 interface VacancyDetailCardProps {
-  title: string
   company: string
-  salary: number
   energyCost?: number
-  requirements: Array<{ skill: string; level: number }>
   image: string
-  onApply?: () => void
-  jobCost?: Job['cost']
   isApplied?: boolean
+  jobCost?: Job['cost']
+  onApply?: () => void
+  requirements: { skill: string; level: number }[]
+  salary: number
+  title: string
 }
 
 export function VacancyDetailCard({
-  title,
   company,
-  salary,
   energyCost = 20,
-  requirements,
   image,
-  onApply,
-  jobCost,
   isApplied = false,
+  jobCost,
+  onApply,
+  requirements,
+  salary,
+  title,
 }: VacancyDetailCardProps) {
   const [showDetails, setShowDetails] = useState(false)
 
@@ -45,31 +45,33 @@ export function VacancyDetailCard({
   return (
     <>
       <EmployeeCard
-        id={`vacancy-${title}-${company}`}
-        name={title}
-        role="worker" // Дефолтная роль для отображения иконки, если не указана
-        roleLabel="Вакансия"
-        company={company}
-        salary={salary}
-        salaryLabel="/мес"
-        avatar={image}
-        isVacancy={true}
-        stars={Math.max(1, ...requirements.map((r) => r.level), 1)}
-        requirements={requirements}
-        cost={jobCost}
-        isApplied={isApplied}
-        onAction={onApply}
-        actionLabel={isApplied ? 'Отправлено' : 'Откликнуться'}
         actionIcon={
           isApplied ? <CheckCircle className="w-3 h-3 mr-1" /> : <Info className="w-3 h-3 mr-1" />
         }
+        actionLabel={isApplied ? 'Отправлено' : 'Откликнуться'}
         actionVariant={isApplied ? 'secondary' : 'default'}
-        onSecondaryAction={() => setShowDetails(true)}
-        secondaryActionLabel="Подробнее"
+        avatar={image}
         className={isApplied ? 'opacity-60' : ''}
+        company={company}
+        cost={jobCost}
+        id={`vacancy-${title}-${company}`}
+        isApplied={isApplied}
+        isVacancy={true}
+        name={title}
+        onAction={onApply}
+        onSecondaryAction={() => {
+          setShowDetails(true)
+        }}
+        requirements={requirements}
+        role="worker" // Дефолтная роль для отображения иконки, если не указана
+        roleLabel="Вакансия"
+        salary={salary}
+        salaryLabel="/мес"
+        secondaryActionLabel="Подробнее"
+        stars={Math.max(1, ...requirements.map((r) => r.level), 1)}
       />
 
-      <Dialog open={showDetails} onOpenChange={setShowDetails}>
+      <Dialog onOpenChange={setShowDetails} open={showDetails}>
         <DialogContent className="bg-zinc-900/95 backdrop-blur-2xl border-white/10 text-white max-w-2xl p-0 overflow-hidden rounded-3xl shadow-2xl shadow-black/50">
           <div className="p-6 md:p-8">
             <DialogHeader>
@@ -93,22 +95,22 @@ export function VacancyDetailCard({
                   Требования к навыкам
                 </p>
                 <div className="space-y-3">
-                  {requirements.map((req, i) => (
+                  {requirements.map((req) => (
                     <div
-                      key={i}
                       className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/5"
+                      key={req.skill}
                     >
                       <span className="font-bold text-zinc-100">{req.skill}</span>
                       <div className="flex gap-1">
-                        {Array.from({ length: 5 }).map((_, j) => (
+                        {[0, 1, 2, 3, 4].map((starIndex) => (
                           <div
-                            key={j}
                             className={cn(
                               'w-2 h-2 rounded-full',
-                              j < req.level
+                              starIndex < req.level
                                 ? 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.4)]'
                                 : 'bg-white/10',
                             )}
+                            key={`${req.skill}-star-${String(starIndex)}`}
                           />
                         ))}
                       </div>
@@ -119,14 +121,14 @@ export function VacancyDetailCard({
 
               <div className="pt-4 flex flex-col gap-3">
                 <Button
-                  onClick={onApply}
-                  disabled={isApplied}
                   className={cn(
                     'w-full h-14 text-lg font-black rounded-2xl transition-all duration-300',
                     isApplied
                       ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
                       : 'bg-white text-black hover:bg-zinc-200 hover:scale-[1.02] active:scale-[0.98]',
                   )}
+                  disabled={isApplied}
+                  onClick={onApply}
                 >
                   {isApplied ? (
                     <span className="flex items-center gap-2">

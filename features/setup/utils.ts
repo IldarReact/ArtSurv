@@ -10,16 +10,16 @@ export function calculateQuarterlySalary(monthlySalary: number): number {
 }
 
 export const MOCK_DETAILED_INFO: CharacterDetailedInfo = {
-  family: {
-    spouse: { name: "Елена", age: 28, job: "Дизайнер" },
-    children: [
-      { name: "Максим", age: 5 },
-      { name: "Алиса", age: 2 },
-    ],
-    pet: { name: "Бобик", type: "Собака" },
-  },
   assets: [],
   debts: [],
-  savings: [],
+  family: {
+    children: [
+      { age: 5, name: 'Максим' },
+      { age: 2, name: 'Алиса' },
+    ],
+    pet: { name: 'Бобик', type: 'Собака' },
+    spouse: { age: 28, job: 'Дизайнер', name: 'Елена' },
+  },
   investments: [],
+  savings: [],
 }

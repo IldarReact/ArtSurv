@@ -3,80 +3,80 @@ import { describe, it, expect } from 'vitest'
 import type { Business, Employee } from '../../types/business.types'
 import type { CountryEconomy } from '../../types/economy.types'
 import { getInflatedPrice, getInflatedSalary } from '../calculations/price-helpers'
-
 import { calculateBusinessFinancials } from './business-financials'
 
 describe('Business Financials NaN Guards', () => {
   // Base mock business generator
   const createMockBusiness = (overrides: Partial<Business> = {}): Business => ({
-    id: 'test-biz',
-    name: 'Test Business',
-    type: 'retail',
-    description: 'Test',
-    state: 'active',
-    price: 5,
-    quantity: 100,
-    isServiceBased: false,
-    networkId: undefined,
-    isMainBranch: true,
-    partners: [],
-    proposals: [],
-    lastQuarterlyUpdate: 0,
-    createdAt: 0,
-    monthlyIncome: 0,
-    monthlyExpenses: 0,
     autoPurchaseAmount: 0,
-    initialCost: 10000,
-    quarterlyIncome: 0,
-    quarterlyExpenses: 0,
-    quarterlyTax: 0,
-    currentValue: 10000,
-    employees: [],
-    maxEmployees: 5,
-    minEmployees: 1,
-    reputation: 50,
-    efficiency: 50,
-    taxRate: 20,
-    hasInsurance: false,
-    insuranceCost: 0,
+    createdAt: 0,
     creationCost: { energy: 0, money: 0 },
-    playerRoles: { managerialRoles: [], operationalRole: null },
+    currentValue: 10000,
+    description: 'Test',
+    efficiency: 50,
     employeeRoles: [],
+    employees: [],
+    eventsHistory: [],
+    foundedTurn: 1,
+    hasInsurance: false,
+    id: 'test-biz',
+    initialCost: 10000,
+    insuranceCost: 0,
     inventory: {
+      autoPurchaseAmount: 0,
       currentStock: 1000,
       maxStock: 1000,
       pricePerUnit: 50,
       purchaseCost: 20,
-      autoPurchaseAmount: 0,
     },
+    isMainBranch: true,
+    isServiceBased: false,
+    lastQuarterlyUpdate: 0,
+    maxEmployees: 5,
+    minEmployees: 1,
+    monthlyExpenses: 0,
+    monthlyIncome: 0,
+    name: 'Test Business',
+    networkId: undefined,
     openingProgress: {
       id: 'test-opening',
-      title: 'Opening Test Business',
-      totalDuration: 0,
-      remainingDuration: 0,
-      totalQuarters: 0,
-      quartersLeft: 0,
       investedAmount: 0,
+      quartersLeft: 0,
+      remainingDuration: 0,
+      title: 'Opening Test Business',
       totalCost: 0,
+      totalDuration: 0,
+      totalQuarters: 0,
       upfrontCost: 0,
     },
-    eventsHistory: [],
-    foundedTurn: 1,
+    partners: [],
+    playerRoles: { managerialRoles: [], operationalRole: null },
+    price: 5,
+    proposals: [],
+    quantity: 100,
+    quarterlyExpenses: 0,
+    quarterlyIncome: 0,
+    quarterlyTax: 0,
+    reputation: 50,
+    state: 'active',
+    taxRate: 20,
+    type: 'retail',
+    valuation: 10000,
     ...overrides,
   })
 
   describe('Service Business Resilience', () => {
     it('should handle NaN price', () => {
       const business = createMockBusiness({
-        isServiceBased: true,
-        price: NaN,
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 0,
           maxStock: 0,
           pricePerUnit: 0,
           purchaseCost: 0,
-          autoPurchaseAmount: 0,
         },
+        isServiceBased: true,
+        price: NaN,
       })
       const result = calculateBusinessFinancials(business, false)
 
@@ -86,15 +86,15 @@ describe('Business Financials NaN Guards', () => {
 
     it('should handle undefined price', () => {
       const business = createMockBusiness({
-        isServiceBased: true,
-        price: undefined as any,
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 0,
           maxStock: 0,
           pricePerUnit: 0,
           purchaseCost: 0,
-          autoPurchaseAmount: 0,
         },
+        isServiceBased: true,
+        price: undefined as unknown as number,
       })
       const result = calculateBusinessFinancials(business, false)
 
@@ -103,16 +103,16 @@ describe('Business Financials NaN Guards', () => {
 
     it('should handle NaN efficiency and reputation', () => {
       const business = createMockBusiness({
-        isServiceBased: true,
         efficiency: NaN,
-        reputation: NaN,
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 0,
           maxStock: 0,
           pricePerUnit: 0,
           purchaseCost: 0,
-          autoPurchaseAmount: 0,
         },
+        isServiceBased: true,
+        reputation: NaN,
       })
       const result = calculateBusinessFinancials(business, false)
 
@@ -122,14 +122,14 @@ describe('Business Financials NaN Guards', () => {
 
     it('should handle NaN global market value', () => {
       const business = createMockBusiness({
-        isServiceBased: true,
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 0,
           maxStock: 0,
           pricePerUnit: 0,
           purchaseCost: 0,
-          autoPurchaseAmount: 0,
         },
+        isServiceBased: true,
       })
       const result = calculateBusinessFinancials(business, false, undefined, NaN)
 
@@ -140,14 +140,14 @@ describe('Business Financials NaN Guards', () => {
   describe('Product Business Resilience', () => {
     it('should handle NaN inventory prices', () => {
       const business = createMockBusiness({
-        isServiceBased: false,
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 100,
           maxStock: 1000,
           pricePerUnit: NaN,
           purchaseCost: NaN,
-          autoPurchaseAmount: 0,
         },
+        isServiceBased: false,
       })
       const result = calculateBusinessFinancials(business, false)
 
@@ -160,28 +160,14 @@ describe('Business Financials NaN Guards', () => {
 
     it('should handle NaN current stock', () => {
       const business = createMockBusiness({
-        isServiceBased: false,
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: NaN,
           maxStock: 1000,
           pricePerUnit: 50,
           purchaseCost: 20,
-          autoPurchaseAmount: 0,
         },
-      })
-      const result = calculateBusinessFinancials(business, false)
-    })
-
-    it('should handle NaN current stock', () => {
-      const business = createMockBusiness({
         isServiceBased: false,
-        inventory: {
-          currentStock: NaN,
-          maxStock: 1000,
-          pricePerUnit: 50,
-          purchaseCost: 20,
-          autoPurchaseAmount: 0,
-        },
       })
       const result = calculateBusinessFinancials(business, false)
 
@@ -191,14 +177,15 @@ describe('Business Financials NaN Guards', () => {
 
     it('should handle zero price (infinite margin percentage protection)', () => {
       const business = createMockBusiness({
-        isServiceBased: false,
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 100,
           maxStock: 1000,
           pricePerUnit: 0,
           purchaseCost: 20,
-          autoPurchaseAmount: 0,
         },
+        isServiceBased: false,
+        price: 0,
       })
       const result = calculateBusinessFinancials(business, false)
 
@@ -210,15 +197,15 @@ describe('Business Financials NaN Guards', () => {
   describe('Employee and Tax Resilience', () => {
     it('should handle employees with NaN salary', () => {
       const emp: Employee = {
-        id: 'e1',
-        name: 'Test',
-        role: 'worker',
-        stars: 3,
-        skills: { efficiency: 50 },
-        salary: NaN,
-        productivity: 100,
         experience: 1,
         humanTraits: [],
+        id: 'e1',
+        name: 'Test',
+        productivity: 100,
+        role: 'worker',
+        salary: NaN,
+        skills: { efficiency: 50 },
+        stars: 3,
       }
       const business = createMockBusiness({
         employees: [emp],
@@ -240,21 +227,21 @@ describe('Business Financials NaN Guards', () => {
 
   describe('Inflation and Price Helpers Resilience', () => {
     const mockEconomy: CountryEconomy = {
-      id: 'us',
-      name: 'USA',
+      activeEvents: [],
       archetype: 'rich_stable',
+      corporateTaxRate: 0.2,
+      costOfLivingModifier: 1.0,
+      gdpGrowth: 0.02,
+      id: 'us',
       inflation: 2.5,
       inflationHistory: [2.5, 3.0, 2.8],
-      salaryModifier: 1.0,
-      corporateTaxRate: 0.2,
-      taxRate: 0.2,
       interestRate: 0.05,
       keyRate: 0.05,
-      gdpGrowth: 0.02,
+      name: 'USA',
+      salaryModifier: 1.0,
       stockMarketInflation: 0.03,
+      taxRate: 0.2,
       unemployment: 0.05,
-      costOfLivingModifier: 1.0,
-      activeEvents: [],
     }
 
     it('should handle NaN in inflation history', () => {

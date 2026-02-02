@@ -1,6 +1,5 @@
 import { ShopItemSchema } from '@/core/schemas/finance.schema'
-import { ShopItem } from '@/core/types/shop.types'
-
+import type { ShopItem } from '@/core/types/shop.types'
 // Country imports
 // ... (imports remain the same)
 import brHousing from '@/shared/data/world/countries/brazil/housing.json'
@@ -23,12 +22,12 @@ import usTransport from '@/shared/data/world/countries/us/transport.json'
  * Type-safe data loaders with runtime validation
  */
 
-function loadAndValidate(data: unknown[], source: string): ShopItem[] {
+function loadAndValidate(data: unknown[], _source: string): ShopItem[] {
   return data
     .map((item) => {
       const result = ShopItemSchema.safeParse(item)
       if (!result.success) {
-        console.error(`Invalid shop item in ${source}:`, item, result.error.format())
+        // console.error(`Invalid shop item in ${source}:`, item, result.error.format())
         return null
       }
       return result.data as ShopItem
@@ -37,7 +36,14 @@ function loadAndValidate(data: unknown[], source: string): ShopItem[] {
 }
 
 // Country Data Registry - ALL data is country-specific
-const COUNTRY_DATA: Record<string, ShopItem[]> = {
+const COUNTRY_DATA: Record<string, ShopItem[] | undefined> = {
+  brazil: [
+    ...loadAndValidate(brFood, 'brazil/food.json'),
+    ...loadAndValidate(brTransport, 'brazil/transport.json'),
+    ...loadAndValidate(brHealth, 'brazil/health.json'),
+    ...loadAndValidate(brServices, 'brazil/services.json'),
+    ...loadAndValidate(brHousing, 'brazil/housing.json'),
+  ],
   germany: [
     ...loadAndValidate(geFood, 'germany/food.json'),
     ...loadAndValidate(geTransport, 'germany/transport.json'),
@@ -52,35 +58,29 @@ const COUNTRY_DATA: Record<string, ShopItem[]> = {
     ...loadAndValidate(usServices, 'us/services.json'),
     ...loadAndValidate(usHousing, 'us/housing.json'),
   ],
-  brazil: [
-    ...loadAndValidate(brFood, 'brazil/food.json'),
-    ...loadAndValidate(brTransport, 'brazil/transport.json'),
-    ...loadAndValidate(brHealth, 'brazil/health.json'),
-    ...loadAndValidate(brServices, 'brazil/services.json'),
-    ...loadAndValidate(brHousing, 'brazil/housing.json'),
-  ],
 }
 
 // Get items for specific country (NO fallback to commons)
 function getCountryItems(countryId: string): ShopItem[] {
-  if (!COUNTRY_DATA[countryId]) {
-    console.error(`No data found for country: ${countryId}`)
+  const items = COUNTRY_DATA[countryId]
+  if (!items) {
+    // console.error(`No data found for country: ${countryId}`)
     return []
   }
-  return COUNTRY_DATA[countryId]
+  return items
 }
 
 // Export for backward compatibility (defaults to US)
-export const ALL_SHOP_ITEMS = COUNTRY_DATA.us || []
+export const ALL_SHOP_ITEMS = COUNTRY_DATA.us ?? []
 
 // Helper to get item by ID
-export function getShopItemById(id: string, countryId: string = 'us'): ShopItem | undefined {
+export function getShopItemById(id: string, countryId = 'us'): ShopItem | undefined {
   const items = getCountryItems(countryId)
   return items.find((item) => item.id === id)
 }
 
 // Helper to get items by category
-export function getShopItemsByCategory(category: string, countryId: string = 'us'): ShopItem[] {
+export function getShopItemsByCategory(category: string, countryId = 'us'): ShopItem[] {
   const items = getCountryItems(countryId)
   return items.filter((item) => item.category === category)
 }

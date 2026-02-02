@@ -1,16 +1,20 @@
-// features/activities/bank/useBank.ts
+// features/activities/bank/use-bank.ts
 import { useGameStore } from '@/core/model/store'
 
-export const usePlayer = () => useGameStore((s) => s.player)
-export const useOpenDeposit = () => useGameStore((s) => s.openDeposit)
-export const useTakeLoan = () => useGameStore((s) => s.takeLoan)
-
 export function useBank() {
-  const player = usePlayer()
-  const openDeposit = useOpenDeposit()
-  const takeLoan = useTakeLoan()
+  const player = useGameStore((s) => s.player)
+  const openDeposit = useGameStore((s) => s.openDeposit)
+  const closeDeposit = useGameStore((s) => s.closeDeposit)
+  const borrow = useGameStore((s) => s.borrow)
+  const repay = useGameStore((s) => s.repay)
 
   if (!player) return null
 
-  return { player, openDeposit, takeLoan }
+  return {
+    borrow,
+    closeDeposit,
+    openDeposit,
+    player,
+    repay,
+  }
 }

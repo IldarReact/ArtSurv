@@ -3,11 +3,173 @@ import type { Job, JobApplication, Skill, Notification, SkillLevel } from '@/cor
 import type { EconomicCycle } from '@/core/types/economy.types'
 
 interface JobsResult {
-  updatedSkills: Skill[]
   notifications: Notification[]
-  remainingApplications: JobApplication[]
   protectedSkills: string[]
+  remainingApplications: JobApplication[]
   updatedJobs: Job[]
+  updatedSkills: Skill[]
+}
+
+/**
+ * Рассчитывает риск увольнения
+ */
+function calculateFiringRisk(
+  job: Job,
+  cycle: EconomicCycle,
+  currentTurn: number,
+  updatedSkills: Skill[],
+): number {
+  const BASE_FIRING_RISK = 0.005
+  const RECESSION_FIRING_RISK_BOOST = 0.05
+  const GROWTH_FIRING_RISK_DECREASE = 0.005
+  const PROBATION_TURNS = 4
+  const PROBATION_RISK_BOOST = 0.03
+  const SENIORITY_TURNS = 12
+  const SENIORITY_RISK_DECREASE = 0.02
+  const SKILL_RISK_DECREASE_PER_LEVEL = 0.01
+  const MAX_FIRING_RISK = 0.2
+  const MIN_FIRING_RISK = 0
+
+  let risk = BASE_FIRING_RISK // Lowered base risk
+
+  if (cycle.phase === 'recession') risk += RECESSION_FIRING_RISK_BOOST // Lowered recession penalty
+  if (cycle.phase === 'growth') risk -= GROWTH_FIRING_RISK_DECREASE
+
+  const tenure = currentTurn - (job.startedTurn ?? currentTurn)
+  if (tenure < PROBATION_TURNS) risk += PROBATION_RISK_BOOST // Lowered probation penalty
+  if (tenure > SENIORITY_TURNS) risk -= SENIORITY_RISK_DECREASE
+
+  // Skill bonus: reduce risk if player skills are higher than required
+  let skillBonus = 0
+  job.requirements?.skills?.forEach((req) => {
+    const skill = updatedSkills.find((s) => s.id === req.name)
+    if (skill && skill.level > req.level) {
+      skillBonus += (skill.level - req.level) * SKILL_RISK_DECREASE_PER_LEVEL
+    }
+  })
+  risk -= skillBonus
+
+  return Math.min(MAX_FIRING_RISK, Math.max(MIN_FIRING_RISK, risk)) // Lowered max risk cap
+}
+
+/**
+ * Обрабатывает прогресс навыка и возможное повышение зарплаты
+ */
+function updateSkillAndSalary(
+  skill: Skill,
+  reqLevel: number,
+  job: Job,
+  currentTurn: number,
+  currentYear: number,
+  notifications: Notification[],
+): Skill {
+  const SKILL_PROGRESS_PER_TURN = 15
+  const MAX_SKILL_PROGRESS = 100
+  const MAX_SKILL_LEVEL = 5
+  const SALARY_INCREASE_CHANCE = 0.05
+  const SALARY_INCREASE_PERCENT = 0.05
+
+  const updatedSkill = { ...skill }
+  updatedSkill.progress += SKILL_PROGRESS_PER_TURN
+  updatedSkill.lastPracticedTurn = currentTurn
+  updatedSkill.isBeingUsedAtWork = true
+
+  if (updatedSkill.progress >= MAX_SKILL_PROGRESS) {
+    if (updatedSkill.level < MAX_SKILL_LEVEL) {
+      updatedSkill.level = (updatedSkill.level + 1) as SkillLevel
+    }
+    updatedSkill.progress = 0
+    notifications.push({
+      date: formatGameDate(currentYear, currentTurn),
+      id: `skill_up_${updatedSkill.name}_${String(currentTurn)}`,
+      isRead: false,
+      message: `Навык ${updatedSkill.name} повышен до ${String(updatedSkill.level)}!`,
+      title: 'Рост навыка',
+      type: 'success',
+    })
+  }
+
+  // Salary increase chance if skill is high or improved
+  if (updatedSkill.level > reqLevel && Math.random() < SALARY_INCREASE_CHANCE) {
+    const increase = Math.round(job.salary * SALARY_INCREASE_PERCENT)
+    job.salary += increase
+    notifications.push({
+      date: formatGameDate(currentYear, currentTurn),
+      id: `salary_inc_${job.id}_${String(currentTurn)}`,
+      isRead: false,
+      message: `Ваша зарплата на должности ${job.title} выросла на ${String(increase)}!`,
+      title: 'Повышение зарплаты! 💰',
+      type: 'success',
+    })
+  }
+
+  return updatedSkill
+}
+
+/**
+ * Обрабатывает заявки на работу
+ */
+function processJobApplications(
+  pendingApplications: JobApplication[],
+  updatedSkills: Skill[],
+  currentTurn: number,
+  currentYear: number,
+  notifications: Notification[],
+  remainingApplications: JobApplication[],
+) {
+  for (const app of pendingApplications) {
+    let score = 0
+    let match = true
+
+    for (const req of app.requirements) {
+      const skill = updatedSkills.find((s) => s.id === req.skillId)
+      if (!skill || skill.level < req.minLevel) match = false
+      else score += skill.level - req.minLevel
+    }
+
+    const MAX_JOB_CHANCE = 0.95
+    const BASE_JOB_CHANCE = 0.4
+    const SCORE_CHANCE_BOOST = 0.1
+    const MIN_JOB_CHANCE = 0.02
+    const MAX_APPLICATION_PENDING_DAYS = 1
+
+    const chance = match
+      ? Math.min(MAX_JOB_CHANCE, BASE_JOB_CHANCE + score * SCORE_CHANCE_BOOST)
+      : MIN_JOB_CHANCE
+
+    if (Math.random() < chance) {
+      notifications.push({
+        data: {
+          company: app.company,
+          jobApplicationId: app.id,
+          salary: app.salary,
+          title: app.jobTitle,
+        },
+        date: formatGameDate(currentYear, currentTurn),
+        id: `job_offer_${app.id}_${String(currentTurn)}`,
+        isRead: false,
+        message: `Ваша заявка в компанию ${app.company} на должность ${app.jobTitle} была одобрена.`,
+        title: '💼 Приглашение на работу!',
+        type: 'info',
+      })
+    } else if (app.daysPending < MAX_APPLICATION_PENDING_DAYS) {
+      // Keep application for one more turn
+      remainingApplications.push({
+        ...app,
+        daysPending: app.daysPending + 1,
+      })
+    } else {
+      // Finally rejected
+      notifications.push({
+        date: formatGameDate(currentYear, currentTurn),
+        id: `job_rejected_${app.id}_${String(currentTurn)}`,
+        isRead: false,
+        message: `К сожалению, компания ${app.company} отклонила вашу заявку на должность ${app.jobTitle}.`,
+        title: 'Отказ по вакансии',
+        type: 'warning',
+      })
+    }
+  }
 }
 
 export function processJobs(
@@ -27,36 +189,17 @@ export function processJobs(
     let isFired = false
 
     if (cycle) {
-      let risk = 0.005 // Lowered base risk
-
-      if (cycle.phase === 'recession') risk += 0.05 // Lowered recession penalty
-      if (cycle.phase === 'growth') risk -= 0.005
-
-      const tenure = currentTurn - (job.startedTurn ?? currentTurn)
-      if (tenure < 4) risk += 0.03 // Lowered probation penalty
-      if (tenure > 12) risk -= 0.02
-
-      // Skill bonus: reduce risk if player skills are higher than required
-      let skillBonus = 0
-      job.requirements?.skills?.forEach((req) => {
-        const skill = updatedSkills.find((s) => s.name === req.name)
-        if (skill && skill.level > req.level) {
-          skillBonus += (skill.level - req.level) * 0.01
-        }
-      })
-      risk -= skillBonus
-
-      risk = Math.min(0.2, Math.max(0, risk)) // Lowered max risk cap
+      const risk = calculateFiringRisk(job, cycle, currentTurn, updatedSkills)
 
       if (Math.random() < risk) {
         isFired = true
         notifications.push({
-          id: `fired_${job.id}_${currentTurn}`,
-          type: 'warning',
-          title: 'Вас уволили! 😱',
-          message: `Вы были уволены с должности ${job.title}.`,
           date: formatGameDate(currentYear, currentTurn),
+          id: `fired_${job.id}_${String(currentTurn)}`,
           isRead: false,
+          message: `Вы были уволены с должности ${job.title}.`,
+          title: 'Вас уволили! 😱',
+          type: 'warning',
         })
       }
     }
@@ -69,42 +212,14 @@ export function processJobs(
 
         const idx = updatedSkills.findIndex((s) => s.name === req.name)
         if (idx !== -1) {
-          const skill = { ...updatedSkills[idx] }
-          skill.progress += 15
-          skill.lastPracticedTurn = currentTurn
-          skill.isBeingUsedAtWork = true
-
-          if (skill.progress >= 100) {
-            if (skill.level < 5) {
-              skill.level = (skill.level + 1) as SkillLevel
-            }
-            skill.progress = 0
-            notifications.push({
-              id: `skill_up_${skill.name}_${currentTurn}`,
-              type: 'success',
-              title: 'Рост навыка',
-              message: `Навык ${skill.name} повышен до ${skill.level}!`,
-              date: formatGameDate(currentYear, currentTurn),
-              isRead: false,
-            })
-          }
-
-          updatedSkills[idx] = skill
-
-          // Salary increase chance if skill is high or improved
-          const baseReqLevel = req.level || 0
-          if (skill.level > baseReqLevel && Math.random() < 0.05) {
-            const increase = Math.round(job.salary * 0.05)
-            job.salary += increase
-            notifications.push({
-              id: `salary_up_${job.id}_${currentTurn}`,
-              type: 'success',
-              title: 'Повышение зарплаты! 💰',
-              message: `За отличную работу на должности ${job.title} вам повысили зарплату на $${increase}.`,
-              date: formatGameDate(currentYear, currentTurn),
-              isRead: false,
-            })
-          }
+          updatedSkills[idx] = updateSkillAndSalary(
+            updatedSkills[idx],
+            req.level,
+            job,
+            currentTurn,
+            currentYear,
+            notifications,
+          )
         }
       })
     }
@@ -112,62 +227,27 @@ export function processJobs(
 
   // 2. Job Applications
   const remainingApplications: JobApplication[] = []
-
-  for (const app of pendingApplications) {
-    let score = 0
-    let match = true
-
-    for (const req of app.requirements ?? []) {
-      const skill = updatedSkills.find((s) => s.name === req.skillId)
-      if (!skill || skill.level < req.minLevel) match = false
-      else score += skill.level - req.minLevel
-    }
-
-    const chance = match ? Math.min(0.95, 0.4 + score * 0.1) : 0.02
-
-    if (Math.random() < chance) {
-      notifications.push({
-        id: `job_offer_${app.id}_${currentTurn}`,
-        type: 'info',
-        title: '💼 Приглашение на работу!',
-        message: `Ваша заявка в компанию ${app.company} на должность ${app.jobTitle} была одобрена.`,
-        date: formatGameDate(currentYear, currentTurn),
-        isRead: false,
-        data: {
-          jobApplicationId: app.id,
-          company: app.company,
-          title: app.jobTitle,
-          salary: app.salary,
-        },
-      })
-    } else if ((app as any).daysPending < 1) {
-      // Keep application for one more turn
-      remainingApplications.push({
-        ...app,
-        daysPending: ((app as any).daysPending || 0) + 1,
-      } as any)
-    } else {
-      // Finally rejected
-      notifications.push({
-        id: `job_rejected_${app.id}_${currentTurn}`,
-        type: 'warning',
-        title: 'Отказ по вакансии',
-        message: `К сожалению, компания ${app.company} отклонила вашу заявку на должность ${app.jobTitle}.`,
-        date: formatGameDate(currentYear, currentTurn),
-        isRead: false,
-      })
-    }
-  }
+  processJobApplications(
+    pendingApplications,
+    updatedSkills,
+    currentTurn,
+    currentYear,
+    notifications,
+    remainingApplications,
+  )
 
   // 3. Skill decay
-  updatedSkills = updatedSkills.map((skill) => {
+  const finalSkills = updatedSkills.map((skill) => {
     if (protectedSkills.has(skill.name) || skill.isBeingStudied || skill.isBeingUsedAtWork) {
       return skill
     }
 
-    const idleTurns = currentTurn - (skill.lastPracticedTurn ?? 0)
-    if (idleTurns > 4) {
-      const decay = (idleTurns - 4) * 5
+    const SKILL_IDLE_TURNS_THRESHOLD = 4
+    const SKILL_DECAY_PER_TURN = 5
+
+    const idleTurns = currentTurn - skill.lastPracticedTurn
+    if (idleTurns > SKILL_IDLE_TURNS_THRESHOLD) {
+      const decay = (idleTurns - SKILL_IDLE_TURNS_THRESHOLD) * SKILL_DECAY_PER_TURN
       skill.progress = Math.max(0, skill.progress - decay)
     }
 
@@ -175,10 +255,10 @@ export function processJobs(
   })
 
   return {
-    updatedSkills,
     notifications,
-    remainingApplications,
     protectedSkills: [...protectedSkills],
+    remainingApplications,
     updatedJobs,
+    updatedSkills: finalSkills,
   }
 }

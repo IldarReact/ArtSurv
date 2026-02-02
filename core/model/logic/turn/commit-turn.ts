@@ -1,9 +1,8 @@
-import type { GameStore } from '../../slices/types'
+import { isQuarterEnd } from '@/core/lib/quarter'
 
+import type { GameStore } from '../../slices/types'
 import type { TurnContext } from './turn-context'
 import type { TurnState } from './turn-state'
-
-import { isQuarterEnd } from '@/core/lib/quarter'
 
 export function commitTurn(ctx: TurnContext, state: TurnState): Partial<GameStore> {
   const nextTurn = ctx.turn + 1
@@ -20,60 +19,60 @@ export function commitTurn(ctx: TurnContext, state: TurnState): Partial<GameStor
   const moneyDelta = state.moneyDelta || 0
   let nextMoney = state.player.stats.money + netProfit + moneyDelta
 
-  if (isNaN(nextMoney) || !isFinite(nextMoney)) {
-    console.error('CRITICAL: Invalid money calculation in commitTurn', {
-      currentMoney: state.player.stats.money,
-      netProfit,
-      moneyDelta,
-    })
+  if (!Number.isFinite(nextMoney)) {
+    // console.error('CRITICAL: Invalid money calculation in commitTurn', {
+    //   currentMoney: state.player.stats.money,
+    //   moneyDelta,
+    //   netProfit,
+    // })
     nextMoney = state.player.stats.money // Fallback to current money to avoid NaN
   }
 
   return {
-    // meta
-    turn: nextTurn,
-    year: nextYear,
-    isProcessingTurn: false,
-    gameStatus: nextGameStatus,
+    // economy
+    countries: state.countries,
     endReason: state.gameOverReason,
+    gameStatus: nextGameStatus,
     globalEvents: state.globalEvents,
+    globalMarket: {
+      description: `Фаза: ${state.country.cycle?.phase ?? 'unknown'}`,
+      lastUpdatedTurn: nextTurn,
+      trend: 'stable',
+      value: state.globalMarketValue,
+    },
     history: state.historyEntry ? [...ctx.prev.history, state.historyEntry] : ctx.prev.history,
+    // inflation
+    inflationNotification: state.inflationNotification,
+
+    isProcessingTurn: false,
+
+    marketEvents: state.marketEvents,
+    // notifications
+    notifications: state.notifications,
+
+    // applications
+    pendingApplications: state.pendingApplications,
+    pendingFreelanceApplications: state.pendingFreelanceApplications,
 
     // player
     player: {
       ...state.player,
+
+      personal: {
+        ...state.player.personal,
+        stats: state.stats,
+      },
 
       stats: {
         ...state.player.stats,
         ...state.stats, // ✅ SYNC: Применяем изменения статов (Health, Energy, etc.)
         money: nextMoney,
       },
-
-      personal: {
-        ...state.player.personal,
-        stats: state.stats,
-      },
     },
 
-    // economy
-    countries: state.countries,
-    marketEvents: state.marketEvents,
+    // meta
+    turn: nextTurn,
 
-    // applications
-    pendingApplications: state.pendingApplications,
-    pendingFreelanceApplications: state.pendingFreelanceApplications,
-
-    globalMarket: {
-      value: state.globalMarketValue,
-      description: `Фаза: ${state.country.cycle?.phase ?? 'unknown'}`,
-      trend: 'stable',
-      lastUpdatedTurn: nextTurn,
-    },
-
-    // notifications
-    notifications: state.notifications,
-
-    // inflation
-    inflationNotification: state.inflationNotification,
+    year: nextYear,
   }
 }

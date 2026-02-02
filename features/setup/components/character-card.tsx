@@ -1,53 +1,54 @@
 import { motion } from 'framer-motion'
 
-import { getCharacterImage, calculateQuarterlySalary } from '../utils'
-
 import { getJobById } from '@/core/lib/data-loaders/jobs-loader'
 import type { CharacterData } from '@/core/types/character.types'
-import { Button } from '@/shared/ui/button'
+import { Button } from '@/shared/components/button'
 import { cn } from '@/shared/utils/utils'
 
+import { getCharacterImage, calculateQuarterlySalary } from '../utils'
+
 interface CharacterCardProps {
+  archetype: string
   character: CharacterData
   countryId: string
   isCenter: boolean
-  archetype: string
   onDetailsClick: () => void
   onSelectClick: () => void
 }
 
 export function CharacterCard({
+  archetype,
   character,
   countryId,
   isCenter,
-  archetype,
   onDetailsClick,
   onSelectClick,
 }: CharacterCardProps) {
   return (
     <motion.div
-      key={`${archetype}-${character.id}`}
-      layoutId={archetype}
-      initial={{ opacity: 0, scale: 0.8 }}
       animate={{
+        filter: isCenter ? 'blur(0px)' : 'blur(4px) brightness(0.6)',
         opacity: isCenter ? 1 : 0.4,
         scale: isCenter ? 1 : 0.85,
         x: 0,
         zIndex: isCenter ? 10 : 1,
-        filter: isCenter ? 'blur(0px)' : 'blur(4px) brightness(0.6)',
       }}
-      exit={{ opacity: 0, scale: 0.8 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
       className={cn(
         'relative h-[70vh] aspect-2/3 rounded-3xl overflow-hidden shadow-2xl transition-all duration-500',
         'border border-white/10 bg-black/40 backdrop-blur-sm',
       )}
+      exit={{ opacity: 0, scale: 0.8 }}
+      initial={{ opacity: 0, scale: 0.8 }}
+      key={`${archetype}-${character.id}`}
+      layoutId={archetype}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
     >
       <div className="absolute inset-0">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={getCharacterImage(archetype)}
           alt={archetype}
           className="w-full h-full object-cover"
+          src={getCharacterImage(archetype)}
         />
         <div className="absolute inset-0 bg-linear-to-t from-black via-black/40 to-transparent opacity-90" />
       </div>
@@ -70,7 +71,7 @@ export function CharacterCard({
                     const job = getJobById(character.startingJobId, countryId)
                     if (job) return calculateQuarterlySalary(job.salary).toLocaleString()
                   }
-                  return calculateQuarterlySalary(character.startingSalary || 0).toLocaleString()
+                  return calculateQuarterlySalary(character.startingSalary ?? 0).toLocaleString()
                 })()}
                 /кв
               </span>
@@ -95,17 +96,17 @@ export function CharacterCard({
           {isCenter && (
             <div className="flex flex-col gap-3 w-full mt-2">
               <Button
-                variant="outline"
-                size="lg"
                 className="w-full bg-white/10 hover:bg-white/20 border-white/30 text-white backdrop-blur-sm h-14 text-lg font-medium rounded-xl"
                 onClick={onDetailsClick}
+                size="lg"
+                variant="outline"
               >
                 Подробнее...
               </Button>
               <Button
-                size="lg"
                 className="w-full bg-white text-black hover:bg-white/90 h-14 text-xl font-bold rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.3)]"
                 onClick={onSelectClick}
+                size="lg"
               >
                 Выбрать
               </Button>

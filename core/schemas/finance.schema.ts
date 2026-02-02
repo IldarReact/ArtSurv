@@ -5,74 +5,74 @@ export const DebtTypeSchema = z.enum(['mortgage', 'consumer_credit', 'student_lo
 
 export const AssetSchema = z
   .object({
-    id: z.string(),
-    name: z.string(),
-    type: AssetTypeSchema,
-    value: z.number(),
     currentValue: z.number(),
-    purchasePrice: z.number(),
-    unrealizedGain: z.number(),
-    income: z.number(),
     expenses: z.number(),
-    risk: z.enum(['low', 'medium', 'high']),
-    liquidity: z.enum(['low', 'medium', 'high']),
-    stockSymbol: z.string().optional(),
-    quantity: z.number().optional(),
+    id: z.string(),
+    income: z.number(),
     lastSoldPrice: z.number().optional(),
+    liquidity: z.enum(['low', 'medium', 'high']),
+    name: z.string(),
+    purchasePrice: z.number(),
+    quantity: z.number().optional(),
+    risk: z.enum(['low', 'medium', 'high']),
     soldAt: z.number().optional(),
+    stockSymbol: z.string().optional(),
+    type: AssetTypeSchema,
+    unrealizedGain: z.number(),
+    value: z.number(),
   })
   .strict()
 
 export const DebtSchema = z
   .object({
     id: z.string(),
-    name: z.string(),
-    type: DebtTypeSchema,
-    principalAmount: z.number(),
-    remainingAmount: z.number(),
     interestRate: z.number(),
+    name: z.string(),
+    principalAmount: z.number(),
+    quarterlyInterest: z.number(),
     quarterlyPayment: z.number(),
     quarterlyPrincipal: z.number(),
-    quarterlyInterest: z.number(),
-    termQuarters: z.number(),
+    remainingAmount: z.number(),
     remainingQuarters: z.number(),
     startTurn: z.number(),
+    termQuarters: z.number(),
+    type: DebtTypeSchema,
   })
   .strict()
 
 export const IncomeBreakdownSchema = z
   .object({
-    salary: z.number(),
-    businessRevenue: z.number(),
-    familyIncome: z.number(),
     assetIncome: z.number(),
+    businessRevenue: z.number(),
     capitalGains: z.number(),
+    familyIncome: z.number(),
+    salary: z.number(),
     total: z.number(),
   })
   .strict()
 
 export const ExpensesBreakdownSchema = z
   .object({
-    living: z.number(),
+    assetMaintenance: z.number(),
+    business: z.number(),
+    credits: z.number(),
+    debtInterest: z.number(),
+    family: z.number(),
     food: z.number(),
     housing: z.number(),
-    transport: z.number(),
-    credits: z.number(),
+    living: z.number(),
     mortgage: z.number(),
     other: z.number(),
-    family: z.number(),
-    business: z.number(),
-    debtInterest: z.number(),
-    assetMaintenance: z.number(),
     total: z.number(),
+    transport: z.number(),
   })
   .strict()
 
 export const TaxesBreakdownSchema = z
   .object({
-    income: z.number(),
     business: z.number(),
     capital: z.number(),
+    income: z.number(),
     property: z.number(),
     total: z.number(),
   })
@@ -80,10 +80,10 @@ export const TaxesBreakdownSchema = z
 
 export const QuarterlyReportSchema = z
   .object({
-    income: IncomeBreakdownSchema,
     expenses: ExpensesBreakdownSchema,
-    taxes: TaxesBreakdownSchema,
+    income: IncomeBreakdownSchema,
     netProfit: z.number(),
+    taxes: TaxesBreakdownSchema,
     warning: z.string().nullable(),
   })
   .strict()
@@ -94,16 +94,16 @@ export const ShopCategorySchema = z.enum(['food', 'transport', 'health', 'servic
 
 export const ShopItemSchema = z
   .object({
-    id: z.string(),
-    name: z.string(),
-    description: z.string().optional(),
-    category: ShopCategorySchema,
-    effects: z.record(z.string(), z.number()).optional(),
-    isRecurring: z.boolean().default(false),
-    price: z.number().finite().min(0).default(0),
-    costPerTurn: z.number().finite().min(0).default(0),
     assetType: AssetTypeSchema.optional(),
+    category: ShopCategorySchema,
+    costPerTurn: z.number().finite().min(0).default(0),
+    description: z.string().optional(),
+    effects: z.record(z.string(), z.number()).optional(),
+    id: z.string(),
+    isRecurring: z.boolean().default(false),
     maintenanceCost: z.number().finite().min(0).optional(),
+    name: z.string(),
+    price: z.number().finite().min(0).default(0),
   })
   .transform((data) => {
     // If it has costPerTurn > 0, it's definitely recurring

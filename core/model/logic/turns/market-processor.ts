@@ -1,5 +1,5 @@
 import { generateMarketEvent, cleanupExpiredMarketEvents } from '@/core/lib/market-events-generator'
-import { formatGameDate } from '@/core/lib/quarter';
+import { formatGameDate } from '@/core/lib/quarter'
 import type { MarketEvent } from '@/core/types'
 import type { Notification } from '@/core/types'
 
@@ -15,19 +15,19 @@ export function processMarket(
   const marketEvents = cleanupExpiredMarketEvents(prevMarketEvents, currentTurn)
   const newNotifications: Notification[] = []
 
-  const newMarketEvent = generateMarketEvent(currentTurn, currentYear)
+  const newMarketEvent = generateMarketEvent(currentTurn)
   if (newMarketEvent) {
     marketEvents.push(newMarketEvent)
     const eventIcon =
       newMarketEvent.type === 'positive' ? '📈' : newMarketEvent.type === 'negative' ? '📉' : '📊'
 
     newNotifications.push({
-      id: newMarketEvent.id,
-      type: newMarketEvent.type === 'positive' ? 'success' : 'info',
-      title: `${eventIcon} Рынок: ${newMarketEvent.title}`,
-      message: newMarketEvent.description,
       date: formatGameDate(currentYear, currentTurn),
+      id: newMarketEvent.id,
       isRead: false,
+      message: newMarketEvent.description,
+      title: `${eventIcon} Рынок: ${newMarketEvent.title}`,
+      type: newMarketEvent.type === 'positive' ? 'success' : 'info',
     })
   }
 

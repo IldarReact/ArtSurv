@@ -1,13 +1,13 @@
 import { describe, it, expect } from 'vitest'
 
+import type { CountryEconomy } from '@/core/types/economy.types'
+
 import {
   getCumulativeInflationMultiplier,
   applyInflationToPrice,
   applyYearlyInflation,
   INFLATION_MULTIPLIERS,
 } from './inflation-system'
-
-import type { CountryEconomy } from '@/core/types/economy.types'
 
 describe('Inflation System', () => {
   describe('getCumulativeInflationMultiplier', () => {
@@ -47,24 +47,24 @@ describe('Inflation System', () => {
     const createEconomy = (
       inflation: number,
       inflationHistory: number[],
-      baseYear: number = 2024,
+      baseYear = 2024,
     ): CountryEconomy => ({
-      id: 'us',
-      name: 'USA',
-      archetype: 'rich_stable',
-      gdpGrowth: 2,
-      inflation,
-      stockMarketInflation: 7,
-      keyRate: 5,
-      interestRate: 5,
-      unemployment: 4,
-      taxRate: 20,
-      corporateTaxRate: 20,
-      salaryModifier: 1,
-      costOfLivingModifier: 1,
       activeEvents: [],
-      inflationHistory,
+      archetype: 'rich_stable',
       baseYear,
+      corporateTaxRate: 20,
+      costOfLivingModifier: 1,
+      gdpGrowth: 2,
+      id: 'us',
+      inflation,
+      inflationHistory,
+      interestRate: 5,
+      keyRate: 5,
+      name: 'USA',
+      salaryModifier: 1,
+      stockMarketInflation: 7,
+      taxRate: 20,
+      unemployment: 4,
     })
 
     it('should return base price for current year equal to base year', () => {
@@ -136,22 +136,22 @@ describe('Inflation System', () => {
       // Симулируем несколько лет инфляции с фиксированными значениями
       // Используем прямое обновление истории для предсказуемости
       let economy: CountryEconomy = {
-        id: 'us',
-        name: 'USA',
-        archetype: 'rich_stable',
-        gdpGrowth: 2,
-        inflation: 3,
-        stockMarketInflation: 7,
-        keyRate: 5,
-        interestRate: 5,
-        unemployment: 4,
-        taxRate: 20,
-        corporateTaxRate: 20,
-        salaryModifier: 1,
-        costOfLivingModifier: 1,
         activeEvents: [],
-        inflationHistory: [3, 4], // 2024: 3%, 2025: 4%
+        archetype: 'rich_stable',
         baseYear: 2024,
+        corporateTaxRate: 20,
+        costOfLivingModifier: 1,
+        gdpGrowth: 2,
+        id: 'us',
+        inflation: 3,
+        inflationHistory: [3, 4], // 2024: 3%, 2025: 4%
+        interestRate: 5,
+        keyRate: 5,
+        name: 'USA',
+        salaryModifier: 1,
+        stockMarketInflation: 7,
+        taxRate: 20,
+        unemployment: 4,
       }
 
       const basePrice = 1000
@@ -196,32 +196,32 @@ describe('Inflation System', () => {
   describe('Inflation never goes negative', () => {
     it('should never generate negative inflation', () => {
       const economy: CountryEconomy = {
-        id: 'us',
-        name: 'USA',
-        archetype: 'rich_stable',
-        gdpGrowth: 2,
-        inflation: 1, // Низкая инфляция
-        stockMarketInflation: 7,
-        keyRate: 5,
-        interestRate: 5,
-        unemployment: 4,
-        taxRate: 20,
-        corporateTaxRate: 20,
-        salaryModifier: 1,
-        costOfLivingModifier: 1,
         activeEvents: [
           {
-            id: 'test',
-            type: 'recession',
-            title: 'Test',
             description: 'Test',
-            turn: 1,
             duration: 4,
             effects: { inflationChange: -5 }, // Сильное отрицательное событие
+            id: 'test',
+            title: 'Test',
+            turn: 1,
+            type: 'recession',
           },
         ],
-        inflationHistory: [1],
+        archetype: 'rich_stable',
         baseYear: 2024,
+        corporateTaxRate: 20,
+        costOfLivingModifier: 1,
+        gdpGrowth: 2,
+        id: 'us',
+        inflation: 1, // Низкая инфляция
+        inflationHistory: [1],
+        interestRate: 5,
+        keyRate: 5,
+        name: 'USA',
+        salaryModifier: 1,
+        stockMarketInflation: 7,
+        taxRate: 20,
+        unemployment: 4,
       }
 
       // Генерируем инфляцию много раз, чтобы проверить, что она никогда не станет отрицательной
@@ -235,22 +235,22 @@ describe('Inflation System', () => {
     it('should never reduce prices due to inflation', () => {
       // Создаем экономику с историей инфляции, где значения могут быть низкими, но не отрицательными
       const economy: CountryEconomy = {
-        id: 'us',
-        name: 'USA',
-        archetype: 'rich_stable',
-        gdpGrowth: 2,
-        inflation: 1,
-        stockMarketInflation: 7,
-        keyRate: 5,
-        interestRate: 5,
-        unemployment: 4,
-        taxRate: 20,
-        corporateTaxRate: 20,
-        salaryModifier: 1,
-        costOfLivingModifier: 1,
         activeEvents: [],
-        inflationHistory: [3, 2, 1], // Инфляция снижается, но остается положительной
+        archetype: 'rich_stable',
         baseYear: 2024,
+        corporateTaxRate: 20,
+        costOfLivingModifier: 1,
+        gdpGrowth: 2,
+        id: 'us',
+        inflation: 1,
+        inflationHistory: [3, 2, 1], // Инфляция снижается, но остается положительной
+        interestRate: 5,
+        keyRate: 5,
+        name: 'USA',
+        salaryModifier: 1,
+        stockMarketInflation: 7,
+        taxRate: 20,
+        unemployment: 4,
       }
       const basePrice = 1000
 
@@ -269,50 +269,54 @@ describe('Inflation System', () => {
   describe('applyYearlyInflation', () => {
     it('should add new inflation to history', () => {
       const economy: CountryEconomy = {
-        id: 'us',
-        name: 'USA',
-        archetype: 'rich_stable',
-        gdpGrowth: 2,
-        inflation: 3,
-        stockMarketInflation: 7,
-        keyRate: 5,
-        interestRate: 5,
-        unemployment: 4,
-        taxRate: 20,
-        corporateTaxRate: 20,
-        salaryModifier: 1,
-        costOfLivingModifier: 1,
         activeEvents: [],
-        inflationHistory: [3],
+        archetype: 'rich_stable',
         baseYear: 2024,
+        corporateTaxRate: 20,
+        costOfLivingModifier: 1,
+        gdpGrowth: 2,
+        id: 'us',
+        inflation: 3,
+        inflationHistory: [3],
+        interestRate: 5,
+        keyRate: 5,
+        name: 'USA',
+        salaryModifier: 1,
+        stockMarketInflation: 7,
+        taxRate: 20,
+        unemployment: 4,
       }
 
       const result = applyYearlyInflation(economy, 2025)
 
       // История должна содержать новую и старую инфляцию (новая в начале!)
-      expect(result.newEconomy.inflationHistory).toHaveLength(2)
-      expect(result.newEconomy.inflationHistory![0]).toBeGreaterThan(0) // Новая инфляция в начале
-      expect(result.newEconomy.inflationHistory![1]).toBe(3) // Базовая инфляция в конце
+      const history = result.newEconomy.inflationHistory
+      expect(history).toBeDefined()
+      expect(history).toHaveLength(2)
+      if (history) {
+        expect(history[0]).toBeGreaterThan(0) // Новая инфляция в начале
+        expect(history[1]).toBe(3) // Базовая инфляция в конце
+      }
     })
 
     it('should update inflation and key rate', () => {
       const economy: CountryEconomy = {
-        id: 'us',
-        name: 'USA',
-        archetype: 'rich_stable',
-        gdpGrowth: 2,
-        inflation: 3,
-        stockMarketInflation: 7,
-        keyRate: 5,
-        interestRate: 5,
-        unemployment: 4,
-        taxRate: 20,
-        corporateTaxRate: 20,
-        salaryModifier: 1,
-        costOfLivingModifier: 1,
         activeEvents: [],
-        inflationHistory: [3],
+        archetype: 'rich_stable',
         baseYear: 2024,
+        corporateTaxRate: 20,
+        costOfLivingModifier: 1,
+        gdpGrowth: 2,
+        id: 'us',
+        inflation: 3,
+        inflationHistory: [3],
+        interestRate: 5,
+        keyRate: 5,
+        name: 'USA',
+        salaryModifier: 1,
+        stockMarketInflation: 7,
+        taxRate: 20,
+        unemployment: 4,
       }
 
       const result = applyYearlyInflation(economy, 2025)

@@ -1,72 +1,74 @@
 import { describe, it, expect } from 'vitest'
 
-import { calculateBusinessFinancials } from '../business-financials'
+import type { Business, Country } from '@/core/types'
 
-import type { Business } from '@/core/types'
+import { calculateBusinessFinancials } from '../business-financials'
 
 describe('Business Logic Alignment (User Feedback & Refactoring)', () => {
   const mockBusiness: Business = {
-    id: 'test-biz',
-    name: 'Test Retail',
-    type: 'retail',
-    description: 'Test',
-    state: 'active',
-    price: 5, // 2.5x multiplier
-    quantity: 100,
-    isServiceBased: false,
-    isMainBranch: true,
-    partners: [],
-    proposals: [],
-    lastQuarterlyUpdate: 0,
-    createdAt: 0,
-    monthlyIncome: 0,
-    monthlyExpenses: 0,
     autoPurchaseAmount: 0,
-    initialCost: 10000,
-    quarterlyIncome: 0,
-    quarterlyExpenses: 0,
-    quarterlyTax: 0,
-    currentValue: 20000,
-    employees: [],
-    maxEmployees: 5,
-    minEmployees: 1,
-    reputation: 50,
-    efficiency: 100,
-    taxRate: 20,
-    hasInsurance: true,
-    insuranceCost: 1000,
+    createdAt: 0,
     creationCost: { energy: 0, money: 0 },
-    playerRoles: { managerialRoles: [], operationalRole: 'worker' },
+    currentValue: 20000,
+    description: 'Test',
+    efficiency: 100,
     employeeRoles: [],
+    employees: [],
+    eventsHistory: [],
+    foundedTurn: 1,
+    hasInsurance: true,
+    id: 'test-biz',
+    initialCost: 10000,
+    insuranceCost: 1000,
     inventory: {
+      autoPurchaseAmount: 0,
       currentStock: 100,
       maxStock: 500,
       pricePerUnit: 50,
       purchaseCost: 20,
-      autoPurchaseAmount: 0,
     },
+    isMainBranch: true,
+    isServiceBased: false,
+    lastQuarterlyUpdate: 0,
+    maxEmployees: 5,
+    minEmployees: 1,
+    monthlyExpenses: 0,
+    monthlyIncome: 0,
+    name: 'Test Retail',
     openingProgress: {
       id: 'test-opening',
-      title: 'Opening Test Business',
-      totalDuration: 0,
-      remainingDuration: 0,
-      totalQuarters: 0,
-      quartersLeft: 0,
       investedAmount: 0,
+      quartersLeft: 0,
+      remainingDuration: 0,
+      title: 'Opening Test Business',
       totalCost: 0,
+      totalDuration: 0,
+      totalQuarters: 0,
       upfrontCost: 0,
     },
-    eventsHistory: [],
-    foundedTurn: 1,
+    partners: [],
+    playerRoles: { managerialRoles: [], operationalRole: 'worker' },
+    price: 5, // 2.5x multiplier
+    proposals: [],
+    quantity: 100,
+    quarterlyExpenses: 0,
+    quarterlyIncome: 0,
+    quarterlyTax: 0,
+    reputation: 50,
+    state: 'active',
+    taxRate: 20,
+    type: 'retail',
+    valuation: 20000,
+    walletBalance: 0,
   }
 
-  const mockEconomy: any = {
-    id: 'us',
-    name: 'USA',
+  const mockEconomy = {
     archetype: 'rich_stable',
-    inflation: 50, // High inflation to test if it's IGNORED for some fields
     corporateTaxRate: 15,
-  }
+    id: 'us',
+    inflation: 50, // High inflation to test if it's IGNORED for some fields
+    name: 'USA',
+  } as unknown as Country
 
   describe('Simplified Inflation ("3 излишне")', () => {
     it('should NOT apply economy inflation to unit cost', () => {
@@ -80,7 +82,13 @@ describe('Business Logic Alignment (User Feedback & Refactoring)', () => {
     it('should NOT apply economy inflation to rent and utilities', () => {
       // We need to know baseRentPerEmployee and baseUtilitiesPerEmployee from BUSINESS_BALANCE
       // Assuming they are fixed values from business-balance.json
-      const result1 = calculateBusinessFinancials(mockBusiness, true, [], 1.0, undefined)
+      const result1 = calculateBusinessFinancials(
+        mockBusiness,
+        true,
+        [],
+        1.0,
+        undefined as unknown as Country,
+      )
       const result2 = calculateBusinessFinancials(mockBusiness, true, [], 1.0, mockEconomy)
 
       // Expenses breakdown for rent/equipment should be identical despite high inflation
@@ -91,7 +99,13 @@ describe('Business Logic Alignment (User Feedback & Refactoring)', () => {
     })
 
     it('should NOT apply economy inflation to insurance cost', () => {
-      const result1 = calculateBusinessFinancials(mockBusiness, true, [], 1.0, undefined)
+      const result1 = calculateBusinessFinancials(
+        mockBusiness,
+        true,
+        [],
+        1.0,
+        undefined as unknown as Country,
+      )
       const result2 = calculateBusinessFinancials(mockBusiness, true, [], 1.0, mockEconomy)
 
       expect(result1.debug?.expensesBreakdown.other).toBe(result2.debug?.expensesBreakdown.other)
@@ -104,21 +118,22 @@ describe('Business Logic Alignment (User Feedback & Refactoring)', () => {
         ...mockBusiness,
         employees: [
           {
-            id: 'emp-1',
-            name: 'NaN Guy',
-            role: 'worker',
-            stars: 3,
-            salary: NaN, // Dangerous!
-            productivity: 100,
             experience: 0,
             humanTraits: [],
-          } as any,
+            id: 'emp-1',
+            name: 'NaN Guy',
+            productivity: 100,
+            role: 'worker',
+            salary: NaN, // Dangerous!
+            skills: { efficiency: 50 },
+            stars: 3,
+          },
         ],
       }
 
       const result = calculateBusinessFinancials(bizWithNan, true)
       expect(result.expenses).toBeGreaterThan(0)
-      expect(isNaN(result.expenses)).toBe(false)
+      expect(Number.isNaN(result.expenses)).toBe(false)
     })
 
     it('should handle zero production quantity gracefully', () => {

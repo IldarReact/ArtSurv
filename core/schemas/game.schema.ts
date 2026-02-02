@@ -6,7 +6,12 @@ import {
   SkillLevelSchema,
   SkillRequirementSchema,
 } from './base.schema'
-import { BusinessSchema, FreelanceGigSchema, BusinessIdeaSchema } from './business.schema'
+import {
+  BusinessSchema,
+  FreelanceGigSchema,
+  BusinessIdeaSchema,
+  BusinessRoleConfigSchema,
+} from './business.schema'
 import { CountryEconomySchema, GlobalEventSchema } from './economy.schema'
 import {
   BuffSchema,
@@ -30,25 +35,28 @@ export const JobOfferDetailsSchema = z
   .object({
     businessId: z.string(),
     businessName: z.string(),
+    description: z.string().optional(),
+    kpiBonus: z.number().finite().min(0),
     role: z.string(), // Use string to avoid circular dependency with EmployeeRoleSchema if needed, but here it's fine
     salary: z.number().finite().min(0),
-    kpiBonus: z.number().finite().min(0),
-    description: z.string().optional(),
   })
   .strict()
 
+const SHARE_MIN = 0
+const SHARE_MAX = 100
+
 export const PartnershipOfferDetailsSchema = z
   .object({
-    businessId: z.string(),
-    businessType: z.string(),
-    businessName: z.string(),
     businessDescription: z.string(),
-    totalCost: z.number().finite().min(0),
-    partnerShare: z.number().finite().min(0).max(100),
+    businessId: z.string(),
+    businessName: z.string(),
+    businessType: z.string(),
+    employeeRoles: z.array(BusinessRoleConfigSchema), // Using proper schema instead of z.any()
     partnerInvestment: z.number().finite().min(0),
-    yourShare: z.number().finite().min(0).max(100),
+    partnerShare: z.number().finite().min(SHARE_MIN).max(SHARE_MAX),
+    totalCost: z.number().finite().min(0),
     yourInvestment: z.number().finite().min(0),
-    employeeRoles: z.array(z.any()), // Simplified to avoid deep circularity
+    yourShare: z.number().finite().min(SHARE_MIN).max(SHARE_MAX),
   })
   .strict()
 
@@ -56,39 +64,43 @@ export const ShareSaleOfferDetailsSchema = z
   .object({
     businessId: z.string(),
     businessName: z.string(),
-    sharePercent: z.number().finite().min(0).max(100),
-    price: z.number().finite().min(0),
     currentValue: z.number().finite().min(0),
+    price: z.number().finite().min(0),
+    sharePercent: z.number().finite().min(SHARE_MIN).max(SHARE_MAX),
   })
   .strict()
 
 export const OfferStatusSchema = z.enum(['pending', 'accepted', 'rejected', 'expired', 'cancelled'])
 
+const TURN_MIN = 0
+const STAT_MIN = 0
+const STAT_MAX = 100
+
 export const BaseGameOfferSchema = z.object({
-  id: z.string(),
+  createdTurn: z.number().int().min(TURN_MIN),
+  expiresInTurns: z.number().int().min(TURN_MIN),
   fromPlayerId: z.string(),
   fromPlayerName: z.string(),
+  id: z.string(),
+  message: z.string().optional(),
+  status: OfferStatusSchema,
   toPlayerId: z.string(),
   toPlayerName: z.string(),
-  status: OfferStatusSchema,
-  createdTurn: z.number().int().min(0),
-  expiresInTurns: z.number().int().min(0),
-  message: z.string().optional(),
 })
 
 export const JobOfferSchema = BaseGameOfferSchema.extend({
-  type: z.literal('job_offer'),
   details: JobOfferDetailsSchema,
+  type: z.literal('job_offer'),
 })
 
 export const PartnershipOfferSchema = BaseGameOfferSchema.extend({
-  type: z.literal('business_partnership'),
   details: PartnershipOfferDetailsSchema,
+  type: z.literal('business_partnership'),
 })
 
 export const ShareSaleOfferSchema = BaseGameOfferSchema.extend({
-  type: z.literal('share_sale'),
   details: ShareSaleOfferDetailsSchema,
+  type: z.literal('share_sale'),
 })
 
 export const GameOfferSchema = z.discriminatedUnion('type', [
@@ -101,51 +113,51 @@ export const GameOfferSchema = z.discriminatedUnion('type', [
 
 export const SkillDefinitionSchema = z
   .object({
-    id: z.string(),
-    name: z.string(),
-    description: z.string(),
-    maxLevel: z.number().int().min(1).optional(),
     category: z.enum(['technical', 'creative', 'social', 'physical', 'language']).optional(),
+    description: z.string(),
+    id: z.string(),
+    maxLevel: z.number().int().min(1).optional(),
+    name: z.string(),
   })
   .strict()
 
 export const SkillSchema = z
   .object({
     id: z.string(),
-    name: z.string(),
-    level: SkillLevelSchema,
-    progress: z.number().finite().min(0).max(100),
-    lastPracticedTurn: z.number().int().min(0),
     isBeingStudied: z.boolean().optional(),
     isBeingUsedAtWork: z.boolean().optional(),
+    lastPracticedTurn: z.number().int().min(0),
+    level: SkillLevelSchema,
+    name: z.string(),
+    progress: z.number().finite().min(0).max(100),
   })
   .strict()
 
 export const ActiveCourseSchema = z
   .object({
-    id: z.string(),
-    title: z.string().optional(), // New base field
-    courseName: z.string(),
-    skillName: z.string(),
-    skillBonus: z.number().finite(),
-    totalDuration: z.number().int().min(1),
-    remainingDuration: z.number().int().min(0),
     costPerTurn: StatEffectSchema,
+    courseName: z.string(),
+    id: z.string(),
+    remainingDuration: z.number().int().min(0),
+    skillBonus: z.number().finite(),
+    skillName: z.string(),
     startedTurn: z.number().int().min(0),
+    title: z.string().optional(), // New base field
+    totalDuration: z.number().int().min(1),
   })
   .strict()
 
 export const ActiveUniversitySchema = z
   .object({
-    id: z.string(),
-    title: z.string().optional(), // New base field
-    programName: z.string(),
-    skillName: z.string(),
-    skillBonus: z.number().finite(),
-    totalDuration: z.number().int().min(1),
-    remainingDuration: z.number().int().min(0),
     costPerTurn: StatEffectSchema,
+    id: z.string(),
+    programName: z.string(),
+    remainingDuration: z.number().int().min(0),
+    skillBonus: z.number().finite(),
+    skillName: z.string(),
     startedTurn: z.number().int().min(0),
+    title: z.string().optional(), // New base field
+    totalDuration: z.number().int().min(1),
   })
   .strict()
 
@@ -153,20 +165,20 @@ export const ActiveUniversitySchema = z
 
 export const CourseSchema = z
   .object({
+    cost: z.number().finite().min(0),
+    costPerTurn: StatEffectSchema.optional(),
+    description: z.string().optional(),
+    duration: z.number().int().min(1),
     id: z.string(),
     name: z.string(),
-    description: z.string().optional(),
-    cost: z.number().finite().min(0),
-    duration: z.number().int().min(1),
-    skillName: z.string(),
-    skillGain: z.number().finite().min(0),
-    costPerTurn: StatEffectSchema.optional(),
     requirements: z
       .object({
         education: z.string().optional(),
-        skills: z.array(z.object({ name: z.string(), level: z.number() })).optional(),
+        skills: z.array(z.object({ level: z.number(), name: z.string() })).optional(),
       })
       .optional(),
+    skillGain: z.number().finite().min(0),
+    skillName: z.string(),
   })
   .strict()
 
@@ -175,21 +187,22 @@ export const CourseSchema = z
 export const JobRequirementsSchema = z
   .object({
     education: z.string().optional(),
-    skills: z.array(z.object({ name: z.string(), level: z.number() })).optional(),
     experience: z.number().optional(),
+    skills: z.array(z.object({ level: z.number(), name: z.string() })).optional(),
   })
   .strict()
 
 export const JobSchema = z
   .object({
-    id: z.string(),
-    title: z.string(),
+    category: z.string().optional(),
     company: z.string(),
-    salary: z.number().finite().min(0),
     cost: StatEffectSchema,
+    description: z.string().optional(),
+    id: z.string(),
     imageUrl: z.string(),
-    description: z.string(),
     requirements: JobRequirementsSchema.optional(),
+    salary: z.number().finite().min(0),
+    title: z.string(),
   })
   .strict()
 
@@ -197,38 +210,40 @@ export const JobSchema = z
 
 export const NearbyConstructionSchema = z
   .object({
-    id: z.string(),
-    name: z.string(),
+    attractivenessBonus: z.number(),
     buildTime: z.number().int().min(1),
     currentProgress: z.number().int().min(0),
     effectDuringConstruction: StatEffectSchema,
     effectOnCompletion: StatEffectSchema,
-    attractivenessBonus: z.number(),
+    id: z.string(),
+    name: z.string(),
   })
   .strict()
 
+const ATTRACTIVENESS_DEFAULT = 50
+
 export const HousingOptionSchema = z
   .object({
-    id: z.string(),
-    name: z.string(),
-    description: z.string(),
-    type: z.enum(['rent', 'mortgage', 'own']).default('rent'),
-    subtype: z.string().default('apartment'),
-    marketValue: z.number().finite().min(0).default(0),
-    rentCostPerQuarter: z.number().finite().min(0).default(0),
-    maintenanceCost: z.number().finite().min(0).default(0),
+    attractiveness: z.number().finite().min(STAT_MIN).max(STAT_MAX).default(ATTRACTIVENESS_DEFAULT),
     capacity: z.number().int().min(1).default(1),
+    costPerTurn: z.number().optional(),
+    description: z.string(),
     effects: StatEffectSchema.default({}),
-    attractiveness: z.number().finite().min(0).max(100).default(50),
-    nearbyConstructions: z.array(NearbyConstructionSchema).default([]),
-    isRentable: z.boolean().default(false),
-    rentalIncomePerQuarter: z.number().finite().min(0).default(0),
-    yearBuilt: z.number().int().optional(),
+    id: z.string(),
     imageUrl: z.string().optional(),
     isOwnedByPlayer: z.boolean().optional(),
+    isRentable: z.boolean().default(false),
+    maintenanceCost: z.number().finite().min(0).default(0),
+    marketValue: z.number().finite().min(0).default(0),
+    name: z.string(),
+    nearbyConstructions: z.array(NearbyConstructionSchema).default([]),
     // Support for legacy JSON format
     price: z.number().optional(),
-    costPerTurn: z.number().optional(),
+    rentalIncomePerQuarter: z.number().finite().min(0).default(0),
+    rentCostPerQuarter: z.number().finite().min(0).default(0),
+    subtype: z.string().default('apartment'),
+    type: z.enum(['rent', 'mortgage', 'own']).default('rent'),
+    yearBuilt: z.number().int().optional(),
   })
   .transform((data) => {
     // Map legacy fields to new fields if necessary
@@ -251,20 +266,20 @@ export const HousingOptionSchema = z
 
 export const RestActivitySchema = z
   .object({
-    id: z.string(),
-    title: z.string(),
-    energyCost: z.number().finite(),
+    bg: z.string(),
+    color: z.string(),
+    cost: z.number().finite(),
     effects: z.object({
+      energy: z.number().finite().optional(),
       happiness: z.number().finite().optional(),
       health: z.number().finite().optional(),
-      sanity: z.number().finite().optional(),
       intelligence: z.number().finite().optional(),
-      energy: z.number().finite().optional(),
+      sanity: z.number().finite().optional(),
     }),
-    cost: z.number().finite(),
+    energyCost: z.number().finite(),
     icon: z.string(),
-    color: z.string(),
-    bg: z.string(),
+    id: z.string(),
+    title: z.string(),
   })
   .strict()
 
@@ -273,38 +288,38 @@ export const RestActivitySchema = z
 export const CharacterSkillSchema = z
   .object({
     id: z.string(),
-    name: z.string(),
     level: z.number().int().min(1),
+    name: z.string(),
   })
   .strict()
 
 export const CharacterDebtSchema = z
   .object({
     id: z.string(),
-    name: z.string(),
-    type: z.enum(['mortgage', 'loan', 'credit_card', 'business_loan', 'tax_debt', 'student_loan']),
-    principalAmount: z.number().finite().min(0),
-    remainingAmount: z.number().finite().min(0),
     interestRate: z.number().finite().min(0),
+    name: z.string(),
+    principalAmount: z.number().finite().min(0),
     quarterlyPayment: z.number().finite().min(0),
-    termQuarters: z.number().int().min(1),
+    remainingAmount: z.number().finite().min(0),
     remainingQuarters: z.number().int().min(0),
+    termQuarters: z.number().int().min(1),
+    type: z.enum(['mortgage', 'loan', 'credit_card', 'business_loan', 'tax_debt', 'student_loan']),
   })
   .strict()
 
 export const CharacterDataSchema = z
   .object({
-    id: z.string(),
     archetype: z.string(),
-    name: z.string(),
     description: z.string(),
-    startingMoney: z.number().finite(),
-    startingJobId: z.string().optional(),
-    startingSalary: z.number().finite().default(0),
-    startingStats: StatsSchema.omit({ money: true }),
-    startingSkills: z.array(CharacterSkillSchema).optional(),
-    startingDebts: z.array(CharacterDebtSchema).optional(),
+    id: z.string(),
     imageUrl: z.string(),
+    name: z.string(),
+    startingDebts: z.array(CharacterDebtSchema).optional(),
+    startingJobId: z.string().optional(),
+    startingMoney: z.number().finite(),
+    startingSalary: z.number().finite().default(0),
+    startingSkills: z.array(CharacterSkillSchema).optional(),
+    startingStats: StatsSchema.omit({ money: true }),
   })
   .strict()
 
@@ -312,50 +327,50 @@ export const CharacterDataSchema = z
 
 export const PersonalLifeSchema = z
   .object({
-    stats: StatsSchema,
-    relations: z
-      .object({
-        family: z.number().finite().min(0).max(100),
-        friends: z.number().finite().min(0).max(100),
-        colleagues: z.number().finite().min(0).max(100),
-      })
-      .strict(),
-    skills: z.array(SkillSchema),
     activeCourses: z.array(ActiveCourseSchema),
     activeUniversity: z.array(ActiveUniversitySchema),
     buffs: z.array(BuffSchema),
     familyMembers: z.array(FamilyMemberSchema),
-    lifeGoals: z.array(LifeGoalSchema),
     isDating: z.boolean(),
+    lifeGoals: z.array(LifeGoalSchema),
     potentialPartner: PotentialPartnerSchema.nullable(),
     pregnancy: PregnancySchema.nullable(),
+    relations: z
+      .object({
+        colleagues: z.number().finite().min(0).max(100),
+        family: z.number().finite().min(0).max(100),
+        friends: z.number().finite().min(0).max(100),
+      })
+      .strict(),
+    skills: z.array(SkillSchema),
+    stats: StatsSchema,
   })
   .strict()
 
 export const PlayerSchema = z
   .object({
-    id: z.string(),
-    name: z.string(),
+    activeLifestyle: z.record(z.string(), z.string().optional()),
     age: z.number().int().min(0),
-    avatar: z.string().optional(),
-    gender: z.enum(['male', 'female', 'other']),
-    currentJob: JobSchema.nullable(),
-    residenceCountryId: z.string(),
-    personalLife: PersonalLifeSchema,
-    businesses: z.array(BusinessSchema),
-    freelanceGigs: z.array(FreelanceGigSchema),
-    businessIdeas: z.array(BusinessIdeaSchema),
     // Missing fields from Player interface
     assets: z.array(AssetSchema),
-    debts: z.array(DebtSchema),
-    quarterlyReport: QuarterlyReportSchema,
+    avatar: z.string().optional(),
+    businesses: z.array(BusinessSchema),
+    businessIdeas: z.array(BusinessIdeaSchema),
+    countryId: z.string(),
     creditScore: z.union([z.object({ value: z.number() }), z.number()]),
+    currentJob: JobSchema.nullable(),
+    debts: z.array(DebtSchema),
+    freelanceGigs: z.array(FreelanceGigSchema),
+    gender: z.enum(['male', 'female', 'other']),
+    happinessMultiplier: z.number().finite(),
+    housingId: z.string(),
+    id: z.string(),
+    multipliers: StatEffectSchema.optional(),
+    name: z.string(),
+    personal: PersonalLifeSchema,
+    quarterlyReport: QuarterlyReportSchema,
     quarterlySalary: z.number().finite(),
     stats: StatsSchema,
-    multipliers: StatEffectSchema.optional(),
-    happinessMultiplier: z.number().finite(),
-    activeLifestyle: z.record(z.string(), z.string()),
-    housingId: z.string(),
     traits: z.array(z.string()),
   })
   .strict()
@@ -364,7 +379,12 @@ export const PlayerSchema = z
 
 export const NotificationSchema = z
   .object({
+    data: z.unknown().optional(),
+    date: z.string().optional(),
     id: z.string(),
+    isRead: z.boolean(),
+    message: z.string(),
+    title: z.string(),
     type: z.enum([
       'job_offer',
       'job_rejection',
@@ -374,34 +394,29 @@ export const NotificationSchema = z
       'warning',
       'error',
     ]),
-    title: z.string(),
-    message: z.string(),
-    isRead: z.boolean(),
-    date: z.string().optional(),
-    data: z.unknown().optional(),
   })
   .strict()
 
 export const PendingApplicationSchema = z
   .object({
+    company: z.string(),
+    cost: StatEffectSchema,
+    daysPending: z.number().int(),
     id: z.string(),
     jobTitle: z.string(),
-    company: z.string(),
-    salary: z.number().finite(),
-    cost: StatEffectSchema,
     requirements: z.array(SkillRequirementSchema),
-    daysPending: z.number().int(),
+    salary: z.number().finite(),
   })
   .strict()
 
 export const PendingFreelanceApplicationSchema = z
   .object({
-    id: z.string(),
-    gigId: z.string(),
-    title: z.string(),
-    payment: z.number().finite(),
     cost: StatEffectSchema,
+    gigId: z.string(),
+    id: z.string(),
+    payment: z.number().finite(),
     requirements: z.array(SkillRequirementSchema),
+    title: z.string(),
   })
   .strict()
 
@@ -409,9 +424,11 @@ export const PendingFreelanceApplicationSchema = z
 
 export const GameStateSchema = z
   .object({
-    turn: z.number().int().min(0),
-    year: z.number().int().min(0),
-    isProcessingTurn: z.boolean(),
+    activeActivity: z.string().nullable(),
+    countries: z.record(z.string(), CountryEconomySchema),
+    endReason: z
+      .enum(['DEATH', 'MENTAL_BREAKDOWN', 'DEGRADATION', 'DEPRESSION', 'BANKRUPTCY'])
+      .nullable(),
     gameStatus: z.enum([
       'menu',
       'setup',
@@ -422,27 +439,25 @@ export const GameStateSchema = z
       'ended',
     ]),
     globalEvents: z.array(GlobalEventSchema),
-    countries: z.record(z.string(), CountryEconomySchema),
-    player: PlayerSchema.nullable(),
     history: z.array(
       z.object({
-        turn: z.number().int().min(0),
-        year: z.number().int().min(0),
-        netWorth: z.number().finite(),
-        happiness: z.number().finite().min(0).max(100),
-        health: z.number().finite().min(0).max(100),
         eventDescription: z.string().optional(),
+        happiness: z.number().finite().min(STAT_MIN).max(STAT_MAX),
+        health: z.number().finite().min(STAT_MIN).max(STAT_MAX),
+        netWorth: z.number().finite(),
+        turn: z.number().int().min(TURN_MIN),
+        year: z.number().int().min(0),
       }),
     ),
-    activeActivity: z.string().nullable(),
-    pendingEventNotification: GlobalEventSchema.nullable(),
-    setupCountryId: z.string().nullable(),
-    endReason: z
-      .enum(['DEATH', 'MENTAL_BREAKDOWN', 'DEGRADATION', 'DEPRESSION', 'BANKRUPTCY'])
-      .nullable(),
+    isProcessingTurn: z.boolean(),
     notifications: z.array(NotificationSchema),
     pendingApplications: z.array(PendingApplicationSchema),
+    pendingEventNotification: GlobalEventSchema.nullable(),
     pendingFreelanceApplications: z.array(PendingFreelanceApplicationSchema),
+    player: PlayerSchema.nullable(),
+    setupCountryId: z.string().nullable(),
+    turn: z.number().int().min(0),
+    year: z.number().int().min(0),
   })
   .strict()
 

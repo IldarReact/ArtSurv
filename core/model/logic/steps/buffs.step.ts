@@ -1,7 +1,7 @@
-import type { TurnStep } from '../turn/turn-step'
-import { processBuffs } from '../turns/buffs-processor'
-
 import type { Stats } from '@/core/types'
+
+import { processBuffs } from '../turns/buffs-processor'
+import type { TurnStep } from './step.types'
 
 export const buffsStep: TurnStep = (ctx, state) => {
   const res = processBuffs(state.buffs, {

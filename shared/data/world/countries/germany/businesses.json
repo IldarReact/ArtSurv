@@ -29,7 +29,7 @@
         "description": "Управление точкой и закупками"
       },
       {
-        "role": "chef",
+        "role": "worker",
         "priority": "required",
         "description": "Приготовление дёнера"
       }

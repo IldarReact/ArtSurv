@@ -4,31 +4,31 @@ import React from 'react'
 import { calculateDevelopmentCost, calculateDevelopmentTime } from '@/core/lib/idea-generator'
 import type { Skill } from '@/core/types'
 import type { BusinessIdea } from '@/core/types/idea.types'
-import { Button } from '@/shared/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
-import { Progress } from '@/shared/ui/progress'
+import { Button } from '@/shared/components/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/dialog'
+import { Progress } from '@/shared/components/progress'
 
 interface IdeaManagementDialogProps {
+  idea: BusinessIdea
   isOpen: boolean
   onClose: () => void
-  idea: BusinessIdea
+  onDevelop: (ideaId: string, amount: number) => void
+  onDiscard: (ideaId: string) => void
+  onLaunch: (ideaId: string) => void
+  playerEnergy: number
   playerMoney?: number
   playerSkills?: Skill[]
-  onDevelop: (ideaId: string, amount: number) => void
-  onLaunch: (ideaId: string) => void
-  onDiscard: (ideaId: string) => void
-  playerEnergy: number
 }
 
 export function IdeaManagementDialog({
+  idea,
   isOpen,
   onClose,
-  idea,
+  onDevelop,
+  onDiscard,
+  onLaunch,
   playerMoney = 0,
   playerSkills = [],
-  onDevelop,
-  onLaunch,
-  onDiscard,
 }: IdeaManagementDialogProps) {
   const [investAmount, setInvestAmount] = React.useState<number>(0)
 
@@ -114,7 +114,7 @@ export function IdeaManagementDialog({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog onOpenChange={onClose} open={isOpen}>
       <DialogContent className="bg-slate-900 text-white border-slate-700 max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl">
@@ -132,7 +132,7 @@ export function IdeaManagementDialog({
                 <span className="text-xs font-bold uppercase tracking-wider">Стадия</span>
               </div>
               <p className="text-xl font-bold">{getStageLabel(idea.stage)}</p>
-              <Progress value={idea.developmentProgress} className="h-2 bg-white/10" />
+              <Progress className="h-2 bg-white/10" value={idea.developmentProgress} />
               <p className="text-xs text-white/40">
                 {idea.developmentProgress.toFixed(0)}% завершено
               </p>
@@ -180,23 +180,25 @@ export function IdeaManagementDialog({
           </div>
 
           <p className="text-sm text-white/60 leading-relaxed bg-white/5 p-4 rounded-xl italic">
-            "{idea.description}"
+            &quot;{idea.description}&quot;
           </p>
         </div>
 
         <div className="flex gap-3 mt-4">
           <Button
-            onClick={handleDevelop}
-            disabled={playerMoney < investAmount || investAmount <= 0}
             className="flex-1 h-12 bg-white text-black hover:bg-zinc-200 font-bold"
+            disabled={playerMoney < investAmount || investAmount <= 0}
+            onClick={handleDevelop}
           >
             Вложить ${investAmount.toLocaleString()}
           </Button>
 
           {idea.developmentProgress >= 100 && (
             <Button
-              onClick={() => onLaunch(idea.id)}
               className="flex-1 h-12 bg-green-600 hover:bg-green-700 text-white font-bold"
+              onClick={() => {
+                onLaunch(idea.id)
+              }}
             >
               <Rocket className="w-4 h-4 mr-2" />
               Запустить
@@ -204,9 +206,11 @@ export function IdeaManagementDialog({
           )}
 
           <Button
-            variant="ghost"
-            onClick={() => onDiscard(idea.id)}
             className="text-rose-400 hover:text-rose-300 hover:bg-rose-400/10 font-bold"
+            onClick={() => {
+              onDiscard(idea.id)
+            }}
+            variant="ghost"
           >
             Удалить
           </Button>

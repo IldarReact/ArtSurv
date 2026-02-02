@@ -1,6 +1,5 @@
-import type { TurnStep } from '../turn/turn-step'
 import { processBusinessTurn } from '../turns/business-turn-processor'
-
+import type { TurnStep } from './step.types'
 
 export const businessStep: TurnStep = (ctx, state) => {
   const res = processBusinessTurn(
@@ -21,11 +20,11 @@ export const businessStep: TurnStep = (ctx, state) => {
   // Применяем затраты статов от ролей игрока
   const energyCost = res.playerRoleEnergyCost
   if (typeof energyCost === 'number' && Number.isFinite(energyCost)) {
-    state.statModifiers.energy = (state.statModifiers.energy || 0) - energyCost
+    state.statModifiers.energy = (state.statModifiers.energy ?? 0) - energyCost
   }
   const sanityCost = res.playerRoleSanityCost
   if (typeof sanityCost === 'number' && Number.isFinite(sanityCost)) {
-    state.statModifiers.sanity = (state.statModifiers.sanity || 0) - sanityCost
+    state.statModifiers.sanity = (state.statModifiers.sanity ?? 0) - sanityCost
   }
 
   res.protectedSkills.forEach((s) => state.protectedSkills.add(s))

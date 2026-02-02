@@ -3,15 +3,17 @@
 import { Users, Trash2, ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
 import React from 'react'
 
-import { ROLE_ICONS, ROLE_LABELS } from '../../constants'
-
 import { getRoleConfig } from '@/core/lib/business'
 import type { Business, Employee, Player, Country } from '@/core/types'
 import { EmployeeCard } from '@/shared/components/business/employee-card'
 
+import { ROLE_ICONS, ROLE_LABELS } from '../../constants'
+
 interface NpcEmployeesSectionProps {
   business: Business
-  player: Player
+  calculateEmployeeSalary: (employee: Employee, country: Country) => number
+  country: Country
+  handleDemoteEmployee: (id: string, name: string, salary: number, stars: number) => void
   handleFireEmployee: (id: string, name: string) => void
   handlePromoteEmployee: (
     id: string,
@@ -20,23 +22,134 @@ interface NpcEmployeesSectionProps {
     stars: number,
     experience: number,
   ) => void
-  handleDemoteEmployee: (id: string, name: string, salary: number, stars: number) => void
+  player: Player
   setEmployeeEffort: (businessId: string, employeeId: string, value: number) => void
+}
+
+function PlayerEmployeeItem({
+  calculateEmployeeSalary,
+  country,
+  employee,
+}: {
   calculateEmployeeSalary: (employee: Employee, country: Country) => number
   country: Country
+  employee: Employee
+}) {
+  const cfg = getRoleConfig(employee.role)
+  const indexedSalary = calculateEmployeeSalary(employee, country)
+  return (
+    <EmployeeCard
+      experience={employee.experience}
+      id={employee.id}
+      impact={cfg?.staffImpact ? cfg.staffImpact(employee.stars) : undefined}
+      isMe={true}
+      isPlayer={true}
+      key={employee.id}
+      name={employee.name}
+      productivity={employee.productivity}
+      role={employee.role}
+      roleIcon={ROLE_ICONS[employee.role]}
+      roleLabel={ROLE_LABELS[employee.role]}
+      salary={indexedSalary}
+      salaryLabel="/кв"
+      stars={employee.stars}
+    />
+  )
+}
+
+function NpcEmployeeItem({
+  businessId,
+  calculateEmployeeSalary,
+  country,
+  employee,
+  handleDemoteEmployee,
+  handleFireEmployee,
+  handlePromoteEmployee,
+  setEmployeeEffort,
+}: {
+  businessId: string
+  calculateEmployeeSalary: (employee: Employee, country: Country) => number
+  country: Country
+  employee: Employee
+  handleDemoteEmployee: (id: string, name: string, salary: number, stars: number) => void
+  handleFireEmployee: (id: string, name: string) => void
+  handlePromoteEmployee: (
+    id: string,
+    name: string,
+    salary: number,
+    stars: number,
+    experience: number,
+  ) => void
+  setEmployeeEffort: (businessId: string, employeeId: string, value: number) => void
+}) {
+  const isNpcPlayer = employee.id.startsWith('player_')
+  const cfg = getRoleConfig(employee.role)
+  const indexedSalary = calculateEmployeeSalary(employee, country)
+
+  return (
+    <EmployeeCard
+      actionIcon={<Trash2 className="w-3 h-3 mr-1" />}
+      actionLabel="Уволить"
+      actionVariant="destructive"
+      effortPercent={isNpcPlayer ? employee.effortPercent : undefined}
+      experience={employee.experience}
+      id={employee.id}
+      impact={cfg?.staffImpact ? cfg.staffImpact(employee.stars) : undefined}
+      isMe={false}
+      isPlayer={isNpcPlayer}
+      key={employee.id}
+      name={employee.name}
+      onAction={() => {
+        handleFireEmployee(employee.id, employee.name)
+      }}
+      onEffortChange={
+        isNpcPlayer
+          ? (value: number) => {
+              setEmployeeEffort(businessId, employee.id, value)
+            }
+          : undefined
+      }
+      onSecondaryAction={() => {
+        handlePromoteEmployee(
+          employee.id,
+          employee.name,
+          employee.salary,
+          employee.stars,
+          employee.experience,
+        )
+      }}
+      onTertiaryAction={() => {
+        handleDemoteEmployee(employee.id, employee.name, employee.salary, employee.stars)
+      }}
+      productivity={employee.productivity}
+      role={employee.role}
+      roleIcon={ROLE_ICONS[employee.role]}
+      roleLabel={ROLE_LABELS[employee.role]}
+      salary={indexedSalary}
+      salaryLabel="/кв"
+      secondaryActionIcon={<ArrowUpCircle className="w-3 h-3 mr-1" />}
+      secondaryActionLabel="Повысить"
+      stars={employee.stars}
+      tertiaryActionIcon={<ArrowDownCircle className="w-3 h-3 mr-1" />}
+      tertiaryActionLabel="Понизить"
+    />
+  )
 }
 
 export function NpcEmployeesSection({
   business,
-  player,
-  handleFireEmployee,
-  handlePromoteEmployee,
-  handleDemoteEmployee,
-  setEmployeeEffort,
   calculateEmployeeSalary,
   country,
+  handleDemoteEmployee,
+  handleFireEmployee,
+  handlePromoteEmployee,
+  player,
+  setEmployeeEffort,
 }: NpcEmployeesSectionProps) {
   if (business.employees.length === 0) return null
+
+  const playerEmployee = business.employees.find((e) => e.id === `player_${player.id}`)
+  const otherEmployees = business.employees.filter((e) => e.id !== `player_${player.id}`)
 
   return (
     <div>
@@ -45,70 +158,26 @@ export function NpcEmployeesSection({
         Нанятый персонал
       </h4>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {business.employees.map((employee) => {
-          const indexedSalary = calculateEmployeeSalary(employee, country)
-          const isNpcPlayer = employee.id.startsWith('player_')
-          const isMe = employee.id === `player_${player?.id}`
-
-          return (
-            <EmployeeCard
-              key={employee.id}
-              id={employee.id}
-              name={employee.name}
-              role={employee.role}
-              roleLabel={ROLE_LABELS[employee.role]}
-              roleIcon={ROLE_ICONS[employee.role]}
-              stars={employee.stars}
-              experience={employee.experience}
-              salary={indexedSalary}
-              salaryLabel="/кв"
-              isPlayer={isNpcPlayer}
-              isMe={isMe}
-              productivity={employee.productivity}
-              impact={(() => {
-                const cfg = getRoleConfig(employee.role)
-                return cfg?.staffImpact ? cfg.staffImpact(employee.stars) : undefined
-              })()}
-              effortPercent={isNpcPlayer ? employee.effortPercent : undefined}
-              onEffortChange={
-                isNpcPlayer
-                  ? (value: number) => setEmployeeEffort(business.id, employee.id, value)
-                  : undefined
-              }
-              onAction={!isMe ? () => handleFireEmployee(employee.id, employee.name) : undefined}
-              actionLabel={!isMe ? 'Уволить' : undefined}
-              actionIcon={!isMe ? <Trash2 className="w-3 h-3 mr-1" /> : undefined}
-              actionVariant="destructive"
-              onSecondaryAction={
-                !isMe
-                  ? () =>
-                      handlePromoteEmployee(
-                        employee.id,
-                        employee.name,
-                        employee.salary,
-                        employee.stars,
-                        employee.experience,
-                      )
-                  : undefined
-              }
-              secondaryActionLabel={!isMe ? 'Повысить' : undefined}
-              secondaryActionIcon={!isMe ? <ArrowUpCircle className="w-3 h-3 mr-1" /> : undefined}
-              onTertiaryAction={
-                !isMe
-                  ? () =>
-                      handleDemoteEmployee(
-                        employee.id,
-                        employee.name,
-                        employee.salary,
-                        employee.stars,
-                      )
-                  : undefined
-              }
-              tertiaryActionLabel={!isMe ? 'Понизить' : undefined}
-              tertiaryActionIcon={!isMe ? <ArrowDownCircle className="w-3 h-3 mr-1" /> : undefined}
-            />
-          )
-        })}
+        {playerEmployee && (
+          <PlayerEmployeeItem
+            calculateEmployeeSalary={calculateEmployeeSalary}
+            country={country}
+            employee={playerEmployee}
+          />
+        )}
+        {otherEmployees.map((employee) => (
+          <NpcEmployeeItem
+            businessId={business.id}
+            calculateEmployeeSalary={calculateEmployeeSalary}
+            country={country}
+            employee={employee}
+            handleDemoteEmployee={handleDemoteEmployee}
+            handleFireEmployee={handleFireEmployee}
+            handlePromoteEmployee={handlePromoteEmployee}
+            key={employee.id}
+            setEmployeeEffort={setEmployeeEffort}
+          />
+        ))}
       </div>
     </div>
   )

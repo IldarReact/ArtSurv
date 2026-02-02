@@ -1,85 +1,96 @@
-import { calculateQuarterlyTaxes } from '../calculate-quarterly-taxes'
-import { getInflatedPrice } from '../price-helpers'
+import type { QuarterlyReport, IncomeBreakdown, Player } from '@/core/types'
+
 import { sanitizeNumber } from '../financial-helpers'
+import { getInflatedPrice } from '../price-helpers'
+import { assembleQuarterlyReport } from './report-utils'
+import {
+  BASE_MONTHLY_LIFESTYLE_COST,
+  DEFAULT_PLAYER_SHARE,
+  MONTHS_IN_QUARTER,
+  PERCENT_DIVISOR,
+  type QuarterlyReportParams,
+} from './report.types'
 
-import type { Player, QuarterlyReport, IncomeBreakdown } from '@/core/types'
-import type { CountryEconomy } from '@/core/types/economy.types'
+/**
+ * Helper to calculate salary from businesses.
+ */
+function calculateBusinessSalary(player: Player): number {
+  let salary = 0
+  for (const b of player.businesses) {
+    const pEmp = b.playerEmployment
+    if (pEmp) {
+      salary += Math.round(sanitizeNumber(pEmp.salary))
+    }
+  }
+  return salary
+}
 
-export function calculateMixedQuarterlyReport(params: {
-  player: Player
-  country: CountryEconomy
-  familyIncome: number
-  familyExpenses: number
-  assetIncome: number
-  assetMaintenance: number
-  debtInterest: number
-  buffIncomeMod: number
-  businessFinancialsOverride?: { income: number; expenses: number; taxes: number }
-  lifestyleExpenses?: number
-  expensesBreakdown?: Record<string, number>
-}): QuarterlyReport {
-  const {
-    player,
-    country,
-    familyIncome: rawFamilyIncome,
-    familyExpenses: rawFamilyExpenses,
-    assetIncome: rawAssetIncome,
-    assetMaintenance: rawAssetMaintenance,
-    debtInterest: rawDebtInterest,
-    buffIncomeMod: rawBuffIncomeMod,
-    businessFinancialsOverride,
-  } = params
-
-  const familyIncome = sanitizeNumber(rawFamilyIncome)
-  const familyExpenses = sanitizeNumber(rawFamilyExpenses)
-  const assetIncome = sanitizeNumber(rawAssetIncome)
-  const assetMaintenance = sanitizeNumber(rawAssetMaintenance)
-  const debtInterest = sanitizeNumber(rawDebtInterest)
-  const buffIncomeMod = sanitizeNumber(rawBuffIncomeMod)
-
+/**
+ * Calculates business financial data for the quarterly report.
+ */
+function calculateBusinessData(params: QuarterlyReportParams) {
+  const { businessFinancialsOverride, player } = params
   let businessRevenue = 0
   let businessExpenses = 0
   let businessTaxes = 0
   let businessSalary = 0
 
-  // 1. Collect business data
   if (businessFinancialsOverride) {
     businessRevenue = sanitizeNumber(businessFinancialsOverride.income)
     businessExpenses = sanitizeNumber(businessFinancialsOverride.expenses)
     businessTaxes = sanitizeNumber(businessFinancialsOverride.taxes)
+    businessSalary = calculateBusinessSalary(player)
   } else {
-    // Fallback if no override (e.g. initial UI render before first turn)
-    // We don't want to re-calculate everything here if we can avoid it,
-    // but if we must, we do it once.
-    player.businesses.forEach((b) => {
-      const sharePct = typeof b.playerShare === 'number' ? b.playerShare : 100
-      const shareFactor = Math.max(0, Math.min(100, sharePct)) / 100
+    for (const b of player.businesses) {
+      const sharePct = typeof b.playerShare === 'number' ? b.playerShare : DEFAULT_PLAYER_SHARE
+      const shareFactor = Math.max(0, Math.min(DEFAULT_PLAYER_SHARE, sharePct)) / PERCENT_DIVISOR
 
       businessRevenue += Math.round(sanitizeNumber(b.quarterlyIncome) * shareFactor)
       businessExpenses += Math.round(sanitizeNumber(b.quarterlyExpenses) * shareFactor)
       businessTaxes += Math.round(sanitizeNumber(b.quarterlyTax) * shareFactor)
-    })
+
+      const pEmp = b.playerEmployment
+      if (pEmp) {
+        businessSalary += Math.round(sanitizeNumber(pEmp.salary))
+      }
+    }
   }
 
-  // Calculate player's salary from businesses for personal tax
-  // This should always be calculated from current business state to be accurate
-  businessSalary = player.businesses.reduce((sum, b) => {
-    const pEmp = b.playerEmployment
-    if (!pEmp) return sum
-    // Salary is paid in full to the employee, regardless of their ownership share
-    return sum + Math.round(sanitizeNumber(pEmp.salary))
-  }, 0)
+  return {
+    businessExpenses,
+    businessRevenue,
+    businessSalary,
+    businessTaxes,
+  }
+}
 
-  const baseSalary = (player.jobs || []).reduce((sum: number, job) => {
+export function calculateMixedQuarterlyReport(params: QuarterlyReportParams): QuarterlyReport {
+  const {
+    assetIncome: rawAssetIncome,
+    buffIncomeMod: rawBuffIncomeMod,
+    country,
+    familyIncome: rawFamilyIncome,
+    player,
+  } = params
+
+  const familyIncome = sanitizeNumber(rawFamilyIncome)
+  const assetIncome = sanitizeNumber(rawAssetIncome)
+  const buffIncomeMod = sanitizeNumber(rawBuffIncomeMod)
+
+  const { businessExpenses, businessRevenue, businessSalary, businessTaxes } =
+    calculateBusinessData(params)
+
+  let baseSalary = 0
+  for (const job of player.jobs) {
     const monthlySalary = sanitizeNumber(job.salary)
     // Применить инфляцию к зарплате
     const inflatedMonthlySalary = getInflatedPrice(monthlySalary, country, 'salaries')
-    return sum + inflatedMonthlySalary * 3
-  }, 0)
+    baseSalary += inflatedMonthlySalary * MONTHS_IN_QUARTER
+  }
 
   // Total personal income from work (external jobs + own business salary)
-  const workSalary = (baseSalary + businessSalary) * (1 + buffIncomeMod / 100)
-  const adjustedBusinessRevenue = businessRevenue * (1 + buffIncomeMod / 100)
+  const workSalary = (baseSalary + businessSalary) * (1 + buffIncomeMod / PERCENT_DIVISOR)
+  const adjustedBusinessRevenue = businessRevenue * (1 + buffIncomeMod / PERCENT_DIVISOR)
 
   // Taxable income for personal taxes should only include business PROFIT, not gross REVENUE
   const businessProfit = Math.max(0, adjustedBusinessRevenue - businessExpenses - businessTaxes)
@@ -90,80 +101,24 @@ export function calculateMixedQuarterlyReport(params: {
   const totalIncome = workSalary + adjustedBusinessRevenue + familyIncome + assetIncome
 
   const income: IncomeBreakdown = {
-    salary: workSalary,
-    businessRevenue: adjustedBusinessRevenue,
-    familyIncome,
     assetIncome,
+    businessRevenue: adjustedBusinessRevenue,
     capitalGains: 0,
+    familyIncome,
+    salary: workSalary,
     total: totalIncome,
   }
 
   // Базовые расходы на жизнь с инфляцией (категория services)
-  const baseLifestyleCost = 1000 * 3 * (country.costOfLivingModifier || 1.0)
-  const baseLiving = getInflatedPrice(baseLifestyleCost, country, 'services')
+  const baseLifestyleCost = BASE_MONTHLY_LIFESTYLE_COST * country.costOfLivingModifier
+  const baseLiving = getInflatedPrice(baseLifestyleCost, country, 'services') * MONTHS_IN_QUARTER
 
-  const breakdown = params.expensesBreakdown || {
-    food: sanitizeNumber(params.lifestyleExpenses),
-    housing: 0,
-    transport: 0,
-    credits: debtInterest,
-    mortgage: 0,
-    other: familyExpenses,
-  }
-
-  const expensesTotal = Math.round(
-    baseLiving +
-      sanitizeNumber(breakdown.food) +
-      sanitizeNumber(breakdown.housing) +
-      sanitizeNumber(breakdown.transport) +
-      sanitizeNumber(breakdown.other) +
-      familyExpenses +
-      businessExpenses +
-      debtInterest +
-      assetMaintenance,
-  )
-
-  // Centralized tax calculation
-  const personalTaxes = calculateQuarterlyTaxes({
-    income: taxableIncome,
-    assets: player.assets || [],
-    country,
-  })
-
-  const taxes = {
-    income: personalTaxes.income,
-    business: Math.round(businessTaxes), // Corporate tax from businesses
-    capital: personalTaxes.capital,
-    property: personalTaxes.property,
-    total: Math.round(personalTaxes.total + businessTaxes),
-  }
-
-  const netProfit = totalIncome - expensesTotal - taxes.total
-
-  return {
+  return assembleQuarterlyReport(
+    params,
     income,
-    expenses: {
-      living: Math.round(
-        baseLiving +
-          sanitizeNumber(breakdown.food) +
-          sanitizeNumber(breakdown.housing) +
-          sanitizeNumber(breakdown.transport) +
-          sanitizeNumber(breakdown.other),
-      ),
-      food: Math.round(sanitizeNumber(breakdown.food)),
-      housing: Math.round(sanitizeNumber(breakdown.housing)),
-      transport: Math.round(sanitizeNumber(breakdown.transport)),
-      credits: Math.round(sanitizeNumber(breakdown.credits)),
-      mortgage: Math.round(sanitizeNumber(breakdown.mortgage)),
-      other: Math.round(sanitizeNumber(breakdown.other)),
-      family: Math.round(familyExpenses),
-      business: Math.round(businessExpenses),
-      debtInterest: Math.round(debtInterest),
-      assetMaintenance: Math.round(assetMaintenance),
-      total: expensesTotal,
-    },
-    taxes,
-    netProfit: Math.round(sanitizeNumber(netProfit)),
-    warning: netProfit < 0 ? 'Вы теряете деньги!' : null,
-  }
+    taxableIncome,
+    businessExpenses,
+    businessTaxes,
+    baseLiving,
+  )
 }

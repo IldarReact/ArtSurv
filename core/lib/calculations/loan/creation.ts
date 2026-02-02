@@ -1,6 +1,9 @@
+import type { Debt } from '@/core/types'
+
 import { calculateQuarterlyPayment } from './amortization'
 
-import type { Debt } from '@/core/types'
+const PERCENT_DIVISOR = 100
+const QUARTERS_IN_YEAR = 4
 
 export function createDebt(
   principal: number,
@@ -11,28 +14,28 @@ export function createDebt(
   currentTurn: number,
 ): Debt {
   const quarterlyPayment = calculateQuarterlyPayment(principal, annualRate, quarters)
-  const quarterlyRate = annualRate / 100 / 4
+  const quarterlyRate = annualRate / PERCENT_DIVISOR / QUARTERS_IN_YEAR
   const interest = Math.round(principal * quarterlyRate)
   const principalPart = Math.max(0, quarterlyPayment - interest)
 
   return {
-    id: `debt_${Date.now()}_${crypto.randomUUID()}`,
+    id: `debt_${String(Date.now())}_${crypto.randomUUID()}`,
+    interestRate: annualRate,
     name,
-    type,
 
     principalAmount: principal,
-    remainingAmount: principal,
-
-    interestRate: annualRate,
-
-    quarterlyPayment,
-    quarterlyPrincipal: principalPart,
     quarterlyInterest: interest,
 
-    termQuarters: quarters,
+    quarterlyPayment,
+
+    quarterlyPrincipal: principalPart,
+    remainingAmount: principal,
     remainingQuarters: quarters,
 
     startTurn: currentTurn,
+    termQuarters: quarters,
+
+    type,
   }
 }
 
@@ -59,7 +62,7 @@ export function processEarlyRepayment(debt: Debt, amount: number): Debt {
 
   return {
     ...debt,
-    remainingAmount: newRemaining,
     quarterlyPayment: newQuarterlyPayment,
+    remainingAmount: newRemaining,
   }
 }

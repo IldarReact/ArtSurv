@@ -1,11 +1,6 @@
 export interface BankSlice {
-  openDeposit: (amount: number, name?: string) => void
-  takeLoan: (params: {
-    name: string
-    type: 'consumer_credit' | 'mortgage' | 'student_loan'
-    amount: number
-    interestRate: number
-    quarterlyPayment: number
-    termQuarters: number
-  }) => void
+  openDeposit: (amount: number) => void
+  closeDeposit: (id: string) => void
+  borrow: (amount: number) => void
+  repay: (amount: number) => void
 }

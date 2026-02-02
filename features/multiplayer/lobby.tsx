@@ -1,14 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-
-import { LobbyFooterActions } from './components/lobby/lobby-footer-actions'
-import { LobbyHeader } from './components/lobby/lobby-header'
-import { LobbyInfoBlock } from './components/lobby/lobby-info-block'
-import { LobbySettings } from './components/lobby/lobby-settings'
-import { PlayerList } from './components/lobby/player-list'
-import { Player } from './multiplayer-hub'
+import React, { useEffect, useState } from 'react'
 
 import { getCharactersForCountry } from '@/core/lib/data-loaders/characters-loader'
 import {
@@ -25,16 +18,28 @@ import type { CountryEconomy } from '@/core/types'
 import { CharacterSelectUI } from '@/features/setup/components/character-select'
 import { WorldSelectUI } from '@/features/setup/components/world-select'
 
+import { LobbyFooterActions } from './components/lobby/lobby-footer-actions'
+import { LobbyHeader } from './components/lobby/lobby-header'
+import { LobbyInfoBlock } from './components/lobby/lobby-info-block'
+import { LobbySettings } from './components/lobby/lobby-settings'
+import { PlayerList } from './components/lobby/player-list'
+import type { Player } from './multiplayer-hub'
+
 export function MultiplayerLobby() {
   const router = useRouter()
-  const { initializeGame, countries } = useGameStore()
+  const { countries, initializeGame } = useGameStore()
   const countryList: CountryEconomy[] = Object.values(countries)
 
   const [players, setPlayers] = useState<Player[]>([])
   const [selectedArchetype, setSelectedArchetypeLocal] = useState<string | null>(null)
   const [selectedCountry, setSelectedCountry] = useState<string>('us')
-  const [roomId, setRoomId] = useState('')
   const [isReady, setIsReady] = useState(false)
+
+  const roomId = React.useMemo(() => {
+    if (typeof window === 'undefined') return ''
+    const urlParams = new URLSearchParams(window.location.search)
+    return urlParams.get('room') ?? ''
+  }, [])
 
   const characters = getCharactersForCountry(selectedCountry)
 
@@ -42,21 +47,18 @@ export function MultiplayerLobby() {
   const [isArchetypeModalOpen, setIsArchetypeModalOpen] = useState(false)
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const room = urlParams.get('room')
-
-    if (!room) {
+    if (!roomId) {
       router.push('/')
       return
     }
 
-    setRoomId(room)
-    const isStoredHost = sessionStorage.getItem(`life_sim_host_${room}`) === 'true'
-    initMultiplayer(room, isStoredHost)
+    const isStoredHost =
+      typeof window !== 'undefined' &&
+      window.sessionStorage.getItem(`life_sim_host_${roomId}`) === 'true'
+    initMultiplayer(roomId, isStoredHost)
 
     const updatePlayerHost = () => {
       const currentPlayers = getOnlinePlayers()
-      const amIHost = isHost()
       setPlayers(currentPlayers)
     }
 
@@ -77,7 +79,7 @@ export function MultiplayerLobby() {
       clearInterval(interval)
       unsubscribeGameStart()
     }
-  }, [initializeGame, router, selectedCountry])
+  }, [initializeGame, router, selectedCountry, roomId])
 
   const handleArchetypeSelect = (archetype: string) => {
     setSelectedArchetypeLocal(archetype)
@@ -99,7 +101,9 @@ export function MultiplayerLobby() {
   const handleStartGame = () => {
     const allReady = players.every((p) => p.isReady && p.selectedArchetype)
     if (!allReady) {
-      alert("Не все готовы! Все игроки должны выбрать персонажа и нажать 'Готов'.")
+      if (typeof window !== 'undefined') {
+        window.alert("Не все готовы! Все игроки должны выбрать персонажа и нажать 'Готов'.")
+      }
       return
     }
 
@@ -113,8 +117,10 @@ export function MultiplayerLobby() {
   }
 
   const copyLink = () => {
-    navigator.clipboard.writeText(window.location.href)
-    alert('Ссылка скопирована!')
+    if (typeof window !== 'undefined') {
+      void window.navigator.clipboard.writeText(window.location.href)
+      window.alert('Ссылка скопирована!')
+    }
   }
 
   const canStart =
@@ -122,16 +128,18 @@ export function MultiplayerLobby() {
   const canReady = selectedArchetype !== null
 
   const selectedCountryName =
-    countryList.find((c) => c.id === selectedCountry)?.name || 'Не выбрано'
+    countryList.find((c) => c.id === selectedCountry)?.name ?? 'Не выбрано'
   const selectedArchetypeName =
-    characters.find((c) => c.archetype === selectedArchetype)?.name || 'Не выбрано'
+    characters.find((c) => c.archetype === selectedArchetype)?.name ?? 'Не выбрано'
 
   if (isCountryModalOpen) {
     return (
       <WorldSelectUI
         countries={countryList}
+        onBack={() => {
+          setIsCountryModalOpen(false)
+        }}
         onSelect={handleCountrySelect}
-        onBack={() => setIsCountryModalOpen(false)}
       />
     )
   }
@@ -139,9 +147,11 @@ export function MultiplayerLobby() {
   if (isArchetypeModalOpen) {
     return (
       <CharacterSelectUI
-        setupCountryId={selectedCountry}
+        onBack={() => {
+          setIsArchetypeModalOpen(false)
+        }}
         onSelect={handleArchetypeSelect}
-        onBack={() => setIsArchetypeModalOpen(false)}
+        setupCountryId={selectedCountry}
       />
     )
   }
@@ -149,27 +159,31 @@ export function MultiplayerLobby() {
   return (
     <div className="min-h-screen bg-slate-950 p-6 text-slate-200 font-sans">
       <div className="max-w-7xl mx-auto">
-        <LobbyHeader roomId={roomId} onCopyLink={copyLink} />
+        <LobbyHeader onCopyLink={copyLink} roomId={roomId} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1 space-y-6">
             <PlayerList players={players} />
             <LobbyFooterActions
-              isReady={isReady}
               canReady={canReady}
               canStart={canStart}
-              onToggleReady={handleToggleReady}
+              isReady={isReady}
               onStartGame={handleStartGame}
+              onToggleReady={handleToggleReady}
             />
           </div>
 
           <div className="lg:col-span-2 space-y-6">
             <LobbySettings
-              selectedCountryName={selectedCountryName}
-              selectedArchetypeName={selectedArchetypeName}
+              onOpenArchetypeModal={() => {
+                setIsArchetypeModalOpen(true)
+              }}
+              onOpenCountryModal={() => {
+                setIsCountryModalOpen(true)
+              }}
               selectedArchetype={selectedArchetype}
-              onOpenCountryModal={() => setIsCountryModalOpen(true)}
-              onOpenArchetypeModal={() => setIsArchetypeModalOpen(true)}
+              selectedArchetypeName={selectedArchetypeName}
+              selectedCountryName={selectedCountryName}
             />
             <LobbyInfoBlock />
           </div>

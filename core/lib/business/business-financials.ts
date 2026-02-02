@@ -2,22 +2,30 @@ import type { Business, BusinessInventory } from '../../types/business.types'
 import type { CountryEconomy } from '../../types/economy.types'
 import type { Skill } from '../../types/skill.types'
 import type { StatEffect } from '../../types/stats.types'
-
+import { sanitizeNumber } from '../calculations/financial-helpers'
 import { calculateTotalBusinessImpact } from './business-impacts'
 import { calculateEfficiency, calculateReputation } from './business-metrics'
 import { calculateOpEx } from './financials/opex-calculator'
 import { calculateRevenue } from './financials/revenue-calculator'
-import { calculateTaxes, calculateEstimatedMonthlyProfit as _calcMonthlyProfit } from './financials/tax-calculator'
+import {
+  calculateEstimatedMonthlyProfit as _calcMonthlyProfit,
+  calculateTaxes,
+} from './financials/tax-calculator'
 import { calculatePlayerRoleEffects } from './player-roles'
+
+const DEFAULT_TAX_RATE = 15
+const DEFAULT_FALLBACK_PRICE = 5
+const DEFAULT_FALLBACK_PURCHASE_COST = 40
+const DEFAULT_FALLBACK_PRICE_PER_UNIT = 50
 
 /**
  * Рассчитывает детальные финансовые показатели бизнеса за квартал
  */
 export function calculateBusinessFinancials(
   business: Business,
-  isPreview: boolean = false,
+  isPreview = false,
   playerSkills?: Skill[],
-  globalMarketValue: number = 1.0,
+  globalMarketValueInput = 1.0,
   economy?: CountryEconomy,
 ): {
   income: number
@@ -50,43 +58,59 @@ export function calculateBusinessFinancials(
     }
   }
 } {
-  const state = business.state ?? 'active'
+  // NaN Guards for inputs
+  const globalMarketValue = sanitizeNumber(globalMarketValueInput, 1.0)
+  const efficiency = sanitizeNumber(business.efficiency)
+  const reputation = sanitizeNumber(business.reputation)
+
+  const safeBusiness: Business = {
+    ...business,
+    efficiency,
+    inventory: {
+      ...business.inventory,
+      currentStock: sanitizeNumber(business.inventory.currentStock),
+      pricePerUnit: sanitizeNumber(
+        business.inventory.pricePerUnit,
+        DEFAULT_FALLBACK_PRICE_PER_UNIT,
+      ),
+      purchaseCost: sanitizeNumber(business.inventory.purchaseCost, DEFAULT_FALLBACK_PURCHASE_COST),
+    },
+    price: sanitizeNumber(business.price, DEFAULT_FALLBACK_PRICE),
+    quarterlyExpenses: business.quarterlyExpenses,
+    reputation,
+  }
+
+  const state = safeBusiness.state
   if (state !== 'active') {
-    const fixedExpenses = business.quarterlyExpenses
+    const fixedExpenses = safeBusiness.quarterlyExpenses
     return {
-      income: 0,
-      expenses: fixedExpenses,
-      taxAmount: 0,
-      profit: -fixedExpenses,
-      netProfit: -fixedExpenses,
       cashFlow: -fixedExpenses,
-      newInventory: business.inventory || {
-        currentStock: 0,
-        maxStock: 1000,
-        pricePerUnit: 100,
-        purchaseCost: 50,
-        autoPurchaseAmount: 0,
-      },
+      expenses: fixedExpenses,
+      income: 0,
+      netProfit: -fixedExpenses,
+      newInventory: safeBusiness.inventory,
       playerStatEffects: { energy: 0, sanity: 0 },
+      profit: -fixedExpenses,
+      taxAmount: 0,
     }
   }
 
   // 1. Impacts & Metrics
-  const impacts = calculateTotalBusinessImpact(business, playerSkills)
+  const impacts = calculateTotalBusinessImpact(safeBusiness, playerSkills)
   const currentEfficiency = isPreview
-    ? calculateEfficiency(business, playerSkills)
-    : business.efficiency
+    ? calculateEfficiency(safeBusiness, playerSkills)
+    : safeBusiness.efficiency
   const currentReputation = isPreview
-    ? calculateReputation(business, currentEfficiency, playerSkills)
-    : business.reputation
+    ? calculateReputation(safeBusiness, currentEfficiency, playerSkills)
+    : safeBusiness.reputation
 
   // 2. OpEx Calculation
-  const opexResult = calculateOpEx(business, economy, impacts.expenseReductionPct)
+  const opexResult = calculateOpEx(safeBusiness, economy, impacts.expenseReductionPct)
   const { totalOpEx } = opexResult
 
   // 3. Revenue & Inventory Calculation
   const revenueResult = calculateRevenue(
-    business,
+    safeBusiness,
     currentEfficiency,
     currentReputation,
     globalMarketValue,
@@ -94,65 +118,60 @@ export function calculateBusinessFinancials(
     isPreview,
   )
   const {
-    salesIncome,
     cogs,
-    salesVolume,
-    purchaseCost,
-    purchaseAmount,
+    marketDemand,
     productionCapacity,
+    purchaseAmount,
+    purchaseCost,
+    salesIncome,
+    salesVolume,
     sellingPrice,
     unitCost,
-    marketDemand,
   } = revenueResult
 
-  const newInventory = revenueResult.newInventory || business.inventory || {
-    currentStock: 0,
-    maxStock: 1000,
-    pricePerUnit: 100,
-    purchaseCost: 50,
-    autoPurchaseAmount: 0,
-  }
+  const newInventory = revenueResult.newInventory ?? safeBusiness.inventory
 
   // 4. Profit & Taxes
   const grossProfit = salesIncome - cogs
   const ebitda = grossProfit - totalOpEx
 
-  const taxResult = calculateTaxes(ebitda, economy?.corporateTaxRate, business.taxRate)
-  const { taxAmount, netProfit } = taxResult
+  const taxResult = calculateTaxes(ebitda, economy?.corporateTaxRate, safeBusiness.taxRate)
+  const { netProfit, taxAmount } = taxResult
 
   // Cash Flow includes production costs (purchaseCost) and taxes
   const cashFlow = salesIncome - (totalOpEx + purchaseCost + taxAmount)
 
   return {
-    income: Math.round(salesIncome),
-    expenses: Math.round(purchaseCost + totalOpEx),
-    taxAmount: Math.round(taxAmount),
-    profit: Math.round(cashFlow),
-    netProfit: Math.round(netProfit),
-    cashFlow: Math.round(cashFlow),
-    newInventory,
-    playerStatEffects: calculatePlayerRoleEffects(business),
+    cashFlow: Math.round(sanitizeNumber(cashFlow)),
     debug: {
-      productionCapacity,
-      salesVolume,
-      marketDemand,
-      purchaseAmount,
-      purchaseCost: Math.round(purchaseCost),
-      priceUsed: Math.round(sellingPrice),
-      unitCost: Math.round(unitCost),
-      taxAmount: Math.round(taxAmount),
-      opEx: Math.round(totalOpEx),
-      cogs: Math.round(cogs),
-      grossProfit: Math.round(grossProfit),
+      cogs: Math.round(sanitizeNumber(cogs)),
       expensesBreakdown: {
-        employees: opexResult.reducedEmployeesCost,
-        inventory: Math.round(purchaseCost),
+        employees: sanitizeNumber(opexResult.reducedEmployeesCost),
+        equipment: sanitizeNumber(opexResult.reducedUtilities),
+        inventory: Math.round(sanitizeNumber(purchaseCost)),
         marketing: 0,
-        rent: opexResult.reducedRent,
-        equipment: opexResult.reducedUtilities,
-        other: opexResult.reducedInsurance + opexResult.minFixedCosts,
+        other:
+          sanitizeNumber(opexResult.reducedInsurance) + sanitizeNumber(opexResult.minFixedCosts),
+        rent: sanitizeNumber(opexResult.reducedRent),
       },
+      grossProfit: Math.round(sanitizeNumber(grossProfit)),
+      marketDemand: sanitizeNumber(marketDemand),
+      opEx: Math.round(sanitizeNumber(totalOpEx)),
+      priceUsed: Math.round(sanitizeNumber(sellingPrice)),
+      productionCapacity: sanitizeNumber(productionCapacity),
+      purchaseAmount: sanitizeNumber(purchaseAmount),
+      purchaseCost: Math.round(sanitizeNumber(purchaseCost)),
+      salesVolume: sanitizeNumber(salesVolume),
+      taxAmount: Math.round(sanitizeNumber(taxAmount)),
+      unitCost: Math.round(sanitizeNumber(unitCost)),
     },
+    expenses: Math.round(sanitizeNumber(purchaseCost) + sanitizeNumber(totalOpEx)),
+    income: Math.round(sanitizeNumber(salesIncome)),
+    netProfit: Math.round(sanitizeNumber(netProfit)),
+    newInventory,
+    playerStatEffects: calculatePlayerRoleEffects(safeBusiness),
+    profit: Math.round(sanitizeNumber(cashFlow)),
+    taxAmount: Math.round(sanitizeNumber(taxAmount)),
   }
 }
 
@@ -162,7 +181,7 @@ export function calculateBusinessFinancials(
 export function calculateEstimatedMonthlyProfit(
   monthlyIncome: number,
   monthlyExpenses: number,
-  corporateTaxRatePercent: number = 15,
+  corporateTaxRatePercent = DEFAULT_TAX_RATE,
 ): number {
   return _calcMonthlyProfit(monthlyIncome, monthlyExpenses, corporateTaxRatePercent)
 }
@@ -173,11 +192,4 @@ export function calculateEstimatedMonthlyProfit(
 export function calculateBusinessIncome(business: Business): number {
   const financials = calculateBusinessFinancials(business, true)
   return financials.income
-}
-
-/**
- * @deprecated Use calculateBusinessFinancials instead
- */
-export function updateInventory(business: Business): BusinessInventory {
-  return business.inventory
 }

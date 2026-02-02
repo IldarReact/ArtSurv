@@ -3,21 +3,20 @@
 import { Store, UserPlus } from 'lucide-react'
 import React from 'react'
 
-
-import { ROLE_ICONS, ROLE_LABELS } from '../../constants'
-
 import type { EmployeeRole, BusinessPosition } from '@/core/types'
 import { EmployeeCard } from '@/shared/components/business/employee-card'
 
+import { ROLE_ICONS, ROLE_LABELS } from '../../constants'
+
 interface VacanciesSectionProps {
-  missingRoles: EmployeeRole[]
   availablePositions: BusinessPosition[]
+  missingRoles: EmployeeRole[]
   openHireDialog: (role: EmployeeRole) => void
 }
 
 export function VacanciesSection({
-  missingRoles,
   availablePositions,
+  missingRoles,
   openHireDialog,
 }: VacanciesSectionProps) {
   if (missingRoles.length === 0) return null
@@ -29,20 +28,22 @@ export function VacanciesSection({
         Необходимые вакансии
       </h4>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {missingRoles.map((role: EmployeeRole, idx: number) => (
+        {missingRoles.map((role: EmployeeRole) => (
           <EmployeeCard
-            key={`vacancy-${role}-${idx}`}
-            id={`vacancy-${role}`}
-            name="Вакансия"
-            role={role}
-            roleLabel={ROLE_LABELS[role]}
-            roleIcon={ROLE_ICONS[role]}
-            salary={availablePositions.find((p) => p.role === role)?.salary || 0}
-            salaryLabel="/кв"
-            isVacancy={true}
-            actionLabel="Нанять / Занять"
             actionIcon={<UserPlus className="w-3 h-3 mr-1" />}
-            onAction={() => openHireDialog(role)}
+            actionLabel="Нанять / Занять"
+            id={`vacancy-${role}`}
+            isVacancy={true}
+            key={`vacancy-${role}`}
+            name="Вакансия"
+            onAction={() => {
+              openHireDialog(role)
+            }}
+            role={role}
+            roleIcon={ROLE_ICONS[role]}
+            roleLabel={ROLE_LABELS[role]}
+            salary={availablePositions.find((p) => p.role === role)?.salary ?? 0}
+            salaryLabel="/кв"
           />
         ))}
       </div>

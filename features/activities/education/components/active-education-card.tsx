@@ -1,21 +1,16 @@
 import { Zap, Brain } from 'lucide-react'
 import React from 'react'
 
-import { Badge } from '@/shared/ui/badge'
+import { Badge } from '@/shared/components/badge'
 
 interface ActiveEducationCardProps {
-  title: string
-  progress: number
-  total: number
   energy: number
+  progress: number
+  title: string
+  total: number
 }
 
-export function ActiveEducationCard({
-  title,
-  progress,
-  total,
-  energy,
-}: ActiveEducationCardProps) {
+export function ActiveEducationCard({ energy, progress, title, total }: ActiveEducationCardProps) {
   const percentage = Math.round((progress / total) * 100)
 
   return (
@@ -29,10 +24,10 @@ export function ActiveEducationCard({
 
       {/* Stat Modifiers */}
       <div className="flex gap-2 flex-wrap">
-        <Badge variant="secondary" className="bg-amber-500/20 text-amber-300 hover:bg-amber-500/30">
+        <Badge className="bg-amber-500/20 text-amber-300 hover:bg-amber-500/30" variant="secondary">
           <Zap className="w-3 h-3 mr-1" />-{energy}/кв
         </Badge>
-        <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 hover:bg-blue-500/30">
+        <Badge className="bg-blue-500/20 text-blue-300 hover:bg-blue-500/30" variant="secondary">
           <Brain className="w-3 h-3 mr-1" />
           +1/кв
         </Badge>
@@ -46,7 +41,7 @@ export function ActiveEducationCard({
         <div className="h-2 bg-white/10 rounded-full overflow-hidden">
           <div
             className="h-full bg-blue-500 transition-all duration-500"
-            style={{ width: `${percentage}%` }}
+            style={{ width: `${String(percentage)}%` }}
           />
         </div>
         <p className="text-xs text-white/40 text-right">Осталось: {total - progress} кв.</p>

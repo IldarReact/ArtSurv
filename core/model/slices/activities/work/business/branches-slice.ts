@@ -1,7 +1,6 @@
-import type { GameStateCreator } from '../../../types'
-
-import { applyStats } from '@/core/helpers/apply-stats'
 import { createBusinessBranch } from '@/core/lib/business'
+
+import type { GameStateCreator } from '../../../types'
 
 export const createBranchesSlice: GameStateCreator<{
   openBranch: (sourceBusinessId: string) => void
@@ -16,26 +15,26 @@ export const createBranchesSlice: GameStateCreator<{
     // Стоимость открытия филиала (берем initialCost)
     const branchCost = sourceBusiness.initialCost
 
-    if (state.player.stats.money < branchCost) {
-      console.warn('Недостаточно денег для открытия филиала')
-      return
-    }
-
     let networkId = sourceBusiness.networkId
     let updatedBusinesses = [...state.player.businesses]
 
     // Если сети еще нет, создаем её
     if (!networkId) {
-      networkId = `net_${Date.now()}`
+      networkId = `net_${String(Date.now())}`
 
       // Обновляем исходный бизнес, делаем его главным
       updatedBusinesses = updatedBusinesses.map((b) =>
-        b.id === sourceBusinessId ? { ...b, networkId, isMainBranch: true } : b,
+        b.id === sourceBusinessId ? { ...b, isMainBranch: true, networkId } : b,
       )
     }
 
     // Считаем количество филиалов в этой сети для названия
     const branchCount = updatedBusinesses.filter((b) => b.networkId === networkId).length
+
+    // Списываем деньги через транзакцию
+    if (!state.performTransaction({ money: -branchCost }, { title: 'Открытие филиала' })) {
+      return
+    }
 
     const newBranch = createBusinessBranch(
       sourceBusiness,
@@ -45,18 +44,8 @@ export const createBranchesSlice: GameStateCreator<{
       branchCost,
     )
 
-    const updatedStats = applyStats(state.player.stats, {
-      money: -branchCost,
-    })
-
-    set({
-      player: {
-        ...state.player,
-        stats: updatedStats,
-        businesses: [...updatedBusinesses, newBranch],
-      },
-    })
-
-    console.log(`[Business] Открыт филиал: ${newBranch.name} в сети ${networkId}`)
+    state.updatePlayer((_prev) => ({
+      businesses: [...updatedBusinesses, newBranch],
+    }))
   },
 })

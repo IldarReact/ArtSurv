@@ -5,18 +5,42 @@ import type { GameStore, MarketSlice } from './types'
 /**
  * Market Slice - управление глобальным рынком
  */
-export const createMarketSlice: StateCreator<
-  GameStore,
-  [],
-  [],
-  MarketSlice
-> = (set, get) => ({
+export const createMarketSlice: StateCreator<GameStore, [], [], MarketSlice> = (set, get) => ({
+  /**
+   * Добавить событие рынка
+   */
+  addMarketEvent: (event) => {
+    const state = get()
+
+    // Применяем влияние события к текущему значению рынка
+    const newValue = state.globalMarket.value + event.impact
+    const TREND_THRESHOLD = 0.1
+    const trend: 'rising' | 'falling' | 'stable' =
+      event.impact > TREND_THRESHOLD
+        ? 'rising'
+        : event.impact < -TREND_THRESHOLD
+          ? 'falling'
+          : 'stable'
+
+    const MARKET_MIN = 0.1
+    const MARKET_MAX = 2.0
+    set({
+      globalMarket: {
+        description: event.description,
+        lastUpdatedTurn: state.turn,
+        trend,
+        value: Math.max(MARKET_MIN, Math.min(MARKET_MAX, newValue)),
+      },
+      marketEvents: [...state.marketEvents, event],
+    })
+  },
+
   // Начальное состояние рынка - нормальное
   globalMarket: {
-    value: 1.0,
     description: 'Стабильный рынок',
+    lastUpdatedTurn: 0,
     trend: 'stable',
-    lastUpdatedTurn: 0
+    value: 1.0,
   },
 
   marketEvents: [],
@@ -28,47 +52,17 @@ export const createMarketSlice: StateCreator<
     const state = get()
 
     // Ограничиваем значение в диапазоне 0.1 - 2.0
-    const clampedValue = Math.max(0.1, Math.min(2.0, newValue))
-
-    console.log(`[MARKET] Обновление рынка: ${state.globalMarket.value.toFixed(2)} → ${clampedValue.toFixed(2)}`)
-    console.log(`[MARKET] Описание: ${description}`)
-    console.log(`[MARKET] Тренд: ${trend}`)
+    const MARKET_MIN = 0.1
+    const MARKET_MAX = 2.0
+    const clampedValue = Math.max(MARKET_MIN, Math.min(MARKET_MAX, newValue))
 
     set({
       globalMarket: {
-        value: clampedValue,
         description,
+        lastUpdatedTurn: state.turn,
         trend,
-        lastUpdatedTurn: state.turn
-      }
+        value: clampedValue,
+      },
     })
   },
-
-  /**
-   * Добавить событие рынка
-   */
-  addMarketEvent: (event) => {
-    const state = get()
-
-    console.log(`[MARKET EVENT] ${event.title}`)
-    console.log(`[MARKET EVENT] Влияние: ${event.impact > 0 ? '+' : ''}${event.impact.toFixed(2)}`)
-    console.log(`[MARKET EVENT] Длительность: ${event.duration} кварталов`)
-
-    // Применяем влияние события к текущему значению рынка
-    const newValue = state.globalMarket.value + event.impact
-    const trend: 'rising' | 'falling' | 'stable' =
-      event.impact > 0.1 ? 'rising' :
-        event.impact < -0.1 ? 'falling' :
-          'stable'
-
-    set({
-      marketEvents: [...state.marketEvents, event],
-      globalMarket: {
-        value: Math.max(0.1, Math.min(2.0, newValue)),
-        description: event.description,
-        trend,
-        lastUpdatedTurn: state.turn
-      }
-    })
-  }
 })

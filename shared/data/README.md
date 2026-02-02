@@ -1,6 +1,7 @@
 # Data Architecture
 
 ## Overview
+
 All game data is now **country-specific**. Each country has its own set of items, jobs, courses, businesses, etc.
 
 ## Directory Structure
@@ -67,7 +68,7 @@ const housing = getHousingById('rent_room', player.countryId)
 ## Country IDs
 
 - `us` - United States
-- `ge` - Germany  
+- `ge` - Germany
 - `br` - Brazil
 
 ## Adding New Country

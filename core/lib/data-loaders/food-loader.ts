@@ -4,12 +4,12 @@ import brFood from '@/shared/data/world/countries/brazil/shop-categories/food.js
 import geFood from '@/shared/data/world/countries/germany/shop-categories/food.json'
 import usFood from '@/shared/data/world/countries/us/shop-categories/food.json'
 
-function loadFood(data: unknown[], source: string): ShopItem[] {
+function loadFood(data: unknown[], _source: string): ShopItem[] {
   return data
     .map((item) => {
       const result = ShopItemSchema.safeParse(item)
       if (!result.success) {
-        console.error(`Invalid food item in ${source}:`, item, result.error.format())
+        // console.error(`Invalid food item in ${source}:`, item, result.error.format())
         return null
       }
       return result.data as ShopItem
@@ -18,12 +18,12 @@ function loadFood(data: unknown[], source: string): ShopItem[] {
 }
 
 const COUNTRY_FOOD: Record<string, ShopItem[]> = {
-  us: loadFood(usFood, 'us/food.json'),
-  ge: loadFood(geFood, 'germany/food.json'),
   br: loadFood(brFood, 'brazil/food.json'),
+  ge: loadFood(geFood, 'germany/food.json'),
+  us: loadFood(usFood, 'us/food.json'),
 }
 
-export function getFoodOptions(countryId: string = 'us'): ShopItem[] {
+export function getFoodOptions(countryId = 'us'): ShopItem[] {
   return COUNTRY_FOOD[countryId] ?? []
 }
 

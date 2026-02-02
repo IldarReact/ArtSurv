@@ -3,13 +3,6 @@
 import { Store } from 'lucide-react'
 import React from 'react'
 
-import { PartnerSelectionDialog } from '../../partner-selection-dialog'
-import { formatCurrency } from '../utils/business-ui-mappers'
-
-import { BusinessCard } from './all-businesses-dialog/business-card'
-import { DialogTriggerContent } from './all-businesses-dialog/dialog-trigger-content'
-import { InfoBanner } from './all-businesses-dialog/info-banner'
-
 import { useEconomy } from '@/core/hooks'
 import { calculateEstimatedMonthlyProfit } from '@/core/lib/business/business-financials'
 import { createBusinessPurchase } from '@/core/lib/business/purchase-logic'
@@ -20,12 +13,18 @@ import {
 } from '@/core/lib/data-loaders/businesses-loader'
 import { isMultiplayerActive } from '@/core/lib/multiplayer'
 import { useGameStore } from '@/core/model/store'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/ui/dialog'
+import type { Business } from '@/core/types'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/dialog'
+
+import { PartnerSelectionDialog } from '../../partner-selection-dialog'
+import { formatCurrency } from '../utils/business-ui-mappers'
+import { BusinessCard } from './all-businesses-dialog/business-card'
+import { DialogTriggerContent } from './all-businesses-dialog/dialog-trigger-content'
+import { InfoBanner } from './all-businesses-dialog/info-banner'
 
 interface AllBusinessesDialogProps {
-  playerCash: number
-  playerEnergy: number
-  onOpenBusiness: (business: import('@/core/types').Business, upfrontCost: number) => void
+  onError: (message: string) => void
+  onOpenBusiness: (business: Business, upfrontCost: number) => void
   onOpenWithPartner?: (
     partnerId: string,
     partnerName: string,
@@ -33,152 +32,172 @@ interface AllBusinessesDialogProps {
     template: BusinessTemplate,
   ) => void
   onSuccess: (message: string) => void
-  onError: (message: string) => void
+  playerCash: number
+  playerEnergy: number
 }
 
 export function AllBusinessesDialog({
-  playerCash,
-  playerEnergy,
+  onError,
   onOpenBusiness,
   onOpenWithPartner,
   onSuccess,
-  onError,
+  playerCash,
+  playerEnergy,
 }: AllBusinessesDialogProps) {
+  const [isOpen, setIsOpen] = React.useState(false)
   const [selectedBusinessId, setSelectedBusinessId] = React.useState<string | null>(null)
   const [partnerDialogOpen, setPartnerDialogOpen] = React.useState(false)
   const [templateForPartner, setTemplateForPartner] = React.useState<BusinessTemplate | null>(null)
   const economy = useEconomy()
-  const { player, turn: currentTurn } = useGameStore()
+  const player = useGameStore((state) => state.player)
+  const currentTurn = useGameStore((state) => state.turn)
 
-  const countryId = player?.countryId || 'us'
+  const countryId = player?.countryId ?? 'us'
   const businessTemplates = getAllBusinessTypesForCountry(countryId)
-
-  const selectedBusiness = businessTemplates.find((b) => b.id === selectedBusinessId)
 
   const handleOpenBusiness = (template: BusinessTemplate) => {
     try {
-      const inflatedCost = economy
+      const inflatedTotalCost = economy
         ? getInflatedPrice(template.initialCost, economy, 'business')
         : template.initialCost
 
-      const { business, cost: upfrontCost } = createBusinessPurchase(
+      const inflationFactor = inflatedTotalCost / template.initialCost
+      const inflatedUpfrontCost = Math.round(template.upfrontCost * inflationFactor)
+
+      const { business } = createBusinessPurchase(
         {
+          description: template.description ?? '',
+          employeeRoles: template.employeeRoles,
           id: template.id,
-          name: template.name,
-          type: template.type,
-          description: template.description || '',
           initialCost: template.initialCost,
-          monthlyIncome: template.monthlyIncome,
+          maxEmployees: template.maxEmployees,
+          minEmployees: template.minEmployees,
           monthlyExpenses: template.monthlyExpenses,
-          maxEmployees: template.maxEmployees || 25,
-          minEmployees: template.minEmployees || 1,
-          employeeRoles: template.employeeRoles || [],
-          upfrontPaymentPercentage: 100,
+          monthlyIncome: template.monthlyIncome,
+          name: template.name,
+          price: template.price,
+          quantity: template.quantity,
+          type: template.type,
+          upfrontPaymentPercentage: Math.round((template.upfrontCost / template.initialCost) * 100),
         },
-        inflatedCost,
+        inflatedTotalCost,
         currentTurn,
       )
 
-      if (playerCash >= upfrontCost && playerEnergy >= 15) {
-        onOpenBusiness(business, upfrontCost)
+      if (playerCash >= inflatedUpfrontCost && playerEnergy >= 15) {
+        onOpenBusiness(business, inflatedUpfrontCost)
         onSuccess(`Бизнес "${template.name}" успешно открыт!`)
-      } else if (playerCash < upfrontCost) {
-        onError(`Недостаточно средств. Необходимо $${upfrontCost.toLocaleString()}`)
+        setIsOpen(false)
       } else {
-        onError(`Недостаточно энергии. Необходимо 15 ед.`)
+        if (playerCash < inflatedUpfrontCost) {
+          onError(`Недостаточно средств. Необходимо $${inflatedUpfrontCost.toLocaleString()}`)
+        } else {
+          onError(`Недостаточно энергии. Необходимо 15 ед.`)
+        }
       }
-    } catch (error) {
-      console.error('Failed to open business:', error)
+    } catch {
       onError('Ошибка при открытии бизнеса')
     }
   }
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
+    <>
+      <div
+        onClick={() => {
+          setIsOpen(true)
+        }}
+      >
         <DialogTriggerContent businessTemplates={businessTemplates} />
-      </DialogTrigger>
+      </div>
 
-      <DialogContent className="bg-zinc-900/98 backdrop-blur-xl border-white/20 text-white w-[95vw] md:w-[85vw] max-w-[1400px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-3xl flex items-center gap-3 text-white">
-            <Store className="w-8 h-8 text-emerald-400" />
-            Выбор бизнеса
-          </DialogTitle>
-          <p className="text-white/80 text-base mt-2">
-            Ваш бюджет:{' '}
-            <span className="text-green-400 font-bold">${playerCash.toLocaleString()}</span>
-          </p>
-        </DialogHeader>
+      <Dialog onOpenChange={setIsOpen} open={isOpen}>
+        <DialogContent
+          className="bg-zinc-900/98 backdrop-blur-xl border-white/20 text-white w-[95vw] md:w-[85vw] max-w-[1400px] max-h-[90vh] overflow-y-auto"
+          data-testid="all-businesses-dialog-content"
+        >
+          <DialogHeader>
+            <DialogTitle className="text-3xl flex items-center gap-3 text-white">
+              <Store className="w-8 h-8 text-emerald-400" />
+              Выбор бизнеса
+            </DialogTitle>
+            <p className="text-white/80 text-base mt-2">
+              Ваш бюджет:{' '}
+              <span className="text-green-400 font-bold">${playerCash.toLocaleString()}</span>
+            </p>
+          </DialogHeader>
 
-        <div className="grid grid-cols-1 gap-6 mt-6">
-          {businessTemplates.map((template) => {
-            const inflatedCost = economy
-              ? getInflatedPrice(template.initialCost, economy, 'business')
-              : template.initialCost
+          <div className="grid grid-cols-1 gap-6 mt-6">
+            {businessTemplates.map((template) => {
+              const inflatedTotalCost = economy
+                ? getInflatedPrice(template.initialCost, economy, 'business')
+                : template.initialCost
 
-            const upfrontCost = Math.round(inflatedCost)
-            const canAffordMoney = playerCash >= upfrontCost
-            const canAffordEnergy = playerEnergy >= 15
-            const canAfford = canAffordMoney && canAffordEnergy
-            const isSelected = selectedBusinessId === template.id
+              const inflationFactor = inflatedTotalCost / template.initialCost
+              const upfrontCost = Math.round(template.upfrontCost * inflationFactor)
+              const canAffordMoney = playerCash >= upfrontCost
+              const canAffordEnergy = playerEnergy >= 15
+              const canAfford = canAffordMoney && canAffordEnergy
+              const isSelected = selectedBusinessId === template.id
 
-            const corporateTaxRate = economy?.corporateTaxRate || 15
-            const estProfit = calculateEstimatedMonthlyProfit(
-              template.monthlyIncome,
-              template.monthlyExpenses,
-              corporateTaxRate,
-            )
+              const corporateTaxRate = economy?.corporateTaxRate ?? 15
+              const estProfit = calculateEstimatedMonthlyProfit(
+                template.monthlyIncome,
+                template.monthlyExpenses,
+                corporateTaxRate,
+              )
 
-            const minIncome = Math.round(estProfit * 0.7)
-            const maxIncome = Math.round(estProfit * 1.3)
+              const minIncome = Math.round(estProfit * 0.7)
+              const maxIncome = Math.round(estProfit * 1.3)
 
-            const incomeRange = `${formatCurrency(minIncome)} - ${formatCurrency(maxIncome)}/мес`
-            const expenses = `${formatCurrency(template.monthlyExpenses)}/мес`
+              const incomeRange = `${formatCurrency(minIncome)} - ${formatCurrency(maxIncome)}/мес`
+              const expenses = `${formatCurrency(template.monthlyExpenses)}/мес`
 
-            return (
-              <BusinessCard
-                key={template.id}
-                template={template}
-                upfrontCost={upfrontCost}
-                canAfford={canAfford}
-                isSelected={isSelected}
-                incomeRange={incomeRange}
-                expenses={expenses}
-                onSelect={() => setSelectedBusinessId(template.id)}
-                onOpen={handleOpenBusiness}
-                onOpenWithPartner={(t) => {
-                  setTemplateForPartner(t)
-                  setPartnerDialogOpen(true)
-                }}
-                showPartnerButton={!!onOpenWithPartner && isMultiplayerActive()}
-              />
-            )
-          })}
-        </div>
+              return (
+                <BusinessCard
+                  canAfford={canAfford}
+                  expenses={expenses}
+                  incomeRange={incomeRange}
+                  isSelected={isSelected}
+                  key={template.id}
+                  onOpen={handleOpenBusiness}
+                  onOpenWithPartner={(t) => {
+                    setTemplateForPartner(t)
+                    setPartnerDialogOpen(true)
+                  }}
+                  onSelect={() => {
+                    setSelectedBusinessId(template.id)
+                  }}
+                  showPartnerButton={!!onOpenWithPartner && isMultiplayerActive()}
+                  template={template}
+                  upfrontCost={upfrontCost}
+                />
+              )
+            })}
+          </div>
 
-        {/* Partner Selection Dialog */}
-        {templateForPartner && (
-          <PartnerSelectionDialog
-            isOpen={partnerDialogOpen}
-            onClose={() => {
-              setPartnerDialogOpen(false)
-              setTemplateForPartner(null)
-            }}
-            businessName={templateForPartner.name}
-            businessCost={
-              economy
-                ? getInflatedPrice(templateForPartner.initialCost, economy, 'business')
-                : templateForPartner.initialCost
-            }
-            onSelectPartner={(partnerId, partnerName, playerShare) => {
-              onOpenWithPartner?.(partnerId, partnerName, playerShare, templateForPartner)
-            }}
-          />
-        )}
+          {/* Partner Selection Dialog */}
+          {templateForPartner && (
+            <PartnerSelectionDialog
+              businessCost={
+                economy
+                  ? getInflatedPrice(templateForPartner.initialCost, economy, 'business')
+                  : templateForPartner.initialCost
+              }
+              businessName={templateForPartner.name}
+              isOpen={partnerDialogOpen}
+              onClose={() => {
+                setPartnerDialogOpen(false)
+                setTemplateForPartner(null)
+              }}
+              onSelectPartner={(partnerId, partnerName, playerShare) => {
+                onOpenWithPartner?.(partnerId, partnerName, playerShare, templateForPartner)
+              }}
+            />
+          )}
 
-        <InfoBanner />
-      </DialogContent>
-    </Dialog>
+          <InfoBanner />
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

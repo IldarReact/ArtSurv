@@ -1,6 +1,8 @@
 import type { Business, EmployeeRole } from '../../../types/business.types'
 import { isManagerialRole, isOperationalRole } from '../employee-roles.config'
 
+const DEFAULT_MAX_EMPLOYEES_MULTIPLIER = 5
+
 /**
  * Проверить, выполняет ли игрок указанную роль в бизнесе
  */
@@ -26,7 +28,7 @@ export function getPlayerActiveRoles(business: Business): EmployeeRole[] {
   const roles = [...managerialRoles]
 
   if (operationalRole) {
-    roles.push(operationalRole as EmployeeRole)
+    roles.push(operationalRole)
   }
 
   return roles
@@ -49,7 +51,7 @@ export function isRoleFilled(business: Business, role: EmployeeRole): boolean {
  * Получить эффективный лимит сотрудников (с учетом расширения 5x)
  */
 export function getEffectiveMaxEmployees(business: Business): number {
-  return (business.maxEmployees || 0) * 5
+  return business.maxEmployees * DEFAULT_MAX_EMPLOYEES_MULTIPLIER
 }
 
 /**
@@ -57,7 +59,6 @@ export function getEffectiveMaxEmployees(business: Business): number {
  */
 export function getTotalEmployeesCount(business: Business): number {
   const playerRolesCount =
-    (business.playerRoles.managerialRoles?.length || 0) +
-    (business.playerRoles.operationalRole ? 1 : 0)
+    business.playerRoles.managerialRoles.length + (business.playerRoles.operationalRole ? 1 : 0)
   return business.employees.length + playerRolesCount
 }

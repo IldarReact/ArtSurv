@@ -1,88 +1,73 @@
 import { describe, it, expect } from 'vitest'
 
-import { calculateBusinessFinancials } from '../business-financials'
-
 import type { Business } from '@/core/types'
 
-describe('Business Comprehensive Financials', () => {
-  const mockEconomy: any = {
-    id: 'us',
-    name: 'USA',
-    archetype: 'rich_stable',
-    inflation: 10,
-    inflationHistory: [10, 10], // Two years of 10% inflation
-    taxRate: 20,
-    corporateTaxRate: 20,
-    keyRate: 5,
-    unemployment: 5,
-    salaryModifier: 1.0,
-    costOfLivingModifier: 1.0,
-    activeEvents: [],
-    gdpGrowth: 2,
-    stockMarketInflation: 5,
-  }
+import { calculateBusinessFinancials } from '../business-financials'
 
+describe('Business Comprehensive Financials', () => {
   const mockBusiness: Business = {
-    id: 'test-biz',
-    name: 'Test Retail',
-    type: 'retail',
-    description: 'Test',
-    state: 'active',
-    price: 5, // 2.5x multiplier
-    quantity: 100,
-    isServiceBased: false,
-    isMainBranch: true,
-    partners: [],
-    proposals: [],
-    lastQuarterlyUpdate: 0,
-    createdAt: 0,
-    monthlyIncome: 0,
-    monthlyExpenses: 0,
     autoPurchaseAmount: 0,
-    initialCost: 10000,
-    quarterlyIncome: 0,
-    quarterlyExpenses: 0,
-    quarterlyTax: 0,
-    currentValue: 20000,
-    employees: [],
-    maxEmployees: 5,
-    minEmployees: 1,
-    reputation: 50,
-    efficiency: 100,
-    taxRate: 20,
-    hasInsurance: false,
-    insuranceCost: 0,
+    createdAt: 0,
     creationCost: { energy: 0, money: 0 },
-    playerRoles: { managerialRoles: [], operationalRole: 'worker' },
+    currentValue: 20000,
+    description: 'Test',
+    efficiency: 100,
     employeeRoles: [],
+    employees: [],
+    eventsHistory: [],
+    foundedTurn: 1,
+    hasInsurance: false,
+    id: 'test-biz',
+    initialCost: 10000,
+    insuranceCost: 0,
     inventory: {
+      autoPurchaseAmount: 0,
       currentStock: 100,
       maxStock: 500,
       pricePerUnit: 50,
       purchaseCost: 20,
-      autoPurchaseAmount: 0,
     },
+    isMainBranch: true,
+    isServiceBased: false,
+    lastQuarterlyUpdate: 0,
+    maxEmployees: 5,
+    minEmployees: 1,
+    monthlyExpenses: 0,
+    monthlyIncome: 0,
+    name: 'Test Retail',
     openingProgress: {
       id: 'test-opening',
-      title: 'Opening Test Business',
-      totalDuration: 0,
-      remainingDuration: 0,
-      totalQuarters: 0,
-      quartersLeft: 0,
       investedAmount: 0,
+      quartersLeft: 0,
+      remainingDuration: 0,
+      title: 'Opening Test Business',
       totalCost: 0,
+      totalDuration: 0,
+      totalQuarters: 0,
       upfrontCost: 0,
     },
-    eventsHistory: [],
-    foundedTurn: 1,
+    partners: [],
+    playerRoles: { managerialRoles: [], operationalRole: 'worker' },
+    price: 5, // 2.5x multiplier
+    proposals: [],
+    quantity: 100,
+    quarterlyExpenses: 0,
+    quarterlyIncome: 0,
+    quarterlyTax: 0,
+    reputation: 50,
+    state: 'active',
+    taxRate: 20,
+    type: 'retail',
+    valuation: 20000,
+    walletBalance: 0,
   }
 
   describe('Price Scaling (10 = 5x)', () => {
     it('should apply 5x multiplier when price level is 10', () => {
       const biz = {
         ...mockBusiness,
+        inventory: { ...mockBusiness.inventory, purchaseCost: 100 },
         price: 10,
-        inventory: { ...mockBusiness.inventory!, purchaseCost: 100 },
       }
       const result = calculateBusinessFinancials(biz, true)
       // Multiplier = 10 * 0.5 = 5.0
@@ -93,8 +78,8 @@ describe('Business Comprehensive Financials', () => {
     it('should apply 0.5x multiplier when price level is 1', () => {
       const biz = {
         ...mockBusiness,
+        inventory: { ...mockBusiness.inventory, purchaseCost: 100 },
         price: 1,
-        inventory: { ...mockBusiness.inventory!, purchaseCost: 100 },
       }
       const result = calculateBusinessFinancials(biz, true)
       // Multiplier = 1 * 0.5 = 0.5
@@ -105,7 +90,7 @@ describe('Business Comprehensive Financials', () => {
 
   describe('Lifecycle Management', () => {
     it('should return zero income and limited expenses when frozen', () => {
-      const frozenBiz = { ...mockBusiness, state: 'frozen' as const, quarterlyExpenses: 500 }
+      const frozenBiz = { ...mockBusiness, quarterlyExpenses: 500, state: 'frozen' as const }
       const result = calculateBusinessFinancials(frozenBiz)
 
       expect(result.income).toBe(0)

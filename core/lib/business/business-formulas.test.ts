@@ -1,82 +1,83 @@
 import { describe, it, expect } from 'vitest'
 
-import { calculateBusinessFinancials } from './business-utils'
-
 import type { Business, Employee } from '@/core/types'
+
+import { calculateBusinessFinancials } from './business-utils'
 
 describe('Business Formulas', () => {
   const mockBusiness: Business = {
-    id: 'test-biz',
-    name: 'Test Business',
-    type: 'retail',
-    description: 'Test',
-    state: 'active',
-
-    // Новые поля
-    price: 5,
-    quantity: 100,
-    isServiceBased: false,
-    networkId: undefined,
-    isMainBranch: true,
-    partners: [],
-    proposals: [],
-
-    lastQuarterlyUpdate: 0,
-    createdAt: 0,
-    monthlyIncome: 0,
-    monthlyExpenses: 0,
     autoPurchaseAmount: 0,
-
-    initialCost: 10000,
-    quarterlyIncome: 0,
-    quarterlyExpenses: 0,
-    quarterlyTax: 0,
-    currentValue: 10000,
-    employees: [],
-    maxEmployees: 5,
-    minEmployees: 1,
-    reputation: 50,
-    efficiency: 50,
-    taxRate: 20,
-    hasInsurance: false,
-    insuranceCost: 0,
+    createdAt: 0,
     creationCost: { energy: 0, money: 0 },
-    playerRoles: { managerialRoles: [], operationalRole: null },
+    currentValue: 10000,
+    description: 'Test',
+    efficiency: 50,
+
     employeeRoles: [],
+    employees: [],
+    eventsHistory: [],
+    foundedTurn: 1,
+    hasInsurance: false,
+    id: 'test-biz',
+    initialCost: 10000,
+
+    insuranceCost: 0,
     inventory: {
+      autoPurchaseAmount: 0,
       currentStock: 100,
       maxStock: 200,
       pricePerUnit: 50,
       purchaseCost: 20,
-      autoPurchaseAmount: 0,
     },
+    isMainBranch: true,
+    isServiceBased: false,
+    lastQuarterlyUpdate: 0,
+
+    maxEmployees: 5,
+    minEmployees: 1,
+    monthlyExpenses: 0,
+    monthlyIncome: 0,
+    name: 'Test Business',
+    networkId: undefined,
     openingProgress: {
       id: 'test-opening',
-      title: 'Opening Test Business',
-      totalDuration: 0,
-      remainingDuration: 0,
-      totalQuarters: 0,
-      quartersLeft: 0,
       investedAmount: 0,
+      quartersLeft: 0,
+      remainingDuration: 0,
+      title: 'Opening Test Business',
       totalCost: 0,
+      totalDuration: 0,
+      totalQuarters: 0,
       upfrontCost: 0,
     },
-    eventsHistory: [],
-    foundedTurn: 1,
+    partners: [],
+    playerRoles: { managerialRoles: [], operationalRole: null },
+    // Новые поля
+    price: 5,
+    proposals: [],
+    quantity: 100,
+    quarterlyExpenses: 0,
+    quarterlyIncome: 0,
+    quarterlyTax: 0,
+    reputation: 50,
+    state: 'active',
+    taxRate: 20,
+    type: 'retail',
+    valuation: 10000,
   }
 
-  const createMockEmployee = (role: Employee['role'], stars: number = 3): Employee => ({
+  const createMockEmployee = (role: Employee['role'], stars: Employee['stars'] = 3): Employee => ({
+    experience: 4,
+    humanTraits: [],
     id: 'emp-1',
     name: 'John Doe',
+    productivity: 100,
     role,
-    stars: stars as any,
+    salary: 1000,
     skills: {
       efficiency: 50,
     },
-    salary: 1000,
-    productivity: 100,
-    experience: 4,
-    humanTraits: [],
+    stars,
   })
 
   describe('calculateBusinessFinancials', () => {

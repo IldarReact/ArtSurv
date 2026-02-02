@@ -45,11 +45,7 @@ export { calculateEmployeeKPI } from './employee-calculations'
 export { calculateEfficiency, calculateReputation, updateBusinessMetrics } from './business-metrics'
 
 // Business financials
-export {
-  calculateBusinessFinancials,
-  calculateBusinessIncome,
-  updateInventory,
-} from './business-financials'
+export { calculateBusinessFinancials, calculateBusinessIncome } from './business-financials'
 
 // Business events
 export { generateBusinessEvents } from './business-events'

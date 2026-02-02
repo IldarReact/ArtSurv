@@ -1,19 +1,19 @@
 import { canMakeDirectChanges, requiresApproval } from '@/core/lib/business/partnership-permissions'
 import { useGameStore } from '@/core/model/store'
 import type { Business } from '@/core/types'
-import { BusinessChangeType, BusinessProposal } from '@/core/types/business.types'
+import type { BusinessChangeType, BusinessProposal } from '@/core/types/business.types'
 
-export function useBusinessActionExecutor(business: Business) {
+export function useBusinessActionExecutor(business: Business | undefined) {
   const { player, proposeBusinessChange, pushNotification } = useGameStore()
 
   const executeAction = ({
     directAction,
-    proposalType,
-    proposalData,
-    notificationTitle,
-    notificationMessage,
-    errorTitle = 'Недостаточно прав',
     errorMessage = 'У вас недостаточно доли в бизнесе для выполнения этого действия',
+    errorTitle = 'Недостаточно прав',
+    notificationMessage,
+    notificationTitle,
+    proposalData,
+    proposalType,
   }: {
     directAction: () => void
     proposalType: BusinessChangeType
@@ -23,6 +23,10 @@ export function useBusinessActionExecutor(business: Business) {
     errorTitle?: string
     errorMessage?: string
   }) => {
+    if (!business) {
+      return
+    }
+
     if (business.partners.length > 0 && player) {
       const canDirect = canMakeDirectChanges(business, player.id)
       const needsApproval = requiresApproval(business, player.id)
@@ -32,16 +36,16 @@ export function useBusinessActionExecutor(business: Business) {
       } else if (needsApproval) {
         proposeBusinessChange(business.id, proposalType, proposalData)
 
-        pushNotification?.({
-          type: 'info',
-          title: notificationTitle,
+        pushNotification({
           message: notificationMessage,
+          title: notificationTitle,
+          type: 'info',
         })
       } else {
-        pushNotification?.({
-          type: 'error',
-          title: errorTitle,
+        pushNotification({
           message: errorMessage,
+          title: errorTitle,
+          type: 'error',
         })
       }
     } else {

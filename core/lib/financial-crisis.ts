@@ -18,11 +18,23 @@ export function isInFinancialCrisis(balance: number): boolean {
  * Варианты выхода из финансового кризиса
  */
 export interface CrisisExitOption {
-  id: string
-  type: 'sell_asset' | 'emergency_loan' | 'family_help' | 'bankruptcy'
-  title: string
-  description: string
   available: boolean
+  description: string
+  id: string
+  title: string
+  type: 'sell_asset' | 'emergency_loan' | 'family_help' | 'bankruptcy'
+  unavailableReason?: string
+}
+
+interface CrisisOptionTemplate {
+  description?: string
+  descriptionTemplate?: string
+  emptyDescription?: string
+  id: string
+  noFamilyDescription?: string
+  title: string
+  type: 'sell_asset' | 'emergency_loan' | 'family_help' | 'bankruptcy'
+  unavailableDescription?: string
   unavailableReason?: string
 }
 
@@ -30,79 +42,98 @@ export interface CrisisExitOption {
  * Получает доступные варианты выхода из кризиса
  */
 export function getCrisisExitOptions(player: Player): CrisisExitOption[] {
+  const staticOptions = getCrisisOptions() as CrisisOptionTemplate[]
   const options: CrisisExitOption[] = []
-  const staticOptions = getCrisisOptions()
 
   // 1. Продажа активов
   const sellAssetsOpt = staticOptions.find((o) => o.type === 'sell_asset')
   if (sellAssetsOpt) {
-    const sellableAssets = player.assets.filter((a) => a.value > 0)
-    const totalValue = sellableAssets.reduce((sum, a) => sum + a.value, 0)
-
-    options.push({
-      id: sellAssetsOpt.id,
-      type: 'sell_asset',
-      title: sellAssetsOpt.title,
-      description:
-        sellableAssets.length > 0
-          ? (sellAssetsOpt.descriptionTemplate || '')
-              .replace('{count}', sellableAssets.length.toString())
-              .replace('{value}', totalValue.toLocaleString())
-          : sellAssetsOpt.emptyDescription || 'Нет активов',
-      available: sellableAssets.length > 0,
-    })
+    options.push(createSellAssetsOption(player, sellAssetsOpt))
   }
 
   // 2. Экстренный кредит
   const loanOpt = staticOptions.find((o) => o.type === 'emergency_loan')
   if (loanOpt) {
-    const canTakeLoan = player.debts.length < 3
-    options.push({
-      id: loanOpt.id,
-      type: 'emergency_loan',
-      title: loanOpt.title,
-      description: loanOpt.description ?? '',
-      available: canTakeLoan,
-      unavailableReason: canTakeLoan ? undefined : loanOpt.unavailableReason,
-    })
+    options.push(createEmergencyLoanOption(player, loanOpt))
   }
 
   // 3. Помощь семьи
   const familyOpt = staticOptions.find((o) => o.type === 'family_help')
   if (familyOpt) {
-    const hasFamily = player.personal.familyMembers.length > 0
-    const familyRelations =
-      player.personal.familyMembers.reduce((sum, m) => sum + (m.relationLevel || 50), 0) /
-      Math.max(1, player.personal.familyMembers.length)
-    const canAskFamily = hasFamily && familyRelations > 50
-
-    options.push({
-      id: familyOpt.id,
-      type: 'family_help',
-      title: familyOpt.title,
-      description: canAskFamily
-        ? (familyOpt.description ?? '')
-        : hasFamily
-          ? familyOpt.unavailableDescription || 'Отношения плохие'
-          : familyOpt.noFamilyDescription || 'Нет семьи',
-      available: canAskFamily,
-      unavailableReason: canAskFamily ? undefined : familyOpt.unavailableReason,
-    })
+    options.push(createFamilyHelpOption(player, familyOpt))
   }
 
   // 4. Банкротство
   const bankruptcyOpt = staticOptions.find((o) => o.type === 'bankruptcy')
   if (bankruptcyOpt) {
     options.push({
-      id: bankruptcyOpt.id,
-      type: 'bankruptcy',
-      title: bankruptcyOpt.title,
-      description: bankruptcyOpt.description ?? '',
       available: true,
+      description: bankruptcyOpt.description ?? '',
+      id: bankruptcyOpt.id,
+      title: bankruptcyOpt.title,
+      type: 'bankruptcy',
     })
   }
 
   return options
+}
+
+function createSellAssetsOption(player: Player, template: CrisisOptionTemplate): CrisisExitOption {
+  const sellableAssets = player.assets.filter((a) => a.value > 0)
+  const totalValue = sellableAssets.reduce((sum, a) => sum + a.value, 0)
+
+  return {
+    available: sellableAssets.length > 0,
+    description:
+      sellableAssets.length > 0
+        ? (template.descriptionTemplate ?? '')
+            .replace('{count}', String(sellableAssets.length))
+            .replace('{value}', totalValue.toLocaleString())
+        : (template.emptyDescription ?? 'Нет активов'),
+    id: template.id,
+    title: template.title,
+    type: 'sell_asset',
+  }
+}
+
+const MAX_DEBTS_BEFORE_LOAN_RESTRICTION = 3
+const MIN_RELATIONS_FOR_FAMILY_HELP = 50
+const EMERGENCY_LOAN_BUFFER = 1.2
+const FAMILY_HELP_MONTHS = 3
+
+function createEmergencyLoanOption(
+  player: Player,
+  template: CrisisOptionTemplate,
+): CrisisExitOption {
+  const canTakeLoan = player.debts.length < MAX_DEBTS_BEFORE_LOAN_RESTRICTION
+  return {
+    available: canTakeLoan,
+    description: template.description ?? '',
+    id: template.id,
+    title: template.title,
+    type: 'emergency_loan',
+    unavailableReason: canTakeLoan ? undefined : template.unavailableReason,
+  }
+}
+
+function createFamilyHelpOption(player: Player, template: CrisisOptionTemplate): CrisisExitOption {
+  const hasFamily = player.personal.familyMembers.length > 0
+  const relationsSum = player.personal.familyMembers.reduce((sum, m) => sum + m.relationLevel, 0)
+  const familyRelations = relationsSum / Math.max(1, player.personal.familyMembers.length)
+  const canAskFamily = hasFamily && familyRelations > MIN_RELATIONS_FOR_FAMILY_HELP
+
+  return {
+    available: canAskFamily,
+    description: canAskFamily
+      ? (template.description ?? '')
+      : hasFamily
+        ? (template.unavailableDescription ?? 'Отношения плохие')
+        : (template.noFamilyDescription ?? 'Нет семьи'),
+    id: template.id,
+    title: template.title,
+    type: 'family_help',
+    unavailableReason: canAskFamily ? undefined : template.unavailableReason,
+  }
 }
 
 /**
@@ -110,19 +141,19 @@ export function getCrisisExitOptions(player: Player): CrisisExitOption[] {
  */
 export function generateCrisisEconomicEvent(countryId: string, turn: number): EconomicEvent {
   return {
-    id: `crisis_${countryId}_${turn}`,
-    type: 'crisis',
-    title: '📉 Финансовый кризис',
     description: 'Массовые банкротства граждан привели к экономическому кризису в стране',
-    turn,
     duration: 4, // 1 год (4 квартала)
     effects: {
+      gdpGrowthChange: -2, // -2% к росту ВВП
       inflationChange: 5, // +5% к инфляции
       keyRateChange: 3, // +3% к ключевой ставке
-      gdpGrowthChange: -2, // -2% к росту ВВП
-      unemploymentChange: 2, // +2% безработица
       salaryModifierChange: -0.1, // -10% к зарплатам
+      unemploymentChange: 2, // +2% безработица
     },
+    id: `crisis_${countryId}_${String(turn)}`,
+    title: '📉 Финансовый кризис',
+    turn,
+    type: 'crisis',
   }
 }
 
@@ -135,18 +166,18 @@ export function applyCrisisToCountry(
 ): CountryEconomy {
   return {
     ...country,
-    inflation: Math.max(0, country.inflation + (event.effects.inflationChange || 0)),
-    keyRate: Math.max(0, country.keyRate + (event.effects.keyRateChange || 0)),
-    gdpGrowth: country.gdpGrowth + (event.effects.gdpGrowthChange || 0),
-    unemployment: Math.min(
-      100,
-      Math.max(0, country.unemployment + (event.effects.unemploymentChange || 0)),
-    ),
+    activeEvents: [...country.activeEvents, event],
+    gdpGrowth: country.gdpGrowth + (event.effects.gdpGrowthChange ?? 0),
+    inflation: Math.max(0, country.inflation + (event.effects.inflationChange ?? 0)),
+    keyRate: Math.max(0, country.keyRate + (event.effects.keyRateChange ?? 0)),
     salaryModifier: Math.max(
       0.5,
-      country.salaryModifier + (event.effects.salaryModifierChange || 0),
+      country.salaryModifier + (event.effects.salaryModifierChange ?? 0),
     ),
-    activeEvents: [...country.activeEvents, event],
+    unemployment: Math.min(
+      100,
+      Math.max(0, country.unemployment + (event.effects.unemploymentChange ?? 0)),
+    ),
   }
 }
 
@@ -155,7 +186,7 @@ export function applyCrisisToCountry(
  */
 export function calculateEmergencyLoanAmount(deficit: number): number {
   // Кредит покрывает дефицит + 20% запас
-  return Math.ceil(Math.abs(deficit) * 1.2)
+  return Math.ceil(Math.abs(deficit) * EMERGENCY_LOAN_BUFFER)
 }
 
 /**
@@ -163,6 +194,9 @@ export function calculateEmergencyLoanAmount(deficit: number): number {
  */
 export function calculateFamilyHelp(familyMembers: Player['personal']['familyMembers']): number {
   // Семья может помочь суммой, равной их совокупному доходу за квартал
-  const totalIncome = familyMembers.reduce((sum, m) => sum + m.income, 0)
-  return totalIncome * 3 // Помощь = доход за 3 месяца
+  let totalIncome = 0
+  for (const m of familyMembers) {
+    totalIncome += m.income
+  }
+  return totalIncome * FAMILY_HELP_MONTHS // Помощь = доход за 3 месяца
 }

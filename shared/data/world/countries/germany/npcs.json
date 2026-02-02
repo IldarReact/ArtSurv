@@ -12,11 +12,7 @@
       "sanity": 14,
       "intelligence": 3
     },
-    "tags": [
-      "spouse",
-      "engineer",
-      "german"
-    ]
+    "tags": ["spouse", "engineer", "german"]
   },
   {
     "id": "ge_mother",
@@ -30,10 +26,7 @@
       "happiness": 12,
       "sanity": -2
     },
-    "tags": [
-      "mother-in-law",
-      "retired_teacher"
-    ]
+    "tags": ["mother-in-law", "retired_teacher"]
   },
   {
     "id": "ge_friend_hans",
@@ -47,10 +40,7 @@
       "happiness": 10,
       "sanity": 8
     },
-    "tags": [
-      "best_friend",
-      "architect"
-    ]
+    "tags": ["best_friend", "architect"]
   },
   {
     "id": "ge_cat_felix",
@@ -65,10 +55,7 @@
       "sanity": 20,
       "energy": -5
     },
-    "tags": [
-      "cat",
-      "indoor"
-    ]
+    "tags": ["cat", "indoor"]
   },
   {
     "id": "ge_colleague_klaus",
@@ -82,9 +69,6 @@
       "intelligence": 5,
       "sanity": 3
     },
-    "tags": [
-      "coworker",
-      "senior_developer"
-    ]
+    "tags": ["coworker", "senior_developer"]
   }
 ]

@@ -3,44 +3,46 @@
 import { Zap } from 'lucide-react'
 import React from 'react'
 
-import { Badge } from '@/shared/ui/badge'
-import { Button } from '@/shared/ui/button'
+import { Badge } from '@/shared/components/badge'
+import { Button } from '@/shared/components/button'
 
 interface BusinessDetailCardProps {
+  cost: number
+  description: string
+  detailDialog?: React.ReactNode
+  energyCost: number
+  expenses: string
+  image: string
+  income: string
+  onBuy?: () => void
+  stressImpact: string
   title: string
   type: string
-  description: string
-  cost: number
-  income: string
-  expenses: string
-  energyCost: number
-  stressImpact: string
-  image: string
-  onBuy?: () => void
-  detailDialog?: React.ReactNode
 }
 
 export function BusinessDetailCard({
+  cost,
+  description,
+  detailDialog,
+  energyCost,
+  expenses,
+  image,
+  income,
+  onBuy,
+  stressImpact: _stressImpact,
   title,
   type,
-  description,
-  cost,
-  income,
-  expenses,
-  energyCost,
-  stressImpact,
-  image,
-  onBuy,
-  detailDialog,
 }: BusinessDetailCardProps) {
+  void _stressImpact
   return (
     <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-white/20 transition-colors">
       <div className="relative h-32">
-        <img src={image} alt={title} className="w-full h-full object-cover" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img alt={title} className="w-full h-full object-cover" src={image} />
         <div className="absolute top-2 left-2">
           <Badge
-            variant="secondary"
             className="bg-black/60 backdrop-blur-md text-white border-white/10"
+            variant="secondary"
           >
             {type}
           </Badge>
@@ -77,8 +79,8 @@ export function BusinessDetailCard({
         <div className="flex gap-2">
           {detailDialog}
           <Button
-            onClick={onBuy}
             className="flex-1 text-xs h-9 bg-white text-black hover:bg-white/90 font-bold"
+            onClick={onBuy}
           >
             Открыть
           </Button>

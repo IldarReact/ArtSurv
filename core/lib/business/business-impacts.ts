@@ -1,18 +1,17 @@
 import type { Business } from '../../types/business.types'
 import type { Skill } from '../../types/skill.types'
 import { BUSINESS_BALANCE } from '../data-loaders/business-balance-loader'
-
 import { getRoleConfig } from './employee-roles.config'
 import { getPlayerRoleBusinessImpact } from './player-roles'
 
 export interface TotalBusinessImpact {
   efficiencyBase: number // Сумма базовой эффективности (от рабочих, техников и т.д.)
   efficiencyMultiplierPct: number // Процентный бонус ко всей эффективности (от менеджеров, HR)
-  salesBonusPct: number
-  taxReductionPct: number
   expenseReductionPct: number
   reputationBonus: number
+  salesBonusPct: number
   staffProductivityBonus: number
+  taxReductionPct: number
 }
 
 /**
@@ -27,11 +26,11 @@ export function calculateTotalBusinessImpact(
   const impact: TotalBusinessImpact = {
     efficiencyBase: metrics.baseEfficiency, // Увеличено с 10, чтобы бизнес работал даже без сотрудников
     efficiencyMultiplierPct: 0,
-    salesBonusPct: 0,
-    taxReductionPct: 0,
     expenseReductionPct: 0,
     reputationBonus: metrics.baseReputationBonus, // Увеличено с 5
+    salesBonusPct: 0,
     staffProductivityBonus: 0,
+    taxReductionPct: 0,
   }
 
   // Если бизнес активен, но в нем нет сотрудников и игрока — он все равно имеет минимальную базу
@@ -77,7 +76,10 @@ export function calculateTotalBusinessImpact(
 
   // Caps to prevent extreme values
   impact.taxReductionPct = Math.min(metrics.maxTaxReduction * 100, impact.taxReductionPct)
-  impact.expenseReductionPct = Math.min(metrics.maxExpenseReduction * 100, impact.expenseReductionPct)
+  impact.expenseReductionPct = Math.min(
+    metrics.maxExpenseReduction * 100,
+    impact.expenseReductionPct,
+  )
 
   return impact
 }

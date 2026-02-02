@@ -1,6 +1,3 @@
-import type { GameStore } from '../../../../types'
-import { BusinessChangeProposal } from '../partnership-business-slice.types'
-
 import type { EmployeeRole } from '@/core/types/business.types'
 import type {
   BusinessChangeApprovedEvent,
@@ -9,41 +6,13 @@ import type {
   BusinessUpdatedEvent,
 } from '@/core/types/events.types'
 
+import type { GameStore } from '../../../../types'
+import type { BusinessChangeProposal } from '../partnership-business-slice.types'
+
 export const createPartnershipHandlers = (
   set: (fn: (state: GameStore) => Partial<GameStore>) => void,
   get: () => GameStore,
 ) => ({
-  onBusinessChangeProposed: (event: BusinessChangeProposedEvent) => {
-    const state = get()
-    if (!state.player) return
-
-    const { businessId, proposalId, changeType, initiatorId, initiatorName, data } = event.payload
-
-    const business = state.player.businesses.find((b) => b.id === businessId)
-    if (!business) return
-
-    const proposal: BusinessChangeProposal = {
-      id: proposalId,
-      businessId,
-      changeType,
-      initiatorId,
-      initiatorName,
-      status: 'pending',
-      createdAt: state.turn,
-      data,
-    }
-
-    set((state) => ({
-      businessProposals: [...state.businessProposals, proposal],
-    }))
-
-    state.pushNotification?.({
-      type: 'info',
-      title: 'Новое предложение',
-      message: `${initiatorName} предлагает изменить параметры бизнеса ${business.name}`,
-    })
-  },
-
   onBusinessChangeApproved: (event: BusinessChangeApprovedEvent) => {
     const state = get()
     if (!state.player) return
@@ -63,18 +32,48 @@ export const createPartnershipHandlers = (
       (proposal.changeType === 'change_role' || proposal.changeType === 'hire_employee') &&
       proposal.data.isMe
     ) {
-      console.log('[onBusinessChangeApproved] Player joining business as employee after approval')
       state.joinBusinessAsEmployee(
         proposal.businessId,
         proposal.data.employeeRole as EmployeeRole,
-        proposal.data.employeeSalary || 0,
+        proposal.data.employeeSalary ?? 0,
       )
     }
 
-    state.pushNotification?.({
-      type: 'success',
-      title: 'Предложение одобрено',
+    state.pushNotification({
       message: 'Ваше предложение по бизнесу было одобрено партнёром',
+      title: 'Предложение одобрено',
+      type: 'success',
+    })
+  },
+
+  onBusinessChangeProposed: (event: BusinessChangeProposedEvent) => {
+    const state = get()
+    if (!state.player) return
+
+    const { businessId, changeType, data, initiatorId, initiatorName, proposalId } = event.payload
+
+    const business = state.player.businesses.find((b) => b.id === businessId)
+    if (!business) return
+
+    const proposal: BusinessChangeProposal = {
+      businessId,
+      changeType,
+      createdAt: state.turn,
+      data,
+      id: proposalId,
+      initiatorId,
+      initiatorName,
+      status: 'pending',
+    }
+
+    set((state) => ({
+      businessProposals: [...state.businessProposals, proposal],
+    }))
+
+    state.pushNotification({
+      message: `${initiatorName} предлагает изменить параметры бизнеса ${business.name}`,
+      title: 'Новое предложение',
+      type: 'info',
     })
   },
 
@@ -88,10 +87,10 @@ export const createPartnershipHandlers = (
       ),
     }))
 
-    state.pushNotification?.({
-      type: 'warning',
-      title: 'Предложение отклонено',
+    state.pushNotification({
       message: 'Ваше предложение было отклонено партнёром',
+      title: 'Предложение отклонено',
+      type: 'warning',
     })
   },
 
@@ -100,52 +99,45 @@ export const createPartnershipHandlers = (
     if (!state.player) return
 
     const { businessId, changes } = event.payload
+    const player = state.player
 
-    set((state) => {
-      if (!state.player) return state
-      const player = state.player
-      return {
-        player: {
-          ...player,
-          businesses: player.businesses.map((business) => {
-            if (business.id !== businessId) return business
+    state.updatePlayer((prev) => ({
+      businesses: prev.businesses.map((business) => {
+        if (business.id !== businessId) return business
 
-            const processedChanges = { ...changes }
-            let updatedPlayerEmployment = business.playerEmployment
+        const processedChanges = { ...changes }
+        let updatedPlayerEmployment = business.playerEmployment
 
-            if (changes.employees && Array.isArray(changes.employees)) {
-              const selfAsEmployee = changes.employees.find(
-                (emp) => emp.id === `player_${player.id}`,
-              )
+        if (changes.employees && Array.isArray(changes.employees)) {
+          const selfAsEmployee = changes.employees.find((emp) => emp.id === `player_${player.id}`)
 
-              if (selfAsEmployee) {
-                updatedPlayerEmployment = {
-                  ...(updatedPlayerEmployment || {
-                    startedTurn: state.turn,
-                    experience: 0,
-                  }),
-                  role: selfAsEmployee.role,
-                  salary: selfAsEmployee.salary,
-                  effortPercent:
-                    selfAsEmployee.effortPercent ?? updatedPlayerEmployment?.effortPercent ?? 100,
-                }
-              } else if (updatedPlayerEmployment) {
-                updatedPlayerEmployment = undefined
-              }
-
-              processedChanges.employees = changes.employees.filter(
-                (emp) => emp.id !== `player_${player.id}`,
-              )
+          if (selfAsEmployee) {
+            updatedPlayerEmployment = {
+              ...(updatedPlayerEmployment ?? {
+                experience: 0,
+                productivity: 100,
+                startedTurn: state.turn,
+              }),
+              effortPercent:
+                selfAsEmployee.effortPercent ?? updatedPlayerEmployment?.effortPercent ?? 100,
+              role: selfAsEmployee.role,
+              salary: selfAsEmployee.salary,
             }
+          } else if (updatedPlayerEmployment) {
+            updatedPlayerEmployment = undefined
+          }
 
-            return {
-              ...business,
-              ...processedChanges,
-              playerEmployment: updatedPlayerEmployment,
-            }
-          }),
-        },
-      }
-    })
+          processedChanges.employees = changes.employees.filter(
+            (emp) => emp.id !== `player_${player.id}`,
+          )
+        }
+
+        return {
+          ...business,
+          ...processedChanges,
+          playerEmployment: updatedPlayerEmployment,
+        }
+      }),
+    }))
   },
 })

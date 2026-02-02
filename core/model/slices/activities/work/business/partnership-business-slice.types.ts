@@ -1,21 +1,33 @@
 import type { Business, BusinessChangeType, BusinessProposal } from '@/core/types/business.types'
+import type {
+  BusinessChangeApprovedEvent,
+  BusinessChangeProposedEvent,
+  BusinessChangeRejectedEvent,
+  BusinessUpdatedEvent,
+} from '@/core/types/events.types'
 
 export type BusinessChangeProposal = BusinessProposal
 
 export interface PartnershipBusinessSlice {
+  approveBusinessChange: (proposalId: string) => void
+
   // Предложения изменений
   businessProposals: BusinessChangeProposal[]
 
+  onBusinessChangeApproved: (event: BusinessChangeApprovedEvent) => void
+  // Event handlers
+  onBusinessChangeProposed: (event: BusinessChangeProposedEvent) => void
+
+  onBusinessChangeRejected: (event: BusinessChangeRejectedEvent) => void
+
+  onBusinessUpdated: (event: BusinessUpdatedEvent) => void
   // Actions
   proposeBusinessChange: (
     businessId: string,
     changeType: BusinessChangeType,
     data: BusinessChangeProposal['data'],
   ) => void
-
-  approveBusinessChange: (proposalId: string) => void
   rejectBusinessChange: (proposalId: string) => void
-
   // Прямые изменения (для владельцев с > 50%)
   updateBusinessDirectly: (
     businessId: string,
@@ -25,16 +37,4 @@ export interface PartnershipBusinessSlice {
       state?: Business['state']
     },
   ) => void
-
-  // Event handlers
-  onBusinessChangeProposed: (
-    event: import('@/core/types/events.types').BusinessChangeProposedEvent,
-  ) => void
-  onBusinessChangeApproved: (
-    event: import('@/core/types/events.types').BusinessChangeApprovedEvent,
-  ) => void
-  onBusinessChangeRejected: (
-    event: import('@/core/types/events.types').BusinessChangeRejectedEvent,
-  ) => void
-  onBusinessUpdated: (event: import('@/core/types/events.types').BusinessUpdatedEvent) => void
 }

@@ -1,16 +1,16 @@
 import { PiggyBank, CreditCard, TrendingUp, Percent } from 'lucide-react'
 
-import { Card } from '@/shared/ui/card'
+import { Card } from '@/shared/components/card'
 
 interface Props {
-  totalDeposits: number
-  totalDebt: number
-  keyRate: number
   depositRate: number
+  keyRate: number
   loanRate: number
+  totalDebt: number
+  totalDeposits: number
 }
 
-export function BankStatsGrid({ totalDeposits, totalDebt, keyRate, depositRate, loanRate }: Props) {
+export function BankStatsGrid({ depositRate, keyRate, loanRate, totalDebt, totalDeposits }: Props) {
   const netWorth = totalDeposits - totalDebt
 
   return (

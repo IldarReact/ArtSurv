@@ -1,6 +1,12 @@
 'use client'
 
 import { ArrowLeft } from 'lucide-react'
+import React from 'react'
+
+import { useGameStore } from '@/core/model/store'
+import type { ActivityType } from '@/core/types'
+import { Button } from '@/shared/components/button'
+import { ExpandableCard } from '@/shared/components/expandable-card'
 
 // Import activities
 import { BanksActivity } from '../activities/bank/banks-activity'
@@ -12,79 +18,85 @@ import { RestActivity } from '../activities/rest/rest-activity'
 import { ShopActivity } from '../activities/shop'
 import { WorkActivity } from '../activities/work/work-activity'
 
-import { useGameStore } from '@/core/model/store'
-import { Button } from '@/shared/ui/button'
-import { ExpandableCard } from '@/shared/ui/expandable-card'
+interface Activity {
+  component: React.ComponentType
+  description: string
+  details: string
+  icon: string
+  id: ActivityType
+  title: string
+}
 
-const ACTIVITIES = [
+const ACTIVITIES: Activity[] = [
   {
+    component: ShopActivity,
+    description: 'Покупай товары и услуги',
+    details: 'Еда, здоровье, развлечения, транспорт',
+    icon: '🛒',
     id: 'shop',
     title: 'МАГАЗИНы',
-    description: 'Покупай товары и услуги',
-    icon: '🛒',
-    details: 'Еда, здоровье, развлечения, транспорт',
-    component: ShopActivity,
   },
   {
+    component: FamilyActivity,
+    description: 'Управляй семьёй и отношениями',
+    details: 'Управление семьей, брак, дети, поддержка родителей',
+    icon: '👨‍👩‍👧‍👦',
     id: 'family',
     title: 'СЕМЬЯ',
-    description: 'Управляй семьёй и отношениями',
-    icon: '👨‍👩‍👧‍👦',
-    details: 'Управление семьей, брак, дети, поддержка родителей',
-    component: FamilyActivity,
   },
   {
+    component: WorkActivity,
+    description: 'Зарабатывай основной доход',
+    details: 'Зарплата, карьерный рост, переквалификация',
+    icon: '💼',
     id: 'work',
     title: 'РАБОТА',
-    description: 'Зарабатывай основной доход',
-    icon: '💼',
-    details: 'Зарплата, карьерный рост, переквалификация',
-    component: WorkActivity,
   },
   {
+    component: EducationActivity,
+    description: 'Учись и повышай квалификацию',
+    details: 'Университеты, курсы, навыки',
+    icon: '🎓',
     id: 'education',
     title: 'ОБРАЗОВАНИЕ',
-    description: 'Учись и повышай квалификацию',
-    icon: '🎓',
-    details: 'Университеты, курсы, навыки',
-    component: EducationActivity,
   },
   {
+    component: InvestmentsActivity,
+    description: 'Инвестируй в акции и недвижимость',
+    details: 'Биржа, портфель, дивиденды, аренда',
+    icon: '📈',
     id: 'investments',
     title: 'ИНВЕСТИЦИИ',
-    description: 'Инвестируй в акции и недвижимость',
-    icon: '📈',
-    details: 'Биржа, портфель, дивиденды, аренда',
-    component: InvestmentsActivity,
   },
   {
+    component: BanksActivity,
+    description: 'Кредиты, ипотека, депозиты',
+    details: 'Займы, переводы, вклады',
+    icon: '🏦',
     id: 'banking',
     title: 'БАНКИ',
-    description: 'Кредиты, ипотека, депозиты',
-    icon: '🏦',
-    details: 'Займы, переводы, вклады',
-    component: BanksActivity,
   },
   {
+    component: RelocationActivity,
+    description: 'Смена страны жительства',
+    details: 'Переезд в новую страну с новыми возможностями',
+    icon: '✈️',
     id: 'relocation',
     title: 'ПЕРЕЕЗД',
-    description: 'Смена страны жительства',
-    icon: '✈️',
-    details: 'Переезд в новую страну с новыми возможностями',
-    component: RelocationActivity,
   },
   {
+    component: RestActivity,
+    description: 'Расслабление и восстановление',
+    details: 'Путешествия, хобби, медитация',
+    icon: '🏖️',
     id: 'leisure',
     title: 'ОТДЫХ',
-    description: 'Расслабление и восстановление',
-    icon: '🏖️',
-    details: 'Путешествия, хобби, медитация',
-    component: RestActivity,
   },
 ]
 
 export function ActivitiesPanel() {
-  const { activeActivity, setActiveActivity } = useGameStore()
+  const activeActivity = useGameStore((state) => state.activeActivity)
+  const setActiveActivity = useGameStore((state) => state.setActiveActivity)
 
   if (activeActivity) {
     const activity = ACTIVITIES.find((a) => a.id === activeActivity)
@@ -94,10 +106,12 @@ export function ActivitiesPanel() {
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setActiveActivity(null)}
             className="text-white hover:bg-white/10"
+            onClick={() => {
+              setActiveActivity(null)
+            }}
+            size="icon"
+            variant="ghost"
           >
             <ArrowLeft className="w-6 h-6" />
           </Button>
@@ -120,16 +134,18 @@ export function ActivitiesPanel() {
       <div className="grid grid-cols-1 gap-4">
         {ACTIVITIES.map((activity) => (
           <ExpandableCard
-            key={activity.id}
-            title={activity.title}
             description={activity.description}
             image={`/placeholder.svg?height=80&width=80&query=${activity.icon}`}
+            key={activity.id}
+            title={activity.title}
           >
             <div className="space-y-4">
               <p className="text-white/60">{activity.details}</p>
               <Button
-                onClick={() => setActiveActivity(activity.id)}
                 className="w-full bg-white/10 hover:bg-white/20 text-white"
+                onClick={() => {
+                  setActiveActivity(activity.id)
+                }}
               >
                 Открыть
               </Button>

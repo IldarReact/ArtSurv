@@ -1,8 +1,10 @@
+import { getPlayerShare } from '@/core/lib/business/partnership-permissions'
+import type { Business, EmployeeRole, EmployeeStars } from '@/core/types/business.types'
+
 import type { GameStore } from '../../../../types'
 import type { BusinessChangeProposal } from '../partnership-business-slice.types'
 
-import { getPlayerShare } from '@/core/lib/business/partnership-permissions'
-import type { EmployeeRole, EmployeeStars } from '@/core/types/business.types'
+type BusinessUpdateFn = (b: Business) => Business
 
 export function applyProposal(
   state: GameStore,
@@ -14,232 +16,226 @@ export function applyProposal(
 
   if (!business || !state.player) return {}
 
-  let changesToBroadcast: Record<string, unknown> = {}
+  // Common helper to update proposal status and other state
+  const approveAndSet = (updateFn: (state: GameStore) => Partial<GameStore>) => {
+    set((state) => ({
+      ...updateFn(state),
+      businessProposals: state.businessProposals.map((p) =>
+        p.id === proposal.id ? { ...p, status: 'approved' as const } : p,
+      ),
+    }))
+  }
+
+  const updateBusinessField = (updateFn: BusinessUpdateFn) => {
+    approveAndSet(() => {
+      state.updatePlayer((prev) => ({
+        businesses: prev.businesses.map((b) => (b.id === businessId ? updateFn(b) : b)),
+      }))
+      return {}
+    })
+  }
 
   switch (changeType) {
     case 'price':
-      set((state) => {
-        if (!state.player) return state
-        return {
-          player: {
-            ...state.player,
-            businesses: state.player.businesses.map((b) =>
-              b.id === businessId ? { ...b, price: data.newPrice ?? b.price } : b,
-            ),
-          },
-          businessProposals: state.businessProposals.map((p) =>
-            p.id === proposal.id ? { ...p, status: 'approved' as const } : p,
-          ),
-        }
-      })
-      changesToBroadcast = { price: data.newPrice }
-      break
+      updateBusinessField((b) => ({ ...b, price: data.newPrice ?? b.price }))
+      return { price: data.newPrice }
 
     case 'quantity':
-      set((state) => {
-        if (!state.player) return state
-        return {
-          player: {
-            ...state.player,
-            businesses: state.player.businesses.map((b) =>
-              b.id === businessId ? { ...b, quantity: data.newQuantity ?? b.quantity } : b,
-            ),
-          },
-          businessProposals: state.businessProposals.map((p) =>
-            p.id === proposal.id ? { ...p, status: 'approved' as const } : p,
-          ),
-        }
-      })
-      changesToBroadcast = { quantity: data.newQuantity }
-      break
+      updateBusinessField((b) => ({ ...b, quantity: data.newQuantity ?? b.quantity }))
+      return { quantity: data.newQuantity }
 
-    case 'fund_collection': {
-      const amount = data.collectionAmount || 0
-      const playerShare = getPlayerShare(business, state.player.id)
-      const contribution = Math.round(amount * (Math.max(0, Math.min(100, playerShare)) / 100))
-
-      if (contribution > 0) {
-        if (state.player.stats.money < contribution) {
-          state.pushNotification?.({
-            type: 'error',
-            title: 'Недостаточно средств',
-            message: 'У вас недостаточно денег для взноса',
-          })
-          return null
-        }
-        set((state) => {
-          if (!state.player) return state
-          const updatedPlayer = {
-            ...state.player,
-            stats: { ...state.player.stats, money: state.player.stats.money - contribution },
-            personal: {
-              ...state.player.personal,
-              stats: {
-                ...state.player.personal.stats,
-                money: state.player.personal.stats.money - contribution,
-              },
-            },
-            businesses: state.player.businesses.map((b) =>
-              b.id === businessId
-                ? { ...b, walletBalance: (b.walletBalance || 0) + contribution }
-                : b,
-            ),
-          }
-          return {
-            player: updatedPlayer,
-            businessProposals: state.businessProposals.map((p) =>
-              p.id === proposal.id ? { ...p, status: 'approved' as const } : p,
-            ),
-          }
-        })
-        const updatedBusiness = state.player.businesses.find((b) => b.id === businessId)
-        changesToBroadcast = {
-          walletBalance: (updatedBusiness?.walletBalance || 0) + contribution,
-        }
-      } else {
-        set((state) => ({
-          businessProposals: state.businessProposals.map((p) =>
-            p.id === proposal.id ? { ...p, status: 'approved' as const } : p,
-          ),
-        }))
-      }
-      break
-    }
+    case 'fund_collection':
+      return handleFundCollection(state, business, data, approveAndSet)
 
     case 'hire_employee':
-      state.addEmployeeToBusiness(
-        businessId,
-        data.employeeName || 'Unknown',
-        data.employeeRole as EmployeeRole,
-        data.employeeSalary || 0,
-        data.isMe ? proposal.initiatorId : undefined,
-        {
-          stars: (data.employeeStars as EmployeeStars) || 1,
-          skills: data.skills,
-          experience: data.experience,
-          humanTraits: data.humanTraits,
-        },
-      )
-      set((state) => ({
-        businessProposals: state.businessProposals.map((p) =>
-          p.id === proposal.id ? { ...p, status: 'approved' as const } : p,
-        ),
-      }))
-      break
+      return handleHireEmployee(state, businessId, data, proposal, approveAndSet)
 
     case 'change_role':
-      if (data.isMe) {
-        state.addEmployeeToBusiness(
-          businessId,
-          proposal.initiatorName || 'Unknown',
-          data.employeeRole as EmployeeRole,
-          data.employeeSalary || 0,
-          proposal.initiatorId,
-          {
-            stars: (data.employeeStars as EmployeeStars) || 1,
-            skills: data.skills,
-            experience: data.experience,
-            humanTraits: data.humanTraits,
-          },
-        )
-      } else if (data.employeeId) {
-        state.updateEmployeeInBusiness(businessId, data.employeeId, {
-          role: data.employeeRole as EmployeeRole,
-          salary: data.employeeSalary,
-        })
-      }
-      set((state) => ({
-        businessProposals: state.businessProposals.map((p) =>
-          p.id === proposal.id ? { ...p, status: 'approved' as const } : p,
-        ),
-      }))
-      break
+      return handleChangeRole(state, businessId, data, proposal, approveAndSet)
 
     case 'fire_employee':
-      if (data.fireEmployeeId) {
-        if (data.isMe) {
-          state.leaveBusinessJob(businessId)
-        } else {
-          state.fireEmployee(businessId, data.fireEmployeeId)
-        }
-      }
-      set((state) => ({
-        businessProposals: state.businessProposals.map((p) =>
-          p.id === proposal.id ? { ...p, status: 'approved' as const } : p,
-        ),
-      }))
-      break
+      return handleFireEmployee(state, businessId, data, approveAndSet)
 
     case 'promote_employee':
     case 'demote_employee':
-      if (data.employeeId) {
-        state.updateEmployeeInBusiness(businessId, data.employeeId, {
-          salary: data.newSalary,
-          stars: data.newStars as EmployeeStars,
-        })
-      }
-      set((state) => ({
-        businessProposals: state.businessProposals.map((p) =>
-          p.id === proposal.id ? { ...p, status: 'approved' as const } : p,
-        ),
-      }))
-      break
+      return handleEmployeePromotion(state, businessId, data, approveAndSet)
 
     case 'freeze':
       state.freezeBusiness(businessId)
-      set((state) => ({
-        businessProposals: state.businessProposals.map((p) =>
-          p.id === proposal.id ? { ...p, status: 'approved' as const } : p,
-        ),
-      }))
-      changesToBroadcast = { state: 'frozen' }
-      break
+      approveAndSet(() => ({}))
+      return { state: 'frozen' }
 
     case 'unfreeze':
       state.unfreezeBusiness(businessId)
-      set((state) => ({
-        businessProposals: state.businessProposals.map((p) =>
-          p.id === proposal.id ? { ...p, status: 'approved' as const } : p,
-        ),
-      }))
-      changesToBroadcast = { state: 'active' }
-      break
-
-    case 'open_branch':
-      state.openBranch(businessId)
-      set((state) => ({
-        businessProposals: state.businessProposals.map((p) =>
-          p.id === proposal.id ? { ...p, status: 'approved' as const } : p,
-        ),
-      }))
-      break
+      approveAndSet(() => ({}))
+      return { state: 'active' }
 
     case 'auto_purchase':
       if (data.autoPurchaseAmount !== undefined) {
-        state.setAutoPurchase(businessId, data.autoPurchaseAmount)
+        updateBusinessField((b) => ({ ...b, autoPurchaseAmount: data.autoPurchaseAmount ?? 0 }))
+        return { autoPurchaseAmount: data.autoPurchaseAmount }
       }
-      set((state) => ({
-        businessProposals: state.businessProposals.map((p) =>
-          p.id === proposal.id ? { ...p, status: 'approved' as const } : p,
-        ),
-      }))
-      break
-  }
+      return {}
 
-  // After set call, we might need to get updated business for some broadcast changes
-  if (Object.keys(changesToBroadcast).length === 0) {
-    const updatedBusiness = state.player.businesses.find((b) => b.id === businessId)
-    if (updatedBusiness) {
-      if (['hire_employee', 'fire_employee', 'change_role'].includes(changeType)) {
-        changesToBroadcast = { employees: updatedBusiness.employees }
-      } else if (changeType === 'open_branch') {
-        changesToBroadcast = {
-          networkId: updatedBusiness.networkId,
-          isMainBranch: updatedBusiness.isMainBranch,
-        }
+    case 'set_salary':
+      if (data.employeeId && data.employeeSalary !== undefined) {
+        state.updateEmployeeInBusiness(businessId, data.employeeId, {
+          salary: data.employeeSalary,
+        })
+        approveAndSet(() => ({}))
       }
+      return {}
+
+    case 'open_branch':
+    case 'branch':
+      if (typeof state.openBranch === 'function') {
+        state.openBranch(businessId)
+      }
+      approveAndSet(() => ({}))
+      return {}
+
+    case 'dividend':
+      approveAndSet(() => ({}))
+      return {}
+
+    case 'expand_storage':
+    case 'marketing_campaign':
+    case 'change_name':
+    case 'sell_business':
+      // Future or specific logic
+      return {}
+
+    default:
+      return null
+  }
+}
+
+function handleHireEmployee(
+  state: GameStore,
+  businessId: string,
+  data: BusinessChangeProposal['data'],
+  proposal: BusinessChangeProposal,
+  approveAndSet: (updateFn: (state: GameStore) => Partial<GameStore>) => void,
+): Record<string, unknown> {
+  state.addEmployeeToBusiness(
+    businessId,
+    data.employeeName ?? 'Unknown',
+    data.employeeRole as EmployeeRole,
+    data.employeeSalary ?? 0,
+    data.isMe ? proposal.initiatorId : undefined,
+    {
+      experience: data.experience,
+      humanTraits: data.humanTraits,
+      skills: data.skills,
+      stars: data.employeeStars as EmployeeStars,
+    },
+  )
+  approveAndSet(() => ({}))
+  return {}
+}
+
+function handleChangeRole(
+  state: GameStore,
+  businessId: string,
+  data: BusinessChangeProposal['data'],
+  proposal: BusinessChangeProposal,
+  approveAndSet: (updateFn: (state: GameStore) => Partial<GameStore>) => void,
+): Record<string, unknown> {
+  if (data.isMe) {
+    state.addEmployeeToBusiness(
+      businessId,
+      proposal.initiatorName,
+      data.employeeRole as EmployeeRole,
+      data.employeeSalary ?? 0,
+      proposal.initiatorId,
+      {
+        experience: data.experience,
+        humanTraits: data.humanTraits,
+        skills: data.skills,
+        stars: data.employeeStars as EmployeeStars,
+      },
+    )
+  } else if (data.employeeId) {
+    state.updateEmployeeInBusiness(businessId, data.employeeId, {
+      role: data.employeeRole as EmployeeRole,
+      salary: data.employeeSalary,
+    })
+  }
+  approveAndSet(() => ({}))
+  return {}
+}
+
+function handleFireEmployee(
+  state: GameStore,
+  businessId: string,
+  data: BusinessChangeProposal['data'],
+  approveAndSet: (updateFn: (state: GameStore) => Partial<GameStore>) => void,
+): Record<string, unknown> {
+  if (data.fireEmployeeId) {
+    if (data.isMe) {
+      state.leaveBusinessJob(businessId)
+    } else {
+      state.fireEmployee(businessId, data.fireEmployeeId)
     }
   }
+  approveAndSet(() => ({}))
+  return {}
+}
 
-  return changesToBroadcast
+function handleEmployeePromotion(
+  state: GameStore,
+  businessId: string,
+  data: BusinessChangeProposal['data'],
+  approveAndSet: (updateFn: (state: GameStore) => Partial<GameStore>) => void,
+): Record<string, unknown> {
+  if (data.employeeId) {
+    state.updateEmployeeInBusiness(businessId, data.employeeId, {
+      salary: data.newSalary,
+      stars: data.newStars as EmployeeStars,
+    })
+  }
+  approveAndSet(() => ({}))
+  return {}
+}
+
+function handleFundCollection(
+  state: GameStore,
+  business: Business,
+  data: BusinessChangeProposal['data'],
+  approveAndSet: (updateFn: (state: GameStore) => Partial<GameStore>) => void,
+): Record<string, unknown> | null {
+  const amount = data.collectionAmount ?? 0
+  const playerShare = getPlayerShare(business, state.player?.id ?? '')
+  const PERCENT_MIN = 0
+  const PERCENT_MAX = 100
+  const contribution = Math.round(
+    amount * (Math.max(PERCENT_MIN, Math.min(PERCENT_MAX, playerShare)) / PERCENT_MAX),
+  )
+
+  if (contribution > 0) {
+    // Списываем деньги через транзакцию
+    if (
+      !state.performTransaction(
+        { money: -contribution },
+        { title: `Взнос в бизнес ${business.name}` },
+      )
+    ) {
+      return null
+    }
+
+    approveAndSet(() => {
+      state.updatePlayer((prev) => ({
+        businesses: prev.businesses.map((b) =>
+          b.id === business.id ? { ...b, walletBalance: (b.walletBalance ?? 0) + contribution } : b,
+        ),
+      }))
+      return {}
+    })
+    return {
+      walletBalance: (business.walletBalance ?? 0) + contribution,
+    }
+  } else {
+    approveAndSet(() => ({}))
+    return {}
+  }
 }

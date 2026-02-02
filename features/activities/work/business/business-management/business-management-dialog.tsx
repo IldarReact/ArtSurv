@@ -2,16 +2,6 @@
 
 import React, { useState, useMemo } from 'react'
 
-import { LifecycleManagement } from './components/business-lifecycle/lifecycle-management'
-import { NetworkManagement } from './components/business-lifecycle/network-management'
-import { PartnershipManagement } from './components/business-lifecycle/partnership-management'
-import { EmployeeManagement } from './components/employee-management'
-import { MetricsOverview } from './components/metrics-overview'
-import { PricingAndProduction } from './components/pricing-and-production'
-import { useBusinessActions } from './hooks/use-business-actions'
-import { calculateEmployeeSalary } from './hooks/use-employee-salary'
-import type { BusinessManagementDialogProps } from './types'
-
 import {
   calculateBusinessFinancials,
   checkMinimumStaffing,
@@ -32,30 +22,41 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/shared/ui/dialog'
+} from '@/shared/components/dialog'
+
+import { BusinessGoals } from './components/business-goals'
+import { LifecycleManagement } from './components/business-lifecycle/lifecycle-management'
+import { NetworkManagement } from './components/business-lifecycle/network-management'
+import { PartnershipManagement } from './components/business-lifecycle/partnership-management'
+import { EmployeeManagement } from './components/employee-management'
+import { MetricsOverview } from './components/metrics-overview'
+import { PricingAndProduction } from './components/pricing-and-production'
+import { useBusinessActions } from './hooks/use-business-actions'
+import { calculateEmployeeSalary } from './hooks/use-employee-salary'
+import type { BusinessManagementDialogProps } from './types'
 
 export function BusinessManagementDialog({
   businessId,
-  open,
   onOpenChange,
+  open,
 }: BusinessManagementDialogProps) {
   const {
-    player,
-    countries,
-    globalMarket,
-    unfreezeBusiness,
-    freezeBusiness,
-    closeBusiness,
-    fireEmployee,
-    unassignPlayerRole: unassignRole,
-    setPlayerEmploymentEffort,
-    setPlayerEmploymentSalary,
-    setEmployeeEffort,
-    setQuantity: setBusinessQuantity,
     changePrice: setBusinessPrice,
+    closeBusiness,
+    countries,
+    fireEmployee,
+    freezeBusiness,
+    globalMarket,
     hireEmployee: onHireEmployee,
     joinBusinessAsEmployee: onJoinAsEmployee,
     openBranch,
+    player,
+    setEmployeeEffort,
+    setPlayerEmploymentEffort,
+    setPlayerEmploymentSalary,
+    setQuantity: setBusinessQuantity,
+    unassignPlayerRole: unassignRole,
+    unfreezeBusiness,
   } = useGameStore()
 
   const [hireDialogOpen, setHireDialogOpen] = useState(false)
@@ -68,27 +69,27 @@ export function BusinessManagementDialog({
   )
 
   const {
-    handleHire,
-    handleFireEmployee,
-    handlePromoteEmployee,
     handleDemoteEmployee,
-    handleUnassignRole,
+    handleFireEmployee,
+    handleHire,
     handlePriceChange,
+    handlePromoteEmployee,
     handleQuantityChange,
-  } = useBusinessActions(business!)
+    handleUnassignRole,
+  } = useBusinessActions(business)
 
   if (!business || !player) return null
 
   const country = countries[player.countryId]
   const playerSkills = player.personal.skills
-  const playerShare = business.partners.find((p) => p.id === player.id)?.share || 0
+  const playerShare = business.partners.find((p) => p.id === player.id)?.share ?? 0
 
   const staffingCheck = checkMinimumStaffing(business)
   const financials = calculateBusinessFinancials(
     business,
     true,
     playerSkills,
-    globalMarket?.value ?? 1.0,
+    globalMarket.value,
     country,
   )
   const forecastProfit = financials.netProfit
@@ -98,12 +99,12 @@ export function BusinessManagementDialog({
   const availablePositions = getOperationalRoles()
     .filter((role) => !isRoleFilled(business, role))
     .map((role) => ({
+      description: '',
       role,
       salary: calculateSalary(role, 3, country),
-      description: '',
     })) as BusinessPosition[]
   const canHireMore = getTotalEmployeesCount(business) < getEffectiveMaxEmployees(business)
-  const availableBudget = business.walletBalance || 0
+  const availableBudget = business.walletBalance ?? 0
 
   const openHireDialog = (role: EmployeeRole) => {
     setSelectedRoleForHire(role)
@@ -120,10 +121,10 @@ export function BusinessManagementDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog onOpenChange={onOpenChange} open={open}>
         <DialogContent
-          maxWidth="6xl"
           className="max-h-[95vh] overflow-y-auto bg-[#0a0a0a]/95 border-white/10 text-white backdrop-blur-xl"
+          maxWidth="6xl"
         >
           <DialogHeader className="mb-6">
             <div className="flex items-center justify-between">
@@ -132,7 +133,7 @@ export function BusinessManagementDialog({
                   {business.name}
                 </DialogTitle>
                 <DialogDescription className="text-white/40 mt-1">
-                  Управление предприятием • {business.type} • {country?.name}
+                  Управление предприятием • {business.type} • {country.name}
                 </DialogDescription>
               </div>
               <div className="text-right">
@@ -140,7 +141,7 @@ export function BusinessManagementDialog({
                   Баланс предприятия
                 </p>
                 <p className="text-2xl font-black text-emerald-400">
-                  ${(business.walletBalance || 0).toLocaleString()}
+                  ${(business.walletBalance ?? 0).toLocaleString()}
                 </p>
               </div>
             </div>
@@ -148,67 +149,80 @@ export function BusinessManagementDialog({
 
           <div className="space-y-6">
             <MetricsOverview
-              safeIncome={financials.income}
-              safeExpenses={financials.expenses}
-              totalEmployees={getTotalEmployeesCount(business)}
-              maxEmployees={getEffectiveMaxEmployees(business)}
-              reputation={business.reputation}
               efficiency={business.efficiency}
               expensesBreakdown={financials.debug?.expensesBreakdown}
+              maxEmployees={getEffectiveMaxEmployees(business)}
+              reputation={business.reputation}
+              safeExpenses={financials.expenses}
+              safeIncome={financials.income}
+              totalEmployees={getTotalEmployeesCount(business)}
             />
 
+            <BusinessGoals goals={business.businessGoals} />
+
             <PricingAndProduction
-              price={business.price}
-              quantity={business.quantity}
-              isServiceBased={business.isServiceBased}
-              inventory={business.inventory}
+              country={country}
               forecastDebug={forecastDebug}
               forecastProfit={forecastProfit}
-              country={country}
-              lastQuarterSummary={business.lastQuarterSummary}
-              handlePriceChange={(e) =>
-                handlePriceChange(parseInt(e.target.value), setBusinessPrice)
-              }
-              handleQuantityChange={(e) =>
-                handleQuantityChange(parseInt(e.target.value), setBusinessQuantity)
-              }
               formatCurrency={formatCurrency}
+              goals={business.businessGoals}
+              handlePriceChange={(e) => {
+                handlePriceChange(parseInt(e.target.value), setBusinessPrice)
+              }}
+              handleQuantityChange={(e) => {
+                handleQuantityChange(parseInt(e.target.value), setBusinessQuantity)
+              }}
+              inventory={business.inventory}
+              isServiceBased={business.isServiceBased}
+              lastQuarterSummary={business.lastQuarterSummary}
+              price={business.price}
+              quantity={business.quantity}
             />
 
             <EmployeeManagement
+              activePlayerRoles={activePlayerRoles}
+              availableBudget={availableBudget}
+              availablePositions={availablePositions}
               business={business}
+              calculateEmployeeSalary={calculateEmployeeSalary}
+              canHireMore={canHireMore}
+              country={country}
+              handleDemoteEmployee={handleDemoteEmployee}
+              handleFireEmployee={(id, name) => {
+                handleFireEmployee(id, name, fireEmployee)
+              }}
+              handlePromoteEmployee={handlePromoteEmployee}
+              handleUnassignRole={(role) => {
+                handleUnassignRole(role, unassignRole)
+              }}
+              openHireDialog={openHireDialog}
               player={player}
               playerSkills={playerSkills}
-              staffingCheck={staffingCheck}
-              activePlayerRoles={activePlayerRoles}
-              availablePositions={availablePositions}
-              canHireMore={canHireMore}
-              availableBudget={availableBudget}
-              handleUnassignRole={(role) => handleUnassignRole(role, unassignRole)}
-              handleFireEmployee={(id, name) => handleFireEmployee(id, name, fireEmployee)}
-              handlePromoteEmployee={handlePromoteEmployee}
-              handleDemoteEmployee={handleDemoteEmployee}
+              setEmployeeEffort={setEmployeeEffort}
               setPlayerEmploymentEffort={setPlayerEmploymentEffort}
               setPlayerEmploymentSalary={setPlayerEmploymentSalary}
-              setEmployeeEffort={setEmployeeEffort}
-              calculateEmployeeSalary={calculateEmployeeSalary}
-              openHireDialog={openHireDialog}
-              country={country}
+              staffingCheck={staffingCheck}
             />
 
             <PartnershipManagement business={business} player={player} playerShare={playerShare} />
 
             <NetworkManagement
               business={business}
-              playerCash={player.stats.money}
               onOpenBranch={openBranch}
+              playerCash={player.stats.money}
             />
 
             <LifecycleManagement
               business={business}
-              handleUnfreeze={() => unfreezeBusiness(business.id)}
-              handleFreeze={() => freezeBusiness(business.id)}
-              handleClose={() => closeBusiness(business.id)}
+              handleClose={() => {
+                closeBusiness(business.id)
+              }}
+              handleFreeze={() => {
+                freezeBusiness(business.id)
+              }}
+              handleUnfreeze={() => {
+                unfreezeBusiness(business.id)
+              }}
             />
           </div>
         </DialogContent>
@@ -216,15 +230,17 @@ export function BusinessManagementDialog({
 
       {selectedRoleForHire && (
         <EmployeeHireDialog
-          isOpen={hireDialogOpen}
-          onClose={() => setHireDialogOpen(false)}
-          candidates={generatedCandidates}
-          onHire={(candidate: EmployeeCandidate) =>
-            handleHire(candidate, onJoinAsEmployee, onHireEmployee, setHireDialogOpen)
-          }
           availableBudget={availableBudget}
           businessId={business.id}
           businessName={business.name}
+          candidates={generatedCandidates}
+          isOpen={hireDialogOpen}
+          onClose={() => {
+            setHireDialogOpen(false)
+          }}
+          onHire={(candidate: EmployeeCandidate) => {
+            handleHire(candidate, onJoinAsEmployee, onHireEmployee, setHireDialogOpen)
+          }}
         />
       )}
     </>

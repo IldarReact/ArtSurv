@@ -3,8 +3,11 @@
  */
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { YearReportModal } from './year-report-modal'
+
+import type { GameStore } from '@/core/model/slices/types'
 import { useGameStore } from '@/core/model/store'
+
+import { YearReportModal } from './year-report-modal'
 
 // Mock the store
 vi.mock('@/core/model/store', () => ({
@@ -20,10 +23,10 @@ describe('YearReportModal', () => {
 
   it('should return null when gameStatus is not year_report', () => {
     vi.mocked(useGameStore).mockReturnValue({
+      closeYearReport: mockCloseYearReport,
       gameStatus: 'playing',
       history: [],
-      closeYearReport: mockCloseYearReport,
-    } as any)
+    } as unknown as GameStore)
 
     const { container } = render(<YearReportModal />)
     expect(container.firstChild).toBeNull()
@@ -31,22 +34,22 @@ describe('YearReportModal', () => {
 
   it('should render correctly with history data', () => {
     vi.mocked(useGameStore).mockReturnValue({
+      closeYearReport: mockCloseYearReport,
       gameStatus: 'year_report',
       history: [
         {
-          turn: 3,
-          year: 2024,
-          netWorth: 150000,
           happiness: 85,
           health: 90,
+          netWorth: 150000,
+          turn: 3,
+          year: 2024,
         },
       ],
-      closeYearReport: mockCloseYearReport,
-    } as any)
+    } as unknown as GameStore)
 
     render(<YearReportModal />)
 
-    expect(screen.getByText(/Отчет за 2024 год/i)).toBeDefined()
+    expect(screen.getByText(/отчет за 2024 год/i)).toBeDefined()
     // Use regex to be flexible about spaces/commas in formatted numbers
     expect(screen.getByText(/150.*000/)).toBeDefined()
     expect(screen.getByText('85')).toBeDefined()
@@ -55,27 +58,27 @@ describe('YearReportModal', () => {
 
   it('should render error message when history is empty instead of black screen', () => {
     vi.mocked(useGameStore).mockReturnValue({
+      closeYearReport: mockCloseYearReport,
       gameStatus: 'year_report',
       history: [],
-      closeYearReport: mockCloseYearReport,
-    } as any)
+    } as unknown as GameStore)
 
     render(<YearReportModal />)
 
-    expect(screen.getByText(/Данные за прошедший год отсутствуют/i)).toBeDefined()
-    expect(screen.getByText(/ПРОДОЛЖИТЬ/i)).toBeDefined()
+    expect(screen.getByText(/данные за прошедший год отсутствуют/i)).toBeDefined()
+    expect(screen.getByText(/продолжить/i)).toBeDefined()
   })
 
   it('should call closeYearReport when clicking continue', () => {
     vi.mocked(useGameStore).mockReturnValue({
+      closeYearReport: mockCloseYearReport,
       gameStatus: 'year_report',
       history: [],
-      closeYearReport: mockCloseYearReport,
-    } as any)
+    } as unknown as GameStore)
 
     render(<YearReportModal />)
 
-    fireEvent.click(screen.getByText(/ПРОДОЛЖИТЬ/i))
+    fireEvent.click(screen.getByText(/продолжить/i))
     expect(mockCloseYearReport).toHaveBeenCalledTimes(1)
   })
 })

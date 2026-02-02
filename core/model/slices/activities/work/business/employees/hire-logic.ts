@@ -1,5 +1,3 @@
-import type { GameStore } from '../../../../types'
-
 import {
   updateBusinessMetrics,
   validateEmployeeHire,
@@ -7,7 +5,37 @@ import {
   createEmployeeObject,
 } from '@/core/lib/business'
 import { broadcastBusinessEmployeesUpdate } from '@/core/lib/multiplayer/broadcast-utils'
-import type { EmployeeCandidate, Employee, Player } from '@/core/types'
+import type { EmployeeCandidate, Employee, EmployeeRole, EmployeeStars } from '@/core/types'
+
+import type { GameStore } from '../../../../types'
+import { updateBusinessInState } from '../utils/business-state-utils'
+
+/* eslint-disable @typescript-eslint/no-magic-numbers */
+const HIRE_ENERGY_COST = 5
+const STAR_PENALTY_MULTIPLIER = 12
+const BASE_ACCEPTANCE_PROB = 40
+const MIN_ACCEPTANCE_PROB = 5
+const MAX_ACCEPTANCE_PROB = 98
+
+const ADULT_CHILD_STARS = 2 as EmployeeStars
+const PARENT_STARS = 4 as EmployeeStars
+const TEEN_CHILD_STARS = 1 as EmployeeStars
+const WIFE_HUSBAND_STARS = 3 as EmployeeStars
+
+const FAMILY_STARS = {
+  ADULT_CHILD: ADULT_CHILD_STARS,
+  PARENT: PARENT_STARS,
+  TEEN_CHILD: TEEN_CHILD_STARS,
+  WIFE_HUSBAND: WIFE_HUSBAND_STARS,
+} as const
+
+const AGES = {
+  ADULT: 18,
+  TEEN: 14,
+} as const
+
+const EXPERIENCE_AGE_MULTIPLIER = 4
+/* eslint-enable @typescript-eslint/no-magic-numbers */
 
 export function handleHireEmployee(
   state: GameStore,
@@ -15,63 +43,70 @@ export function handleHireEmployee(
   businessId: string,
   candidate: EmployeeCandidate,
 ) {
-  const player = state.player as Player
+  const player = state.player
   if (!player) return
 
   // 1. Проверка энергии (нужно 5 на попытку найма)
-  const currentEnergy = player.personal?.stats?.energy ?? 0
-  if (currentEnergy < 5) {
-    state.pushNotification?.({
-      type: 'error',
+  const currentEnergy = player.personal.stats.energy
+  if (currentEnergy < HIRE_ENERGY_COST) {
+    state.pushNotification({
+      message: `Вам нужно хотя бы ${String(HIRE_ENERGY_COST)} единиц энергии, чтобы провести собеседование.`,
       title: 'Недостаточно энергии',
-      message: 'Вам нужно хотя бы 5 единиц энергии, чтобы провести собеседование.',
+      type: 'error',
     })
     return
   }
 
-  const i = player.businesses.findIndex((b) => b.id === businessId)
-  if (i === -1) return
+  const business = player.businesses.find((b) => b.id === businessId)
+  if (!business) return
 
-  const business = player.businesses[i]
-
-  // 2. Списываем энергию за попытку (даже если будет отказ или ошибка валидации)
-  state.applyStatChanges({ energy: -5 })
+  // 1. Списываем энергию за попытку через транзакцию (даже если будет отказ или ошибка валидации)
+  if (
+    !state.performTransaction({ energy: -HIRE_ENERGY_COST }, { title: 'Собеседование сотрудника' })
+  ) {
+    return
+  }
 
   const playerRolesCount =
-    (business.playerRoles.managerialRoles?.length || 0) +
-    (business.playerRoles.operationalRole ? 1 : 0)
+    business.playerRoles.managerialRoles.length + (business.playerRoles.operationalRole ? 1 : 0)
 
-  // 3. Валидация параметров найма (деньги, лимиты)
+  // 2. Валидация параметров найма (деньги, лимиты)
   const validation = validateEmployeeHire(
-    business.walletBalance || 0,
+    business.walletBalance ?? 0,
     candidate.requestedSalary,
     business.employees.length + playerRolesCount,
     business.maxEmployees,
   )
 
   if (!validation.isValid) {
-    state.pushNotification?.({
-      type: 'error',
+    state.pushNotification({
+      message: validation.error ?? 'Невозможно нанять сотрудника',
       title: 'Ошибка найма',
-      message: validation.error || 'Невозможно нанять сотрудника',
+      type: 'error',
     })
     return
   }
 
-  // 4. Логика отказа на основе репутации
+  // 3. Логика отказа на основе репутации
   // Базовая вероятность согласия: 40% + репутация - (звезды * 12)
-  const baseProb = 40
-  const reputationWeight = business.reputation || 0
-  const starPenalty = (candidate.stars || 1) * 12
-  const acceptanceProb = Math.max(5, Math.min(98, baseProb + reputationWeight - starPenalty))
+  const baseProb = BASE_ACCEPTANCE_PROB
+  const reputationWeight = business.reputation
+  const starPenalty = candidate.stars * STAR_PENALTY_MULTIPLIER
+  const acceptanceProb = Math.max(
+    MIN_ACCEPTANCE_PROB,
+    Math.min(MAX_ACCEPTANCE_PROB, baseProb + reputationWeight - starPenalty),
+  )
 
   // В тестах не используем рандом для детерминизма
-  const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test'
+  const isTest =
+    (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') ||
+    (typeof window !== 'undefined' && (window as Window & { isE2E?: boolean }).isE2E)
+
   if (!isTest && Math.random() * 100 > acceptanceProb) {
-    state.pushNotification?.({
-      type: 'warning',
+    state.pushNotification({
+      message: `${candidate.name} отклонил ваше предложение. Ваша репутация (${String(Math.round(reputationWeight))}) недостаточно высока для специалиста такого уровня (${String(candidate.stars)}★).`,
       title: 'Отказ от предложения',
-      message: `${candidate.name} отклонил ваше предложение. Ваша репутация (${Math.round(reputationWeight)}) недостаточно высока для специалиста такого уровня (${candidate.stars}★).`,
+      type: 'warning',
     })
     return
   }
@@ -84,24 +119,15 @@ export function handleHireEmployee(
     employees,
   })
 
-  const updatedBusinesses = [...player.businesses]
-  updatedBusinesses[i] = updatedBusiness
+  updateBusinessInState(set, businessId, () => updatedBusiness)
 
-  set((state) => {
-    if (!state.player) return state
-    return {
-      player: {
-        ...state.player,
-        businesses: updatedBusinesses,
-      },
-    }
-  })
-
-  state.pushNotification?.({
-    type: 'success',
-    title: 'Сотрудник нанят',
+  const notification = {
     message: `${candidate.name} принял ваше предложение и приступил к работе в ${business.name}.`,
-  })
+    title: 'Сотрудник нанят',
+    type: 'success' as const,
+  }
+
+  state.pushNotification(notification)
 
   broadcastBusinessEmployeesUpdate(updatedBusiness, player)
 }
@@ -111,69 +137,69 @@ export function handleHireFamilyMember(
   set: (fn: (state: GameStore) => Partial<GameStore>) => void,
   businessId: string,
   familyMemberId: string,
-  role: import('@/core/types/business.types').EmployeeRole,
+  role: EmployeeRole,
 ) {
-  const player = state.player as Player
+  const player = state.player
   if (!player) return
 
-  const businessIndex = player.businesses.findIndex((b) => b.id === businessId)
-  if (businessIndex === -1) return
+  const familyMember = player.personal.familyMembers.find((m) => m.id === familyMemberId)
+  if (!familyMember) return
 
-  const familyMemberIndex = player.personal.familyMembers.findIndex((m) => m.id === familyMemberId)
-  if (familyMemberIndex === -1) return
-
-  const business = player.businesses[businessIndex]
-  const familyMember = player.personal.familyMembers[familyMemberIndex]
+  const business = player.businesses.find((b) => b.id === businessId)
+  if (!business) return
 
   // Validate hiring parameters
   // Family members are hired for free initially (or we can set a token salary)
   const salary = 0
   const playerRolesCount =
-    (business.playerRoles.managerialRoles?.length || 0) +
-    (business.playerRoles.operationalRole ? 1 : 0)
+    business.playerRoles.managerialRoles.length + (business.playerRoles.operationalRole ? 1 : 0)
 
   const validation = validateEmployeeHire(
-    business.walletBalance || 0,
+    business.walletBalance ?? 0,
     salary,
     business.employees.length + playerRolesCount,
     business.maxEmployees,
   )
 
   if (!validation.isValid) {
-    state.pushNotification?.({
-      type: 'error',
+    state.pushNotification({
+      message: validation.error ?? 'Невозможно нанять члена семьи',
       title: 'Ошибка найма',
-      message: validation.error || 'Невозможно нанять члена семьи',
+      type: 'error',
     })
     return
   }
 
   // Determine stars based on family member type
-  let stars: import('@/core/types/business.types').EmployeeStars = 1
-  if (familyMember.type === 'wife' || familyMember.type === 'husband') stars = 3
-  else if (familyMember.type === 'parent') stars = 4
-  else if (familyMember.type === 'child') {
-    if (familyMember.age >= 18) stars = 2
-    else if (familyMember.age >= 14) stars = 1
-    else {
-      state.pushNotification?.({
-        type: 'error',
-        title: 'Ошибка найма',
+  let stars: EmployeeStars = 1
+  if (familyMember.type === 'wife' || familyMember.type === 'husband') {
+    stars = FAMILY_STARS.WIFE_HUSBAND
+  } else if (familyMember.type === 'parent') {
+    stars = FAMILY_STARS.PARENT
+  } else if (familyMember.type === 'child') {
+    if (familyMember.age >= AGES.ADULT) {
+      stars = FAMILY_STARS.ADULT_CHILD
+    } else if (familyMember.age >= AGES.TEEN) {
+      stars = FAMILY_STARS.TEEN_CHILD
+    } else {
+      state.pushNotification({
         message: 'Этот член семьи слишком мал для работы.',
+        title: 'Ошибка найма',
+        type: 'error',
       })
       return
     }
   }
 
   const newEmployee = createEmployeeObject({
+    experience: familyMember.age * EXPERIENCE_AGE_MULTIPLIER, // Simple proxy
+    humanTraits: familyMember.traits ?? [],
     id: `family_${familyMember.id}`,
     name: familyMember.name,
-    role: role,
-    stars: stars,
-    salary: salary,
-    experience: familyMember.age * 4, // Simple proxy
-    humanTraits: familyMember.traits || [],
     productivity: 100,
+    role: role,
+    salary: salary,
+    stars: stars,
   })
 
   const employees = [...business.employees, newEmployee]
@@ -182,37 +208,31 @@ export function handleHireFamilyMember(
     employees,
   })
 
-  const updatedBusinesses = [...player.businesses]
-  updatedBusinesses[businessIndex] = updatedBusiness
-
-  const updatedFamily = [...player.personal.familyMembers]
-  updatedFamily[familyMemberIndex] = {
-    ...familyMember,
-    employedInBusinessId: businessId,
-    occupation: `Работает в ${business.name}`,
+  // Hiring family costs 5 energy now
+  if (!state.performTransaction({ energy: -HIRE_ENERGY_COST }, { title: 'Наем члена семьи' })) {
+    return
   }
 
-  // Hiring family costs 5 energy now
-  state.applyStatChanges({ energy: -5 })
+  state.updatePlayer((prev) => ({
+    businesses: prev.businesses.map((b) => (b.id === businessId ? updatedBusiness : b)),
+    personal: {
+      ...prev.personal,
+      familyMembers: prev.personal.familyMembers.map((m) =>
+        m.id === familyMemberId
+          ? {
+              ...m,
+              employedInBusinessId: businessId,
+              occupation: `Работает в ${business.name}`,
+            }
+          : m,
+      ),
+    },
+  }))
 
-  set((state) => {
-    if (!state.player) return state
-    return {
-      player: {
-        ...state.player,
-        businesses: updatedBusinesses,
-        personal: {
-          ...state.player.personal,
-          familyMembers: updatedFamily,
-        },
-      },
-    }
-  })
-
-  state.pushNotification?.({
-    type: 'success',
-    title: 'Семейный бизнес',
+  state.pushNotification({
     message: `${familyMember.name} теперь работает в ${business.name} на позиции ${role}.`,
+    title: 'Семейный бизнес',
+    type: 'success',
   })
 
   broadcastBusinessEmployeesUpdate(updatedBusiness, player)
@@ -224,13 +244,12 @@ export function handleFireEmployee(
   businessId: string,
   employeeId: string,
 ) {
-  const player = state.player as Player
+  const player = state.player
   if (!player) return
 
-  const i = player.businesses.findIndex((b) => b.id === businessId)
-  if (i === -1) return
+  const business = player.businesses.find((b) => b.id === businessId)
+  if (!business) return
 
-  const business = player.businesses[i]
   const employees = business.employees.filter((e) => e.id !== employeeId)
 
   const updatedBusiness = updateBusinessMetrics({
@@ -238,17 +257,13 @@ export function handleFireEmployee(
     employees,
   })
 
-  const updatedBusinesses = [...player.businesses]
-  updatedBusinesses[i] = updatedBusiness
+  updateBusinessInState(set, businessId, () => updatedBusiness)
 
-  set((state) => {
-    if (!state.player) return state
-    return {
-      player: {
-        ...state.player,
-        businesses: updatedBusinesses,
-      },
-    }
+  const employeeName = business.employees.find((e) => e.id === employeeId)?.name ?? 'Сотрудник'
+  state.pushNotification({
+    message: `${employeeName} уволен из ${business.name}.`,
+    title: 'Сотрудник уволен',
+    type: 'info',
   })
 
   broadcastBusinessEmployeesUpdate(updatedBusiness, player)
@@ -259,29 +274,27 @@ export function handleAddEmployeeToBusiness(
   set: (fn: (state: GameStore) => Partial<GameStore>) => void,
   businessId: string,
   employeeName: string,
-  role: import('@/core/types').EmployeeRole,
+  role: EmployeeRole,
   salary: number,
   playerId?: string,
   extraData?: Partial<Employee>,
 ) {
-  const player = state.player as Player
+  const player = state.player
   if (!player) return
 
-  const i = player.businesses.findIndex((b) => b.id === businessId)
-  if (i === -1) return
-
-  const business = player.businesses[i]
+  const business = player.businesses.find((b) => b.id === businessId)
+  if (!business) return
 
   const newEmployee = createEmployeeObject({
-    id: playerId ? `player_${playerId}` : undefined,
-    name: employeeName,
-    role,
-    stars: extraData?.stars,
-    skills: extraData?.skills,
-    salary: salary,
     experience: extraData?.experience,
     humanTraits: extraData?.humanTraits,
+    id: playerId ? `player_${playerId}` : undefined,
+    name: employeeName,
     productivity: 100,
+    role,
+    salary: salary,
+    skills: extraData?.skills,
+    stars: extraData?.stars ?? 1,
   })
 
   const existingIndex = business.employees.findIndex((e) => e.id === newEmployee.id)
@@ -297,18 +310,7 @@ export function handleAddEmployeeToBusiness(
     employees: newEmployees,
   }
 
-  const updatedBusinesses = [...player.businesses]
-  updatedBusinesses[i] = updatedBusiness
-
-  set((state) => {
-    if (!state.player) return state
-    return {
-      player: {
-        ...state.player,
-        businesses: updatedBusinesses,
-      },
-    }
-  })
+  updateBusinessInState(set, businessId, () => updatedBusiness)
 
   broadcastBusinessEmployeesUpdate(updatedBusiness, player)
 }

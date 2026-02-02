@@ -1,24 +1,24 @@
 import type { InflationNotification } from '@/core/lib/calculations/inflation-engine'
-import type { GameState } from '@/core/types'
+import type { GameState, ActivityType } from '@/core/types'
 
 export interface GameSlice {
-  turn: number
-  year: number
-  isProcessingTurn: boolean
-  gameStatus: GameState['gameStatus']
-  setupCountryId: string | null
-  endReason: string | null
-  activeActivity: string | null
-  inflationNotification: InflationNotification | null
-
-  // Actions
-  setSetupCountry: (id: string) => void
-  initializeGame: (countryId: string, archetype: string) => void
-  resetGame: () => void
-  setActiveActivity: (activity: string | null) => void
-  nextTurn: () => void
-  startSinglePlayer: () => void
-  resolveCrisis: (actionType: string) => void
+  activeActivity: ActivityType | null
   clearInflationNotification: () => void
   closeYearReport: () => void
+  endReason: string | null
+  gameStatus: GameState['gameStatus']
+  inflationNotification: InflationNotification | null
+  initializeGame: (countryId: string, archetype: string) => void
+  isProcessingTurn: boolean
+
+  nextTurn: () => void
+  resetGame: () => void
+  resolveCrisis: (actionType: string) => void
+  setActiveActivity: (activity: ActivityType | null) => void
+  // Actions
+  setSetupCountry: (id: string) => void
+  setupCountryId: string | null
+  startSinglePlayer: () => void
+  turn: number
+  year: number
 }

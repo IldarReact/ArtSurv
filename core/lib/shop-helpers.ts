@@ -1,6 +1,9 @@
-import { getShopItemById, getShopItemsByCategory as getItemsByCategory } from '@/core/lib/data-loaders/shop-loader'
-import { getItemCost, isRecurringItem, } from '@/core/types/shop.types'
+import {
+  getShopItemById,
+  getShopItemsByCategory as getItemsByCategory,
+} from '@/core/lib/data-loaders/shop-loader'
 import type { ShopItem, ShopCategory } from '@/core/types/shop.types'
+import { getItemCost, isRecurringItem } from '@/core/types/shop.types'
 
 /**
  * Получить товар по ID
@@ -19,7 +22,10 @@ export function getShopItemsByCategory(category: ShopCategory, countryId?: strin
 /**
  * Получить рекуррентные товары категории (для lifestyle)
  */
-export function getRecurringItemsByCategory(category: ShopCategory, countryId?: string): ShopItem[] {
+export function getRecurringItemsByCategory(
+  category: ShopCategory,
+  countryId?: string,
+): ShopItem[] {
   const items = getShopItemsByCategory(category, countryId)
   return items.filter(isRecurringItem)
 }
@@ -35,13 +41,16 @@ export function getLifestyleCost(itemId: string, countryId?: string): number {
 /**
  * Получить дефолтный товар для категории
  */
-export function getDefaultLifestyleItem(category: ShopCategory, countryId?: string): ShopItem | undefined {
+export function getDefaultLifestyleItem(
+  category: ShopCategory,
+  countryId?: string,
+): ShopItem | undefined {
   const defaults: Record<ShopCategory, string> = {
     food: 'food_homemade',
-    housing: 'housing_room',
-    transport: 'transport_public',
     health: '',
-    services: ''
+    housing: 'housing_room',
+    services: '',
+    transport: 'transport_public',
   }
 
   const defaultId = defaults[category]

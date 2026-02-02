@@ -1,0 +1,11 @@
+{
+  "entry": ["app/page.tsx", "app/layout.tsx", "app/**/*.tsx"],
+  "project": ["**/*.{ts,tsx}"],
+  "ignore": ["**/*.spec.ts", "**/*.test.ts", "**/__tests__/**"],
+  "ignoreExportsUsedInFile": true,
+  "rules": {
+    "exports": "off",
+    "types": "off",
+    "unresolved": "error"
+  }
+}

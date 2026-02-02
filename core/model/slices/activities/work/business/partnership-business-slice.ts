@@ -1,15 +1,17 @@
 import type { StateCreator } from 'zustand'
 
-import type { GameStore } from '../../../types'
+import { getBusinessPartner } from '@/core/lib/business/partnership-permissions'
+import { broadcastEvent } from '@/core/lib/multiplayer'
+import type { BusinessChangeType } from '@/core/types/business.types'
 
+import type { GameStore } from '../../../types'
+import type {
+  PartnershipBusinessSlice,
+  BusinessChangeProposal,
+} from './partnership-business-slice.types'
 import { createPartnershipHandlers } from './partnership/partnership-handlers'
 import { applyProposal } from './partnership/proposal-applier'
 import { handleProposeBusinessChange } from './partnership/propose-logic'
-import type { PartnershipBusinessSlice } from './partnership-business-slice.types'
-
-import { getBusinessPartner } from '@/core/lib/business/partnership-permissions'
-import { broadcastEvent } from '@/core/lib/multiplayer'
-
 
 export const createPartnershipBusinessSlice: StateCreator<
   GameStore,
@@ -20,28 +22,22 @@ export const createPartnershipBusinessSlice: StateCreator<
   const handlers = createPartnershipHandlers(set, get)
 
   return {
-    businessProposals: [],
-
-    proposeBusinessChange: (businessId, changeType, data) => {
-      handleProposeBusinessChange(get(), set, businessId, changeType, data)
-    },
-
-    approveBusinessChange: (proposalId) => {
+    ...handlers,
+    approveBusinessChange: (proposalId: string) => {
       const state = get()
       if (!state.player) return
 
       const proposal = state.businessProposals.find((p) => p.id === proposalId)
       if (!proposal) {
-        console.error('[approveBusinessChange] Proposal not found:', proposalId)
         return
       }
 
       const business = state.player.businesses.find((b) => b.id === proposal.businessId)
       if (!business) {
-        state.pushNotification?.({
-          type: 'error',
-          title: 'Ошибка',
+        state.pushNotification({
           message: `Бизнес не найден (ID: ${proposal.businessId}). Это может быть старое предложение.`,
+          title: 'Ошибка',
+          type: 'error',
         })
         return
       }
@@ -53,33 +49,43 @@ export const createPartnershipBusinessSlice: StateCreator<
 
       // Отправляем событие инициатору об одобрении
       broadcastEvent({
-        type: 'BUSINESS_CHANGE_APPROVED',
         payload: {
+          approverId: state.player.id,
           businessId: proposal.businessId,
           proposalId,
-          approverId: state.player.id,
         },
         toPlayerId: proposal.initiatorId,
+        type: 'BUSINESS_CHANGE_APPROVED',
       })
 
       // Отправляем обновление бизнеса инициатору
       broadcastEvent({
-        type: 'BUSINESS_UPDATED',
         payload: {
           businessId: proposal.businessId,
           changes: changesToBroadcast,
         },
         toPlayerId: proposal.initiatorId,
+        type: 'BUSINESS_UPDATED',
       })
 
-      state.pushNotification?.({
-        type: 'success',
-        title: 'Изменение одобрено',
+      state.pushNotification({
         message: 'Изменения применены к бизнесу',
+        title: 'Изменение одобрено',
+        type: 'success',
       })
     },
 
-    rejectBusinessChange: (proposalId) => {
+    businessProposals: [],
+
+    proposeBusinessChange: (
+      businessId: string,
+      changeType: BusinessChangeType,
+      data: BusinessChangeProposal['data'],
+    ) => {
+      handleProposeBusinessChange(get(), set, businessId, changeType, data)
+    },
+
+    rejectBusinessChange: (proposalId: string) => {
       const state = get()
       if (!state.player) return
 
@@ -96,19 +102,19 @@ export const createPartnershipBusinessSlice: StateCreator<
       })
 
       broadcastEvent({
-        type: 'BUSINESS_CHANGE_REJECTED',
         payload: {
           businessId: proposal.businessId,
           proposalId,
           rejecterId: state.player.id,
         },
         toPlayerId: proposal.initiatorId,
+        type: 'BUSINESS_CHANGE_REJECTED',
       })
 
-      state.pushNotification?.({
-        type: 'info',
-        title: 'Изменение отклонено',
+      state.pushNotification({
         message: 'Предложение было отклонено',
+        title: 'Изменение отклонено',
+        type: 'info',
       })
     },
 
@@ -119,41 +125,35 @@ export const createPartnershipBusinessSlice: StateCreator<
       const business = state.player.businesses.find((b) => b.id === businessId)
       if (!business) return
 
-      set((state) => {
-        if (!state.player) return state
-        return {
-          player: {
-            ...state.player,
-            businesses: state.player.businesses.map((b) =>
-              b.id === businessId
-                ? {
-                    ...b,
-                    price: changes.price ?? b.price,
-                    quantity: changes.quantity ?? b.quantity,
-                    state: changes.state ?? b.state,
-                  }
-                : b,
-            ),
-          },
-        }
-      })
+      state.updatePlayer((prev) => ({
+        businesses: prev.businesses.map((b) =>
+          b.id === businessId
+            ? {
+                ...b,
+                price: changes.price ?? b.price,
+                quantity: changes.quantity ?? b.quantity,
+                state: changes.state ?? b.state,
+              }
+            : b,
+        ),
+      }))
 
       const partner = getBusinessPartner(business, state.player.id)
       if (partner) {
         broadcastEvent({
-          type: 'BUSINESS_UPDATED',
           payload: {
             businessId,
             changes,
           },
           toPlayerId: partner.id,
+          type: 'BUSINESS_UPDATED',
         })
       }
 
-      state.pushNotification?.({
-        type: 'success',
-        title: 'Бизнес обновлён',
+      state.pushNotification({
         message: 'Изменения применены',
+        title: 'Бизнес обновлён',
+        type: 'success',
       })
     },
 

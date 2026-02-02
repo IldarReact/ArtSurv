@@ -1,117 +1,214 @@
 import js from '@eslint/js'
-import nextPlugin from '@next/eslint-plugin-next'
-import importPlugin from 'eslint-plugin-import'
+import ts from 'typescript-eslint'
+import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import next from '@next/eslint-plugin-next'
+import unicorn from 'eslint-plugin-unicorn'
+import sonarjs from 'eslint-plugin-sonarjs'
+import perfectionist from 'eslint-plugin-perfectionist'
+import jsxA11y from 'eslint-plugin-jsx-a11y'
+import promise from 'eslint-plugin-promise'
+import security from 'eslint-plugin-security'
+import boundaries from 'eslint-plugin-boundaries'
+import checkFile from 'eslint-plugin-check-file'
 import unusedImports from 'eslint-plugin-unused-imports'
-import tseslint from 'typescript-eslint'
+import playwright from 'eslint-plugin-playwright'
+import prettier from 'eslint-plugin-prettier'
+import prettierConfig from 'eslint-config-prettier'
 
-const isProd = process.env.NODE_ENV === 'production'
-
-export default [
+export default ts.config(
+  {
+    ignores: [
+      '.next/**',
+      'node_modules/**',
+      'dist/**',
+      'build/**',
+      'public/**',
+      'docs/**',
+      'reports/**',
+      'coverage/**',
+      '*.config.mjs',
+      '*.config.js',
+      '*.mjs',
+      '*.cjs',
+      'scripts/**',
+    ],
+  },
+  // --- BASE JS/TS ---
   js.configs.recommended,
-  ...tseslint.configs.recommended,
+  ...ts.configs.strictTypeChecked,
+  ...ts.configs.stylisticTypeChecked,
+
+  // --- PLUGINS CONFIG ---
   {
-    files: ['**/*.{ts,tsx}'],
     languageOptions: {
-      parser: tseslint.parser,
       parserOptions: {
-        project: ['./tsconfig.json'],
-        tsconfigRootDir: process.cwd(),
-      },
-      globals: {
-        console: 'readonly',
-        window: 'readonly',
-        document: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        globalThis: 'readonly',
-        process: 'readonly',
+        project: true,
+        tsconfigRootDir: import.meta.dirname,
       },
     },
     plugins: {
-      '@typescript-eslint': tseslint.plugin,
-      import: importPlugin,
-      'unused-imports': unusedImports,
+      '@next/next': next,
+      react: react,
       'react-hooks': reactHooks,
-      next: nextPlugin,
+      'react-refresh': reactRefresh,
+      unicorn: unicorn,
+      sonarjs: sonarjs,
+      perfectionist: perfectionist,
+      'jsx-a11y': jsxA11y,
+      promise: promise,
+      security: security,
+      boundaries: boundaries,
+      'check-file': checkFile,
+      'unused-imports': unusedImports,
+      playwright: playwright,
+      prettier: prettier,
+    },
+    settings: {
+      react: { version: 'detect' },
+      'boundaries/elements': [
+        { type: 'app', pattern: 'app/**' },
+        { type: 'features', pattern: 'features/**' },
+        { type: 'shared', pattern: 'shared/**' },
+        { type: 'core', pattern: 'core/**' },
+      ],
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'warn',
-      'no-func-assign': 'warn',
-      'no-redeclare': 'warn',
-      'no-shadow': 'warn',
-      'no-inner-declarations': 'warn',
-      'no-param-reassign': 'warn',
-      'no-var': 'warn',
-      '@typescript-eslint/no-unused-vars': 'off',
-      'no-console': isProd ? 'error' : 'warn',
-      'no-unused-vars': 'off',
-      'unused-imports/no-unused-imports': 'warn',
-      'import/order': [
+      // 2025-2026 Must-have
+      'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
+      'no-debugger': 'error',
+
+      // Error Masking Prevention (NaN -> 0)
+      'no-restricted-globals': ['error', 'isNaN', 'isFinite'],
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-return': 'error',
+
+      // Async/Promises
+      'promise/always-return': 'error',
+      'promise/no-return-wrap': 'error',
+      'promise/catch-or-return': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
+
+      // Typescript Quality
+      '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
+      '@typescript-eslint/no-unused-vars': 'off', // handled by unused-imports
+      'unused-imports/no-unused-imports': 'error',
+      'unused-imports/no-unused-vars': [
         'warn',
         {
-          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-          'newlines-between': 'always',
-          alphabetize: { order: 'asc', caseInsensitive: true },
+          vars: 'all',
+          varsIgnorePattern: '^_',
+          args: 'after-used',
+          argsIgnorePattern: '^_',
         },
       ],
-      'react-hooks/rules-of-hooks': 'warn',
-      'react-hooks/exhaustive-deps': 'warn',
-      'prefer-const': 'warn',
-      'no-empty': 'warn',
-      'no-constant-binary-expression': 'warn',
-      '@typescript-eslint/no-require-imports': 'warn',
-      '@typescript-eslint/no-empty-object-type': 'warn',
-      'no-case-declarations': 'warn',
-      '@typescript-eslint/no-unused-expressions': 'warn',
+
+      // Prettier Integration
+      'prettier/prettier': 'error',
+
+      // --- Playwright Rules (Golden Standards) ---
+      'playwright/no-wait-for-timeout': 'error',
+      'playwright/prefer-to-be': 'error',
+      'playwright/prefer-to-have-count': 'error',
+      'playwright/prefer-to-have-length': 'error',
+      'playwright/valid-expect': 'error',
+      'playwright/no-force-option': 'warn',
+      'playwright/no-skipped-test': 'warn',
+      'playwright/no-useless-not': 'error',
+      'playwright/prefer-to-contain': 'error',
+      'playwright/no-focused-test': 'error',
+
+      '@typescript-eslint/switch-exhaustiveness-check': 'error',
+
+      // Perfectionist (Sortings)
+      'perfectionist/sort-imports': [
+        'error',
+        {
+          type: 'alphabetical',
+          order: 'asc',
+          groups: [
+            'side-effect',
+            ['builtin', 'external'],
+            'internal',
+            ['parent', 'sibling', 'index'],
+            'unknown',
+          ],
+        },
+      ],
+      'perfectionist/sort-objects': ['error', { type: 'alphabetical', order: 'asc' }],
+
+      // React / Next
+      ...reactHooks.configs.recommended.rules,
+      ...next.configs.recommended.rules,
+      ...next.configs['core-web-vitals'].rules,
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react/jsx-no-target-blank': 'error',
+      'react/no-unescaped-entities': 'error',
     },
   },
+
+  // --- LAYER: CORE (The Strict One) ---
   {
-    files: ['**/*.{js,jsx,mjs}'],
-    languageOptions: {
-      globals: {
-        console: 'readonly',
-        window: 'readonly',
-        document: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        globalThis: 'readonly',
-        process: 'readonly',
-      },
-    },
-    plugins: {
-      import: importPlugin,
-      'unused-imports': unusedImports,
-      'react-hooks': reactHooks,
-      next: nextPlugin,
-    },
+    files: ['core/**'],
     rules: {
-      'no-func-assign': 'error',
-      'no-redeclare': 'error',
-      'no-shadow': 'error',
-      'no-inner-declarations': 'error',
-      'no-param-reassign': 'error',
-      'no-var': 'error',
-      'no-console': isProd ? 'error' : 'warn',
-      'no-unused-vars': 'off',
-      'unused-imports/no-unused-imports': 'warn',
-      'import/order': [
-        'warn',
+      'no-restricted-syntax': [
+        'error',
         {
-          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-          'newlines-between': 'always',
-          alphabetize: { order: 'asc', caseInsensitive: true },
+          selector: 'BinaryExpression[operator="||"][right.value=0]',
+          message:
+            'Error Masking: Do not use || 0 for numeric fallbacks in CORE. Use nullish coalescing or explicit validation.',
+        },
+        {
+          selector: 'ConditionalExpression[test.callee.name="isNaN"]',
+          message:
+            'Error Masking: Avoid isNaN ? 0 : x. Use Number.isFinite() and handle errors at the source.',
         },
       ],
-      'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
-      'prefer-const': 'warn',
-      'no-empty': 'warn',
-      'no-constant-binary-expression': 'warn',
-      'no-case-declarations': 'warn',
+      '@typescript-eslint/no-magic-numbers': [
+        'warn',
+        { ignore: [0, 1, -1, 100, 0.5, 0.1, 2, 10], ignoreEnums: true },
+      ],
+      'sonarjs/cognitive-complexity': ['error', 15],
     },
   },
+
+  // --- LAYER: SHARED (Strict) ---
   {
-    ignores: ['node_modules', '.next', 'dist', 'build'],
+    files: ['shared/**'],
+    rules: {
+      'sonarjs/cognitive-complexity': ['warn', 20],
+    },
   },
-]
+
+  // --- LAYER: FEATURES & APP (Softer) ---
+  {
+    files: ['features/**', 'app/**'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      'sonarjs/cognitive-complexity': ['warn', 25],
+    },
+  },
+
+  // --- TESTS ---
+  {
+    files: ['**/*.test.ts', '**/*.test.tsx', '**/__tests__/**', '**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-magic-numbers': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
+      'security/detect-non-literal-fs-filename': 'off',
+    },
+  },
+
+  // --- PRETTIER (Must be last) ---
+  prettierConfig,
+)

@@ -23,246 +23,261 @@ export const EmployeeSkillsSchema = z
 
 export const EmployeeSchema = z
   .object({
-    id: z.string(),
-    name: z.string(),
-    role: EmployeeRoleSchema,
-    stars: SkillLevelSchema,
-    skills: EmployeeSkillsSchema,
-    salary: z.number().finite().min(0),
-    productivity: z.number().finite().min(0).max(100),
-    experience: z.number().int().min(0),
-    effortPercent: z.number().finite().min(0).max(100).optional(),
     avatar: z.string().optional(),
-    isFamilyMember: z.boolean().optional(),
+    effortPercent: z.number().finite().min(0).max(100).optional(),
+    experience: z.number().int().min(0),
     familyMemberId: z.string().optional(),
     humanTraits: z.array(z.string()),
+    id: z.string(),
+    isFamilyMember: z.boolean().optional(),
+    name: z.string(),
+    productivity: z.number().finite().min(0).max(100),
+    role: EmployeeRoleSchema,
+    salary: z.number().finite().min(0),
+    skills: EmployeeSkillsSchema,
+    stars: SkillLevelSchema,
   })
   .strict()
 
 export const BusinessPartnerSchema = z
   .object({
     id: z.string(),
-    name: z.string(),
-    type: z.enum(['player', 'npc']),
-    share: z.number().finite().min(0).max(100),
     investedAmount: z.number().finite().min(0),
+    name: z.string(),
     relation: z.number().finite().min(0).max(100),
+    share: z.number().finite().min(0).max(100),
+    type: z.enum(['player', 'npc']),
   })
   .strict()
 
 export const BusinessProposalSchema = z
   .object({
-    id: z.string(),
     businessId: z.string(),
     changeType: z.string(),
+    createdAt: z.number().int().min(0),
+    data: z.record(z.string(), z.unknown()),
+    id: z.string(),
     initiatorId: z.string(),
     initiatorName: z.string(),
     status: z.enum(['pending', 'approved', 'rejected']),
-    createdAt: z.number().int().min(0),
     votes: z.record(z.string(), z.boolean()).optional(),
-    data: z.record(z.string(), z.any()),
   })
   .strict()
 
 export const BusinessEventSchema = z
   .object({
-    id: z.string(),
-    type: z.enum(['positive', 'negative']),
-    title: z.string(),
     description: z.string(),
-    turn: z.number().int().min(0),
     effects: StatEffectSchema.and(
       z.object({
-        reputation: z.number().optional(),
         efficiency: z.number().optional(),
+        reputation: z.number().optional(),
       }),
     ),
+    id: z.string(),
+    title: z.string(),
+    turn: z.number().int().min(0),
+    type: z.enum(['positive', 'negative']),
   })
   .strict()
 
+export const BusinessRoleConfigSchema = z.object({
+  description: z.string(),
+  priority: z.enum(['required', 'recommended', 'optional']),
+  role: EmployeeRoleSchema,
+})
+
+export const BusinessGoalSchema = z.object({
+  current: z.number().finite(),
+  description: z.string(),
+  id: z.string(),
+  isCompleted: z.boolean(),
+  target: z.number().finite(),
+  title: z.string(),
+  type: z.enum(['price', 'quantity', 'revenue', 'profit', 'efficiency', 'reputation']),
+})
+
 export const BusinessSchema = z
   .object({
-    id: z.string(),
-    name: z.string(),
-    type: z.enum(['retail', 'service', 'cafe', 'tech', 'manufacturing', 'food']),
-    description: z.string(),
-    state: z.enum(['opening', 'active', 'frozen']),
-    lastQuarterlyUpdate: z.number().int().min(0),
-    createdAt: z.number().int().min(0),
-    price: z.number().finite().min(0),
-    quantity: z.number().finite().min(0),
-    isServiceBased: z.boolean(),
-    networkId: z.string().optional(),
-    isMainBranch: z.boolean(),
-    monthlyIncome: z.number().finite(),
-    monthlyExpenses: z.number().finite(),
     autoPurchaseAmount: z.number().finite().min(0),
-    partners: z.array(BusinessPartnerSchema),
-    proposals: z.array(BusinessProposalSchema),
-    openingProgress: z.object({
-      id: z.string(),
-      title: z.string(),
-      totalDuration: z.number().int().min(0),
-      remainingDuration: z.number().int().min(0),
-      totalQuarters: z.number().int().min(0),
-      quartersLeft: z.number().int().min(0),
-      investedAmount: z.number().finite().min(0),
-      totalCost: z.number().finite().min(0),
-      upfrontCost: z.number().finite().min(0),
-    }),
+    branches: z.array(z.string()).optional(),
+    businessGoals: z.array(BusinessGoalSchema),
+    createdAt: z.number().int().min(0),
     creationCost: StatEffectSchema,
-    initialCost: z.number().finite().min(0),
-    quarterlyIncome: z.number().finite(),
-    quarterlyExpenses: z.number().finite(),
-    quarterlyTax: z.number().finite(),
     currentValue: z.number().finite().min(0),
-    walletBalance: z.number().finite().optional(),
-    lastQuarterSummary: z
-      .object({
-        sold: z.number().finite(),
-        priceUsed: z.number().finite(),
-        salesIncome: z.number().finite(),
-        taxes: z.number().finite(),
-        expenses: z.number().finite(),
-        netProfit: z.number().finite(),
-        reputationChange: z.number().optional(),
-        efficiencyChange: z.number().optional(),
-        profitDistribution: z
-          .array(
-            z.object({
-              partnerId: z.string(),
-              share: z.number().finite(),
-              amount: z.number().finite(),
-            }),
-          )
-          .optional(),
-        expensesBreakdown: z
-          .object({
-            employees: z.number().finite(),
-            inventory: z.number().finite(),
-            marketing: z.number().finite(),
-            rent: z.number().finite(),
-            equipment: z.number().finite(),
-            other: z.number().finite(),
-          })
-          .optional(),
-      })
-      .optional(),
-    taxRate: z.number().finite().min(0).max(100),
+    description: z.string(),
+    efficiency: z.number().finite().min(0).max(100),
+    employeeRoles: z.array(BusinessRoleConfigSchema),
+    employees: z.array(EmployeeSchema),
+    eventsHistory: z.array(BusinessEventSchema),
+    foundedTurn: z.number().int().min(0),
     hasInsurance: z.boolean(),
+    id: z.string(),
+    imageUrl: z.string().optional(),
+    initialCost: z.number().finite().min(0),
     insuranceCost: z.number().finite().min(0),
     inventory: z.object({
+      autoPurchaseAmount: z.number().finite().min(0),
       currentStock: z.number().finite().min(0),
       maxStock: z.number().finite().min(0),
       pricePerUnit: z.number().finite().min(0),
       purchaseCost: z.number().finite().min(0),
-      autoPurchaseAmount: z.number().finite().min(0),
     }),
-    employees: z.array(EmployeeSchema),
+    isMainBranch: z.boolean(),
+    isServiceBased: z.boolean(),
+    lastQuarterlyUpdate: z.number().int().min(0),
+    lastQuarterSummary: z
+      .object({
+        efficiencyChange: z.number().optional(),
+        expenses: z.number().finite(),
+        expensesBreakdown: z
+          .object({
+            employees: z.number().finite(),
+            equipment: z.number().finite(),
+            inventory: z.number().finite(),
+            marketing: z.number().finite(),
+            other: z.number().finite(),
+            rent: z.number().finite(),
+          })
+          .optional(),
+        netProfit: z.number().finite(),
+        priceUsed: z.number().finite(),
+        profitDistribution: z
+          .array(
+            z.object({
+              amount: z.number().finite(),
+              partnerId: z.string(),
+              share: z.number().finite(),
+            }),
+          )
+          .optional(),
+        reputationChange: z.number().optional(),
+        salesIncome: z.number().finite(),
+        sold: z.number().finite(),
+        taxes: z.number().finite(),
+      })
+      .optional(),
+    lastRoleEnergyCost: z.number().finite().optional(),
+    lastRoleSanityCost: z.number().finite().optional(),
     maxEmployees: z.number().int().min(0),
-    employeeRoles: z.array(
-      z.object({
-        role: EmployeeRoleSchema,
-        priority: z.enum(['required', 'recommended', 'optional']),
-        description: z.string(),
-      }),
-    ),
     minEmployees: z.number().int().min(0),
-    playerRoles: z.object({
-      managerialRoles: z.array(EmployeeRoleSchema),
-      operationalRole: EmployeeRoleSchema.nullable(),
-    }),
-    reputation: z.number().finite().min(0).max(100),
-    efficiency: z.number().finite().min(0).max(100),
-    eventsHistory: z.array(BusinessEventSchema),
-    foundedTurn: z.number().int().min(0),
-    parentId: z.string().optional(),
-    branches: z.array(z.string()).optional(),
+    monthlyExpenses: z.number().finite(),
+    monthlyIncome: z.number().finite(),
+    name: z.string(),
     networkBonus: z
       .object({
         marketingBonus: z.number(),
         reputationBonus: z.number(),
       })
       .optional(),
-    playerEmployment: z
+    networkId: z.string().optional(),
+    openingProgress: z
       .object({
-        role: EmployeeRoleSchema,
-        salary: z.number().finite().min(0),
-        startedTurn: z.number().int().min(0),
-        experience: z.number().int().min(0),
-        effortPercent: z.number().finite().optional(),
-        productivity: z.number().finite().min(0).max(100).optional(),
+        id: z.string(),
+        investedAmount: z.number().finite().min(0),
+        quartersLeft: z.number().int().min(0),
+        remainingDuration: z.number().int().min(0),
+        title: z.string(),
+        totalCost: z.number().finite().min(0),
+        totalDuration: z.number().int().min(0),
+        totalQuarters: z.number().int().min(0),
+        upfrontCost: z.number().finite().min(0),
       })
       .optional(),
+    parentId: z.string().optional(),
     partnerBusinessId: z.string().optional(),
     partnerId: z.string().optional(),
     partnerName: z.string().optional(),
-    playerShare: z.number().finite().optional(),
+    partners: z.array(BusinessPartnerSchema),
+    playerEmployment: z
+      .object({
+        effortPercent: z.number().finite().optional(),
+        experience: z.number().int().min(0),
+        productivity: z.number().finite().min(0).max(100).optional(),
+        role: EmployeeRoleSchema,
+        salary: z.number().finite().min(0),
+        startedTurn: z.number().int().min(0),
+      })
+      .optional(),
     playerInvestment: z.number().finite().optional(),
-    imageUrl: z.string().optional(),
-    lastRoleEnergyCost: z.number().finite().optional(),
-    lastRoleSanityCost: z.number().finite().optional(),
+    playerRoles: z.object({
+      managerialRoles: z.array(EmployeeRoleSchema),
+      operationalRole: EmployeeRoleSchema.nullable(),
+    }),
+    playerShare: z.number().finite().optional(),
+    price: z.number().finite().min(0),
+    proposals: z.array(BusinessProposalSchema),
+    quantity: z.number().finite().min(0),
+    quarterlyExpenses: z.number().finite(),
+    quarterlyIncome: z.number().finite(),
+    quarterlyTax: z.number().finite(),
+    reputation: z.number().finite().min(0).max(100),
+    state: z.enum(['opening', 'active', 'frozen']),
+    taxRate: z.number().finite().min(0).max(100),
+    type: z.enum(['retail', 'service', 'cafe', 'tech', 'manufacturing', 'food']),
+    valuation: z.number().finite().min(0),
+    walletBalance: z.number().finite().optional(),
   })
   .strict()
 
 export const FreelanceGigSchema = z
   .object({
-    id: z.string(),
-    title: z.string(),
     category: z.string(),
-    description: z.string().optional(),
-    payment: z.number().finite().min(0),
     cost: StatEffectSchema,
-    requirements: z.array(SkillRequirementSchema),
-    imageUrl: z.string().optional(),
+    description: z.string().optional(),
     duration: z.number().int().min(1).default(1),
+    id: z.string(),
+    imageUrl: z.string().optional(),
+    payment: z.number().finite().min(0),
+    requirements: z.array(SkillRequirementSchema),
+    title: z.string(),
   })
   .strict()
 
 export const BusinessIdeaSchema = z
   .object({
-    id: z.string(),
-    name: z.string(),
     description: z.string(),
-    type: z.enum(['retail', 'service', 'cafe', 'tech', 'manufacturing', 'food']),
-    requiredSkills: z.array(SkillRequirementSchema),
-    minInvestment: z.number().finite().min(0),
-    maxInvestment: z.number().finite().min(0),
-    riskLevel: z.enum(['low', 'medium', 'high', 'very_high']),
-    potentialReturn: z.number().finite(),
-    marketDemand: z.number().finite().min(0).max(100),
-    stage: z.enum(['idea', 'prototype', 'mvp', 'launched']),
     developmentProgress: z.number().finite().min(0).max(100),
-    investedAmount: z.number().finite().min(0),
-    generatedTurn: z.number().int().min(0),
     expiresIn: z.number().int().min(0),
+    generatedTurn: z.number().int().min(0),
+    id: z.string(),
+    investedAmount: z.number().finite().min(0),
+    marketDemand: z.number().finite().min(0).max(100),
+    maxInvestment: z.number().finite().min(0),
+    minInvestment: z.number().finite().min(0),
+    name: z.string(),
+    potentialReturn: z.number().finite(),
+    requiredSkills: z.array(SkillRequirementSchema),
+    riskLevel: z.enum(['low', 'medium', 'high', 'very_high']),
+    stage: z.enum(['idea', 'prototype', 'mvp', 'launched']),
+    type: z.enum(['retail', 'service', 'cafe', 'tech', 'manufacturing', 'food']),
   })
   .strict()
 
 export const StaffImpactResultSchema = z
   .object({
+    creativity: z.number().optional(),
+    efficiency: z.number().optional(),
     efficiencyBase: z.number().optional(),
     efficiencyMultiplier: z.number().optional(),
     expenseReduction: z.number().optional(),
-    salesBonus: z.number().optional(),
-    reputationBonus: z.number().optional(),
-    taxReduction: z.number().optional(),
     legalProtection: z.number().optional(),
-    staffProductivityBonus: z.number().optional(),
     // Data from employee-data.json
     management: z.number().optional(),
-    efficiency: z.number().optional(),
+    reputationBonus: z.number().optional(),
     salesAbility: z.number().optional(),
-    creativity: z.number().optional(),
+    salesBonus: z.number().optional(),
+    staffProductivityBonus: z.number().optional(),
+    taxReduction: z.number().optional(),
     technical: z.number().optional(),
   })
   .strict()
 
 export const EmployeeDataSchema = z
   .object({
+    baseSalaries: z.record(z.string(), z.number().finite().min(0)),
     firstNames: z.array(z.string()),
-    lastNames: z.array(z.string()),
     humanTraits: z.array(z.string()),
+    lastNames: z.array(z.string()),
     roleDescriptions: z.record(
       z.string(),
       z.object({
@@ -271,7 +286,6 @@ export const EmployeeDataSchema = z
       }),
     ),
     roleModifiers: z.record(z.string(), StaffImpactResultSchema),
-    baseSalaries: z.record(z.string(), z.number().finite().min(0)),
     starMultipliers: z.array(z.number().finite().min(0)),
   })
   .strict()
@@ -280,24 +294,24 @@ export const EmployeeDataSchema = z
 
 export const IdeaTemplateSchema = z
   .object({
-    nameTemplates: z.array(z.string()),
     descriptionTemplates: z.array(z.string()),
-    type: z.enum(['retail', 'service', 'cafe', 'tech', 'manufacturing', 'food']),
+    investmentRange: z.tuple([z.number().finite(), z.number().finite()]),
+    nameTemplates: z.array(z.string()),
     requiredSkills: z.array(SkillRequirementSchema),
+    returnRange: z.tuple([z.number().finite(), z.number().finite()]),
     riskRange: z.tuple([
       z.enum(['low', 'medium', 'high', 'very_high']),
       z.enum(['low', 'medium', 'high', 'very_high']),
     ]),
-    returnRange: z.tuple([z.number().finite(), z.number().finite()]),
-    investmentRange: z.tuple([z.number().finite(), z.number().finite()]),
+    type: z.enum(['retail', 'service', 'cafe', 'tech', 'manufacturing', 'food']),
   })
   .strict()
 
 export const IdeaReplacementsSchema = z.record(z.string(), z.array(z.string())).and(
   z.object({
     categories: z.array(z.string()),
-    niches: z.array(z.string()),
     fields: z.array(z.string()),
+    niches: z.array(z.string()),
     products: z.array(z.string()),
   }),
 )
@@ -306,39 +320,39 @@ export const IdeaReplacementsSchema = z.record(z.string(), z.array(z.string())).
 
 export const BusinessTemplateSchema = z
   .object({
-    id: z.string(),
-    name: z.string(),
     description: z.string().optional(),
+    employeeRoles: z.array(
+      z.object({
+        description: z.string(),
+        priority: z.enum(['required', 'recommended', 'optional']),
+        role: EmployeeRoleSchema,
+      }),
+    ),
+    energyCost: z.number().finite().optional(),
+    id: z.string(),
     imageUrl: z.string().optional(),
-    type: z.enum(['retail', 'service', 'cafe', 'tech', 'manufacturing', 'food']),
-    price: z.number().finite().min(0),
-    quantity: z.number().finite().min(0),
-    isServiceBased: z.boolean(),
     initialCost: z.number().finite().min(0),
-    upfrontCost: z.number().finite().min(0),
-    upfrontPaymentPercentage: z.number().finite().min(0).max(100).optional(),
-    openingQuarters: z.number().int().min(0),
-    monthlyIncome: z.number().finite(),
-    monthlyExpenses: z.number().finite(),
-    maxEmployees: z.number().int().min(0),
-    minEmployees: z.number().int().min(0),
     inventory: z
       .object({
+        autoPurchaseAmount: z.number().finite().min(0),
         maxStock: z.number().finite().min(0),
         pricePerUnit: z.number().finite().min(0),
         purchaseCost: z.number().finite().min(0),
-        autoPurchaseAmount: z.number().finite().min(0),
       })
       .optional(),
-    employeeRoles: z.array(
-      z.object({
-        role: EmployeeRoleSchema,
-        priority: z.enum(['required', 'recommended', 'optional']),
-        description: z.string(),
-      }),
-    ),
+    isServiceBased: z.boolean(),
+    maxEmployees: z.number().int().min(0),
+    minEmployees: z.number().int().min(0),
+    monthlyExpenses: z.number().finite(),
+    monthlyIncome: z.number().finite(),
+    name: z.string(),
+    openingQuarters: z.number().int().min(0),
+    price: z.number().finite().min(0),
+    quantity: z.number().finite().min(0),
     risk: z.enum(['low', 'medium', 'high']),
-    energyCost: z.number().finite().optional(),
     stressImpact: z.number().finite().optional(),
+    type: z.enum(['retail', 'service', 'cafe', 'tech', 'manufacturing', 'food']),
+    upfrontCost: z.number().finite().min(0),
+    upfrontPaymentPercentage: z.number().finite().min(0).max(100).optional(),
   })
   .strict()

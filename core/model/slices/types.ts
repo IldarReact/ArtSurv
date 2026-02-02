@@ -19,20 +19,24 @@ export * from './types/shop.types'
 export * from './types/bank.types'
 export * from './types/offers.types'
 export * from './types/misc.types'
+export * from './types/investment.types'
+export * from './types/relocation.types'
 
-import { ShopSlice } from './types/shop.types'
-import { BankSlice } from './types/bank.types'
-import { BusinessSlice, PricingProductionSlice } from './types/business.types'
-import { EducationSlice } from './types/education.types'
-import { FamilySlice } from './types/family.types'
-import { FreelanceSlice } from './types/freelance.types'
-import { GameSlice } from './types/game.types'
-import { IdeaSlice } from './types/idea.types'
-import { JobSlice } from './types/job.types'
-import { MarketSlice } from './types/market.types'
-import { NotificationSlice } from './types/notification.types'
-import { GameOffersSlice } from './types/offers.types'
-import { PlayerSlice } from './types/player.types'
+import type { BankSlice } from './types/bank.types'
+import type { BusinessSlice, PricingProductionSlice } from './types/business.types'
+import type { EducationSlice } from './types/education.types'
+import type { FamilySlice } from './types/family.types'
+import type { FreelanceSlice } from './types/freelance.types'
+import type { GameSlice } from './types/game.types'
+import type { IdeaSlice } from './types/idea.types'
+import type { InvestmentSlice } from './types/investment.types'
+import type { JobSlice } from './types/job.types'
+import type { MarketSlice } from './types/market.types'
+import type { NotificationSlice } from './types/notification.types'
+import type { GameOffersSlice } from './types/offers.types'
+import type { PlayerSlice } from './types/player.types'
+import type { RelocationSlice } from './types/relocation.types'
+import type { ShopSlice } from './types/shop.types'
 
 // Slice types for better organization
 // Общий тип middleware для стора (devtools + persist)
@@ -52,6 +56,8 @@ export type GameStore = GameSlice &
   IdeaSlice &
   ShopSlice &
   BankSlice &
+  InvestmentSlice &
+  RelocationSlice &
   GameOffersSlice &
   PartnershipBusinessSlice & {
     countries: GameState['countries']

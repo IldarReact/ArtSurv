@@ -2,69 +2,70 @@ import { createEmptyQuarterlyReport } from '@/core/lib/calculations/financial-he
 import type { Player } from '@/core/types'
 import type { Stats } from '@/core/types/stats.types'
 
-export const createMockPlayer = (
-  overrides?: Partial<Player>
-): Player => {
+export const createMockPlayer = (overrides?: Partial<Player>): Player => {
   const baseStats: Stats = {
-    money: 50000,
-    happiness: 100,
     energy: 100,
+    happiness: 100,
     health: 100,
-    sanity: 100,
     intelligence: 100,
+    money: 50000,
+    sanity: 100,
   }
 
   return {
-    id: 'test',
-    name: 'Test Player',
-    countryId: 'us',
+    activeFreelanceGigs: [],
+    activeLifestyle: {},
     age: 25,
+    assets: [],
+    businesses: [],
+    businessIdeas: [],
+    countryId: 'us',
     creditScore: { value: 650 },
-    traits: [],
+    currentJob: null,
 
-    // ✅ Новая система статов
-    stats: { ...baseStats },
+    debts: [],
 
+    freelanceGigs: [],
+    gender: 'male',
+
+    happinessMultiplier: 1,
+    housingId: 'housing_room',
+
+    id: 'test',
+
+    jobs: [],
     multipliers: {
       happiness: 1,
     },
-    happinessMultiplier: 1,
 
-    assets: [],
-    debts: [],
-
+    name: 'Test Player',
     personal: {
-      stats: {
-        money: 0, // Personal stats don't track money separately
-        happiness: baseStats.happiness,
-        energy: baseStats.energy,
-        health: baseStats.health,
-        sanity: baseStats.sanity,
-        intelligence: baseStats.intelligence,
-      },
-
-      relations: { family: 50, friends: 50, colleagues: 50 },
-      skills: [],
       activeCourses: [],
+
       activeUniversity: [],
       buffs: [],
-      lifeGoals: [],
       familyMembers: [],
-
       isDating: false,
+      lifeGoals: [],
       potentialPartner: null,
       pregnancy: null,
-    },
 
+      relations: { colleagues: 50, family: 50, friends: 50 },
+      skills: [],
+      stats: {
+        energy: baseStats.energy,
+        happiness: baseStats.happiness,
+        health: baseStats.health,
+        intelligence: baseStats.intelligence,
+        money: 0, // Personal stats don't track money separately
+        sanity: baseStats.sanity,
+      },
+    },
     quarterlyReport: createEmptyQuarterlyReport(),
     quarterlySalary: 150000,
-
-    jobs: [],
-    activeFreelanceGigs: [],
-    businesses: [],
-    businessIdeas: [],
-    activeLifestyle: {},
-    housingId: 'housing_room',
+    // ✅ Новая система статов
+    stats: { ...baseStats },
+    traits: [],
 
     ...overrides,
   }

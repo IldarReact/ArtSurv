@@ -2,10 +2,7 @@
 
 import { DollarSign, Users, Briefcase, CheckCircle, XCircle } from 'lucide-react'
 
-import { EmployeeCard } from '../../shared/components/business/employee-card'
-
 import { getRoleConfig } from '@/core/lib/business'
-import type { EmployeeRole, StaffImpactResult } from '@/core/types'
 import type {
   GameOffer,
   JobOfferDetails,
@@ -13,24 +10,32 @@ import type {
   ShareSaleOfferDetails,
 } from '@/core/types/game-offers.types'
 import { isJobOffer, isPartnershipOffer, isShareSaleOffer } from '@/core/types/game-offers.types'
+import { Badge } from '@/shared/components/badge'
+import { Button } from '@/shared/components/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/shared/components/dialog'
 import { ROLE_LABELS, ROLE_ICONS } from '@/shared/constants/business'
-import { Badge } from '@/shared/ui/badge'
-import { Button } from '@/shared/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/shared/ui/dialog'
+
+import { EmployeeCard } from '../../shared/components/business/employee-card'
 
 interface OfferDetailsDialogProps {
   isOpen: boolean
-  onClose: () => void
   offer: GameOffer
   onAccept: () => void
+  onClose: () => void
   onReject: () => void
 }
 
 export function OfferDetailsDialog({
   isOpen,
-  onClose,
   offer,
   onAccept,
+  onClose,
   onReject,
 }: OfferDetailsDialogProps) {
   const isJob = isJobOffer(offer)
@@ -38,7 +43,7 @@ export function OfferDetailsDialog({
   const isShareSale = isShareSaleOffer(offer)
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog onOpenChange={onClose} open={isOpen}>
       <DialogContent className="bg-zinc-900/98 backdrop-blur-xl border-white/20 text-white w-[95vw] md:w-[600px] max-w-[90vh]">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-3 text-white">
@@ -53,7 +58,7 @@ export function OfferDetailsDialog({
             </span>
           </DialogTitle>
           <div className="pt-2">
-            <Badge variant="outline" className="text-sm border-white/20 text-white/60">
+            <Badge className="text-sm border-white/20 text-white/60" variant="outline">
               от {offer.fromPlayerName}
             </Badge>
           </div>
@@ -61,10 +66,8 @@ export function OfferDetailsDialog({
 
         <div className="py-4 space-y-6">
           {/* Детали оффера */}
-          {isJob && <JobOfferContent details={offer.details as JobOfferDetails} />}
-          {isPartnership && (
-            <PartnershipOfferContent details={offer.details as PartnershipOfferDetails} />
-          )}
+          {isJob && <JobOfferContent details={offer.details} />}
+          {isPartnership && <PartnershipOfferContent details={offer.details} />}
           {isShareSale && (
             <ShareSaleOfferContent details={offer.details as ShareSaleOfferDetails} />
           )}
@@ -72,29 +75,29 @@ export function OfferDetailsDialog({
           {/* Сообщение */}
           {offer.message && (
             <div className="bg-white/5 rounded-xl p-4 text-white/80 italic border-l-2 border-white/20">
-              "{offer.message}"
+              &ldquo;{offer.message}&rdquo;
             </div>
           )}
         </div>
 
         <DialogFooter className="gap-3 sm:gap-0">
           <Button
+            className="flex-1 border-white/10 hover:bg-white/10 text-white hover:text-red-300 hover:border-red-500/30 h-12 text-base"
             onClick={() => {
               onReject()
               onClose()
             }}
             variant="outline"
-            className="flex-1 border-white/10 hover:bg-white/10 text-white hover:text-red-300 hover:border-red-500/30 h-12 text-base"
           >
             <XCircle className="w-5 h-5 mr-2" />
             Отклонить
           </Button>
           <Button
+            className="flex-1 bg-green-600 hover:bg-green-700 text-white h-12 text-base"
             onClick={() => {
               onAccept()
               onClose()
             }}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white h-12 text-base"
           >
             <CheckCircle className="w-5 h-5 mr-2" />
             Принять
@@ -106,26 +109,26 @@ export function OfferDetailsDialog({
 }
 
 function JobOfferContent({ details }: { details: JobOfferDetails }) {
-  const role = details.role as EmployeeRole
+  const role = details.role
   const cfg = getRoleConfig(role)
   const baseImpact = cfg?.staffImpact ? cfg.staffImpact(3) : {} // 3 звезды как база для оффера
 
   return (
     <div className="space-y-4">
       <EmployeeCard
+        company={details.businessName}
         id="job-offer"
+        impact={{
+          ...baseImpact,
+          salesBonus: (baseImpact.salesBonus ?? 0) + details.kpiBonus,
+        }}
         name={role}
         role={role}
-        roleLabel={ROLE_LABELS[role] || role}
         roleIcon={ROLE_ICONS[role]}
-        company={details.businessName}
+        roleLabel={ROLE_LABELS[role]}
         salary={details.salary}
         salaryLabel="/кв"
         stars={3} // Дефолтное значение для оффера
-        impact={{
-          ...baseImpact,
-          salesBonus: ((baseImpact as StaffImpactResult).salesBonus || 0) + (details.kpiBonus || 0),
-        }}
       />
     </div>
   )

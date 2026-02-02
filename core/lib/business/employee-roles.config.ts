@@ -1,8 +1,8 @@
+import rolesData from '@/shared/data/business/roles.json'
+
 import type { StaffImpactResult, EmployeeRole } from '../../types/business.types'
 import type { Skill } from '../../types/skill.types'
 import type { StatEffect } from '../../types/stats.types'
-
-import rolesData from '@/shared/data/business/roles.json'
 
 /**
  * Тип роли: управленческая или операционная
@@ -18,20 +18,24 @@ export interface BusinessImpact {
   efficiencyBase?: (skill: Skill | null) => number
   efficiencyMultiplier?: (skill: Skill | null) => number
   expenseReduction?: (skill: Skill | null) => number
-  salesBonus?: (skill: Skill | null) => number
-  reputationBonus?: (skill: Skill | null) => number
-  taxReduction?: (skill: Skill | null) => number
   legalProtection?: (skill: Skill | null) => number
+  reputationBonus?: (skill: Skill | null) => number
+  salesBonus?: (skill: Skill | null) => number
   staffProductivityBonus?: (skill: Skill | null) => number
+  taxReduction?: (skill: Skill | null) => number
 }
 
 /**
  * Конфигурация роли сотрудника
  */
 export interface EmployeeRoleConfig {
-  type: RoleType
-  name: string
+  // Влияние навыка игрока на бизнес (если он работает в этой роли)
+  businessImpact?: BusinessImpact
   description: string
+  // Минимальный уровень навыка для занятия роли
+  minSkillLevel?: number
+
+  name: string
 
   // Эффекты на игрока, если он выполняет эту роль
   playerEffects: StatEffect
@@ -42,25 +46,21 @@ export interface EmployeeRoleConfig {
     progressPerQuarter: number
   } | null
 
-  // Минимальный уровень навыка для занятия роли
-  minSkillLevel?: number
-
-  // Влияние навыка игрока на бизнес (если он работает в этой роли)
-  businessImpact?: BusinessImpact
   staffImpact?: (stars: number) => StaffImpactResult
+  type: RoleType
 }
 
 interface RawRoleData {
-  type: RoleType
-  name: string
   description: string
+  impactCoefficients: Record<string, number>
+  minSkillLevel?: number
+  name: string
   playerEffects: StatEffect
   skillGrowth: {
     name: string
     progressPerQuarter: number
   } | null
-  minSkillLevel?: number
-  impactCoefficients: Record<string, number>
+  type: RoleType
 }
 
 /**
@@ -71,17 +71,6 @@ export const EMPLOYEE_ROLES_CONFIG: Record<string, EmployeeRoleConfig> = {
   // УПРАВЛЕНЧЕСКИЕ РОЛИ (можно несколько сразу)
   // ============================================
 
-  manager: {
-    ...(rolesData.manager as unknown as RawRoleData),
-    businessImpact: {
-      efficiencyMultiplier: (skill) =>
-        skill ? skill.level * rolesData.manager.impactCoefficients.efficiencyMultiplier : 0,
-    },
-    staffImpact: (stars) => ({
-      efficiencyMultiplier: stars * rolesData.manager.impactCoefficients.staffEfficiencyMultiplier,
-    }),
-  },
-
   accountant: {
     ...(rolesData.accountant as unknown as RawRoleData),
     businessImpact: {
@@ -90,37 +79,6 @@ export const EMPLOYEE_ROLES_CONFIG: Record<string, EmployeeRoleConfig> = {
     },
     staffImpact: (stars) => ({
       taxReduction: stars * rolesData.accountant.impactCoefficients.staffTaxReduction,
-    }),
-  },
-
-  marketer: {
-    ...(rolesData.marketer as unknown as RawRoleData),
-    businessImpact: {
-      reputationBonus: (skill) =>
-        skill ? skill.level * rolesData.marketer.impactCoefficients.reputationBonus : 0,
-      salesBonus: (skill) =>
-        skill ? skill.level * rolesData.marketer.impactCoefficients.salesBonus : 0,
-    },
-    staffImpact: (stars) => ({
-      salesBonus: stars * rolesData.marketer.impactCoefficients.staffSalesBonus,
-      reputationBonus: stars * rolesData.marketer.impactCoefficients.staffReputationBonus,
-    }),
-  },
-
-  lawyer: {
-    ...(rolesData.lawyer as unknown as RawRoleData),
-    businessImpact: {
-      taxReduction: (skill) =>
-        skill ? skill.level * rolesData.lawyer.impactCoefficients.taxReduction : 0,
-      expenseReduction: (skill) =>
-        skill ? skill.level * rolesData.lawyer.impactCoefficients.expenseReduction : 0,
-      legalProtection: (skill) =>
-        skill ? skill.level * rolesData.lawyer.impactCoefficients.legalProtection : 0,
-    },
-    staffImpact: (stars) => ({
-      taxReduction: stars * rolesData.lawyer.impactCoefficients.staffTaxReduction,
-      expenseReduction: stars * rolesData.lawyer.impactCoefficients.staffExpenseReduction,
-      legalProtection: stars * rolesData.lawyer.impactCoefficients.staffLegalProtection,
     }),
   },
 
@@ -135,6 +93,48 @@ export const EMPLOYEE_ROLES_CONFIG: Record<string, EmployeeRoleConfig> = {
     staffImpact: (stars) => ({
       efficiencyMultiplier: stars * rolesData.hr.impactCoefficients.staffEfficiencyMultiplier,
       staffProductivityBonus: stars * rolesData.hr.impactCoefficients.staffStaffProductivityBonus,
+    }),
+  },
+
+  lawyer: {
+    ...(rolesData.lawyer as unknown as RawRoleData),
+    businessImpact: {
+      expenseReduction: (skill) =>
+        skill ? skill.level * rolesData.lawyer.impactCoefficients.expenseReduction : 0,
+      legalProtection: (skill) =>
+        skill ? skill.level * rolesData.lawyer.impactCoefficients.legalProtection : 0,
+      taxReduction: (skill) =>
+        skill ? skill.level * rolesData.lawyer.impactCoefficients.taxReduction : 0,
+    },
+    staffImpact: (stars) => ({
+      expenseReduction: stars * rolesData.lawyer.impactCoefficients.staffExpenseReduction,
+      legalProtection: stars * rolesData.lawyer.impactCoefficients.staffLegalProtection,
+      taxReduction: stars * rolesData.lawyer.impactCoefficients.staffTaxReduction,
+    }),
+  },
+
+  manager: {
+    ...(rolesData.manager as unknown as RawRoleData),
+    businessImpact: {
+      efficiencyMultiplier: (skill) =>
+        skill ? skill.level * rolesData.manager.impactCoefficients.efficiencyMultiplier : 0,
+    },
+    staffImpact: (stars) => ({
+      efficiencyMultiplier: stars * rolesData.manager.impactCoefficients.staffEfficiencyMultiplier,
+    }),
+  },
+
+  marketer: {
+    ...(rolesData.marketer as unknown as RawRoleData),
+    businessImpact: {
+      reputationBonus: (skill) =>
+        skill ? skill.level * rolesData.marketer.impactCoefficients.reputationBonus : 0,
+      salesBonus: (skill) =>
+        skill ? skill.level * rolesData.marketer.impactCoefficients.salesBonus : 0,
+    },
+    staffImpact: (stars) => ({
+      reputationBonus: stars * rolesData.marketer.impactCoefficients.staffReputationBonus,
+      salesBonus: stars * rolesData.marketer.impactCoefficients.staffSalesBonus,
     }),
   },
 

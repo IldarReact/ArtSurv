@@ -1,5 +1,13 @@
-import { BusinessType } from './business.types'
-import { GameOffer } from './game-offers.types'
+import type {
+  Business,
+  BusinessChangeType,
+  BusinessProposal,
+  BusinessRoleTemplate,
+  BusinessType,
+  Employee,
+  EmployeeRole,
+} from './business.types'
+import type { GameOffer } from './game-offers.types'
 
 export type GameEventType =
   | 'PARTNERSHIP_ACCEPTED'
@@ -15,14 +23,15 @@ export type GameEventType =
   | 'BUSINESS_UPDATED'
 
 export interface BaseGameEvent {
-  toPlayerId?: string
   fromPlayerId?: string
   timestamp?: number
+  toPlayerId?: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any
 }
 
 // Partnership Events
 export interface PartnershipAcceptedEvent extends BaseGameEvent {
-  type: 'PARTNERSHIP_ACCEPTED'
   payload: {
     businessId: string
     partnerId: string
@@ -35,114 +44,110 @@ export interface PartnershipAcceptedEvent extends BaseGameEvent {
     partnerInvestment: number
     yourShare: number
     yourInvestment: number
-    employeeRoles: import('./business.types').BusinessRoleTemplate[]
+    employeeRoles: BusinessRoleTemplate[]
   }
+  type: 'PARTNERSHIP_ACCEPTED'
 }
 
 export interface PartnershipUpdatedEvent extends BaseGameEvent {
-  type: 'PARTNERSHIP_UPDATED'
   payload: {
     businessId: string
     partnerBusinessId: string
   }
+  type: 'PARTNERSHIP_UPDATED'
 }
 
 // Offer Events
 export interface OfferSentEvent extends BaseGameEvent {
-  type: 'OFFER_SENT'
   payload: {
     offer: GameOffer
   }
+  type: 'OFFER_SENT'
 }
 
 export interface OfferRejectedEvent extends BaseGameEvent {
-  type: 'OFFER_REJECTED'
   payload: {
     offerId: string
     rejectedBy: string
   }
+  type: 'OFFER_REJECTED'
 }
 
 export interface OfferAcceptedEvent extends BaseGameEvent {
-  type: 'OFFER_ACCEPTED'
   payload: {
     offerId: string
     acceptedBy: string
   }
+  type: 'OFFER_ACCEPTED'
 }
 
 export interface JobOfferAcceptedEvent extends BaseGameEvent {
-  type: 'JOB_OFFER_ACCEPTED'
   payload: {
     offerId: string
     employeeId: string
     employeeName: string
     businessId: string
-    role: import('./business.types').EmployeeRole
+    role: EmployeeRole
     salary: number
   }
+  type: 'JOB_OFFER_ACCEPTED'
 }
 
 // Business Sync Events
 export interface BusinessSyncEvent extends BaseGameEvent {
-  type: 'BUSINESS_SYNC'
   payload: {
-    business: import('./business.types').Business
+    business: Business
     targetPlayerId: string
   }
+  type: 'BUSINESS_SYNC'
 }
 
 // Business Change Events
-export type BusinessChangeType =
-  | 'price'
-  | 'quantity'
-  | 'hire_employee'
-  | 'fire_employee'
-  | 'freeze'
-  | 'unfreeze'
-
 export interface BusinessChangeProposedEvent extends BaseGameEvent {
-  type: 'BUSINESS_CHANGE_PROPOSED'
   payload: {
     businessId: string
     proposalId: string
-    changeType: import('./business.types').BusinessChangeType
+    changeType: BusinessChangeType
     initiatorId: string
     initiatorName: string
-    data: import('./business.types').BusinessProposal['data']
+    data: BusinessProposal['data']
   }
+  type: 'BUSINESS_CHANGE_PROPOSED'
 }
 
 export interface BusinessChangeApprovedEvent extends BaseGameEvent {
-  type: 'BUSINESS_CHANGE_APPROVED'
   payload: {
     businessId: string
     proposalId: string
     approverId: string
   }
+  type: 'BUSINESS_CHANGE_APPROVED'
 }
 
 export interface BusinessChangeRejectedEvent extends BaseGameEvent {
-  type: 'BUSINESS_CHANGE_REJECTED'
   payload: {
     businessId: string
     proposalId: string
     rejecterId: string
   }
+  type: 'BUSINESS_CHANGE_REJECTED'
 }
 
 export interface BusinessUpdatedEvent extends BaseGameEvent {
-  type: 'BUSINESS_UPDATED'
   payload: {
     businessId: string
     changes: {
       price?: number
       quantity?: number
-      employees?: import('./business.types').Employee[]
+      employees?: Employee[]
       state?: 'active' | 'frozen' | 'opening'
-      [key: string]: unknown
+      playerEmployment?: Business['playerEmployment']
+      walletBalance?: number
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      [key: string]: any
     }
   }
+  type: 'BUSINESS_UPDATED'
 }
 
 export type GameEvent =

@@ -1,4 +1,10 @@
-import { Business, BusinessChangeType } from '@/core/types/business.types'
+import type { Business, BusinessChangeType } from '@/core/types/business.types'
+
+const MAJORITY_SHARE_THRESHOLD = 50
+const FULL_SHARE = 100
+const RADIX_BASE_36 = 36
+const SLICE_START = 2
+const SLICE_END = 9
 
 /**
  * Проверяет, может ли игрок вносить изменения в бизнес без согласования
@@ -6,7 +12,7 @@ import { Business, BusinessChangeType } from '@/core/types/business.types'
  */
 export function canMakeDirectChanges(business: Business, playerId: string): boolean {
   const playerShare = getPlayerShare(business, playerId)
-  return playerShare > 50
+  return playerShare > MAJORITY_SHARE_THRESHOLD
 }
 
 /**
@@ -15,7 +21,7 @@ export function canMakeDirectChanges(business: Business, playerId: string): bool
  */
 export function requiresApproval(business: Business, playerId: string): boolean {
   const playerShare = getPlayerShare(business, playerId)
-  return playerShare === 50
+  return playerShare === MAJORITY_SHARE_THRESHOLD
 }
 
 /**
@@ -24,7 +30,7 @@ export function requiresApproval(business: Business, playerId: string): boolean 
  */
 export function canProposeChanges(business: Business, playerId: string): boolean {
   const playerShare = getPlayerShare(business, playerId)
-  return playerShare >= 50
+  return playerShare >= MAJORITY_SHARE_THRESHOLD
 }
 
 /**
@@ -44,7 +50,7 @@ export function getPlayerShare(business: Business, playerId: string): number {
 
   // Если партнёров нет, игрок владеет 100%
   if (business.partners.length === 0) {
-    return 100
+    return FULL_SHARE
   }
 
   return 0
@@ -54,43 +60,28 @@ export function getPlayerShare(business: Business, playerId: string): number {
  * Получает партнёра по бизнесу
  */
 export function getBusinessPartner(business: Business, playerId: string) {
-  console.log('[getBusinessPartner] Searching for partner:', {
-    businessId: business.id,
-    playerId,
-    partnerId: business.partnerId,
-    partnerName: business.partnerName,
-    partnersCount: business.partners.length,
-    partners: business.partners.map(p => ({ id: p.id, name: p.name, type: p.type }))
-  })
-
-  console.log('[getBusinessPartner] Full partners array:', JSON.stringify(business.partners, null, 2))
-
   // Ищем в списке партнёров (приоритет)
   const partner = business.partners.find((p) => {
-    console.log(`[getBusinessPartner] Checking partner: id=${p.id}, playerId=${playerId}, match=${p.id !== playerId}, type=${p.type}`)
     return p.id !== playerId && p.type === 'player'
   })
 
   if (partner) {
-    console.log('[getBusinessPartner] Found partner in partners array:', partner)
     return {
+      businessId: business.partnerBusinessId, // Используем partnerBusinessId из бизнеса
       id: partner.id,
       name: partner.name,
-      businessId: business.partnerBusinessId, // Используем partnerBusinessId из бизнеса
     }
   }
 
   // Если есть partnerId и это не текущий игрок (fallback)
   if (business.partnerId && business.partnerId !== playerId) {
-    console.log('[getBusinessPartner] Found partner via partnerId:', business.partnerId)
     return {
-      id: business.partnerId,
-      name: business.partnerName || 'Партнёр',
       businessId: business.partnerBusinessId,
+      id: business.partnerId,
+      name: business.partnerName ?? 'Партнёр',
     }
   }
 
-  console.log('[getBusinessPartner] No partner found')
   return null
 }
 
@@ -107,5 +98,5 @@ export function isCriticalChange(changeType: BusinessChangeType): boolean {
  * Генерирует ID для предложения изменения
  */
 export function generateProposalId(): string {
-  return `proposal_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+  return `proposal_${String(Date.now())}_${Math.random().toString(RADIX_BASE_36).slice(SLICE_START, SLICE_END)}`
 }

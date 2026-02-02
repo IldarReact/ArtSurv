@@ -35,7 +35,7 @@ type PriceableItem =
  */
 export function useInflatedPrice(item: PriceableItem): number {
   const economy = useGameStore((state) => {
-    if (!state.countries || !state.player?.countryId) return undefined
+    if (!state.player?.countryId) return undefined
     return state.countries[state.player.countryId]
   })
 
@@ -73,6 +73,10 @@ export function useInflatedPrice(item: PriceableItem): number {
         return getInflatedShopPrice(basePrice, economy, 'transport')
       case 'business':
         return getInflatedPrice(basePrice, economy, 'business')
+      case 'shop':
+        return getInflatedShopPrice(basePrice, economy, 'shop')
+      case undefined:
+        return getInflatedPrice(basePrice, economy)
       default:
         return getInflatedPrice(basePrice, economy)
     }
@@ -84,9 +88,9 @@ export function useInflatedPrice(item: PriceableItem): number {
  */
 export function useInflatedPrices<T extends PriceableItem>(
   items: T[],
-): Array<T & { inflatedPrice: number }> {
+): (T & { inflatedPrice: number })[] {
   const economy = useGameStore((state) => {
-    if (!state.countries || !state.player?.countryId) return undefined
+    if (!state.player?.countryId) return undefined
     return state.countries[state.player.countryId]
   })
 
@@ -116,7 +120,7 @@ export function useInflatedPrices<T extends PriceableItem>(
  */
 export function useEconomy(): CountryEconomy | undefined {
   return useGameStore((state) => {
-    if (!state.countries || !state.player?.countryId) return undefined
+    if (!state.player?.countryId) return undefined
     return state.countries[state.player.countryId]
   })
 }
@@ -153,6 +157,10 @@ function calculateInflatedPrice(item: PriceableItem, economy: CountryEconomy): n
       return getInflatedShopPrice(basePrice, economy, 'transport')
     case 'business':
       return getInflatedPrice(basePrice, economy, 'business')
+    case 'shop':
+      return getInflatedShopPrice(basePrice, economy, 'shop')
+    case undefined:
+      return getInflatedPrice(basePrice, economy)
     default:
       return getInflatedPrice(basePrice, economy)
   }

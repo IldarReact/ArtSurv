@@ -3,27 +3,28 @@
 import { Heart, DollarSign, Baby, Dog, Search, X } from 'lucide-react'
 import React from 'react'
 
-import { FamilyFinancesCard } from '../ui/family-finances-card'
-import { FamilyMemberCard } from '../ui/family-member-card'
-import { OpportunityCard } from '../ui/opportunity-card'
-
-import { useFamilyPricing } from './use-family-pricing'
-
 import { FAMILY_PRICES } from '@/core/lib/calculations/family-prices'
 import { useGameStore } from '@/core/model/store'
-import { Badge } from '@/shared/ui/badge'
-import { Button } from '@/shared/ui/button'
-import { Progress } from '@/shared/ui/progress'
-import { SectionSeparator } from '@/shared/ui/section-separator'
+import { Badge } from '@/shared/components/badge'
+import { Button } from '@/shared/components/button'
+import { Progress } from '@/shared/components/progress'
+import { SectionSeparator } from '@/shared/components/section-separator'
+
+import { FamilyFinancesCard } from '../components/family-finances-card'
+import { FamilyMemberCard } from '../components/family-member-card'
+import { OpportunityCard } from '../components/opportunity-card'
+import { useFamilyPricing } from './use-family-pricing'
+import { useHousingCapacity } from './use-housing-capacity'
 
 export function FamilyActivity(): React.JSX.Element | null {
-  const { player, startDating, acceptPartner, rejectPartner, tryForBaby, adoptPet } = useGameStore()
+  const { acceptPartner, adoptPet, player, rejectPartner, startDating, tryForBaby } = useGameStore()
   const prices = useFamilyPricing()
+  const housing = useHousingCapacity()
 
   if (!player) return null
 
   const { familyMembers, isDating, potentialPartner, pregnancy } = player.personal
-  const hasPartner = familyMembers?.some((m) => m.type === 'wife' || m.type === 'husband')
+  const hasPartner = familyMembers.some((m) => m.type === 'wife' || m.type === 'husband')
 
   return (
     <div className="space-y-8 pb-10">
@@ -58,8 +59,8 @@ export function FamilyActivity(): React.JSX.Element | null {
               <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
                 <h3 className="text-2xl font-bold text-white">{potentialPartner.name}</h3>
                 <Badge
-                  variant="secondary"
                   className="bg-rose-500/20 text-rose-200 border-rose-500/30"
+                  variant="secondary"
                 >
                   {potentialPartner.age} лет
                 </Badge>
@@ -74,16 +75,16 @@ export function FamilyActivity(): React.JSX.Element | null {
             </div>
             <div className="flex gap-3 w-full md:w-auto">
               <Button
+                className="flex-1 border-white/10 hover:bg-white/10 text-white"
                 onClick={rejectPartner}
                 variant="outline"
-                className="flex-1 border-white/10 hover:bg-white/10 text-white"
               >
                 <X className="w-4 h-4 mr-2" />
                 Отказать
               </Button>
               <Button
-                onClick={acceptPartner}
                 className="flex-1 bg-rose-500 hover:bg-rose-600 text-white"
+                onClick={acceptPartner}
               >
                 <Heart className="w-4 h-4 mr-2 fill-current" />
                 Начать отношения
@@ -106,79 +107,65 @@ export function FamilyActivity(): React.JSX.Element | null {
               <span className="text-white font-bold">{pregnancy.remainingDuration} кв.</span>
             </p>
             <Progress
+              className="h-2 mt-2 w-48"
               value={
                 ((pregnancy.totalDuration - pregnancy.remainingDuration) /
                   pregnancy.totalDuration) *
                 100
               }
-              className="h-2 mt-2 w-48"
             />
           </div>
         </div>
       )}
 
       {/* Housing Capacity Warning */}
-      {player.housingId &&
-        (() => {
-          const { useHousingCapacity } = require('./use-housing-capacity')
-          const housing = useHousingCapacity()
-
-          if (housing.status === 'critical') {
-            return (
-              <div className="bg-red-500/10 border-2 border-red-500/30 rounded-2xl p-6 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center text-2xl">
-                  ⚠️
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-white">Жильё критически переполнено!</h4>
-                  <p className="text-white/60 text-sm mb-2">
-                    Занято {housing.familySize}/{housing.capacity} мест (+
-                    {Math.round(housing.overcrowdingPercent)}% переполнения)
-                  </p>
-                  <div className="flex gap-3 text-xs">
-                    <span className="text-red-400">Счастье: -{housing.penalty}</span>
-                    <span className="text-red-400">Рассудок: -{housing.penalty}</span>
-                    <span className="text-red-400">
-                      Интеллект: -{Math.floor(housing.penalty / 2)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )
-          }
-
-          if (housing.status === 'warning') {
-            return (
-              <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center text-2xl">
-                  ⚠️
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-bold text-white">Жильё переполнено</h4>
-                  <p className="text-white/60 text-sm mb-2">
-                    Занято {housing.familySize}/{housing.capacity} мест (+
-                    {Math.round(housing.overcrowdingPercent)}% переполнения)
-                  </p>
-                  <div className="flex gap-3 text-xs">
-                    <span className="text-amber-400">Счастье: -{housing.penalty}</span>
-                    <span className="text-amber-400">Рассудок: -{housing.penalty}</span>
-                    <span className="text-amber-400">
-                      Интеллект: -{Math.floor(housing.penalty / 2)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )
-          }
-
-          return (
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-              <p className="text-white/60 text-sm">
-                Занято {housing.familySize}/{housing.capacity} мест в жилье
-              </p>
+      {player.housingId && housing.status === 'critical' && (
+        <div className="bg-red-500/10 border-2 border-red-500/30 rounded-2xl p-6 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center text-2xl">
+            ⚠️
+          </div>
+          <div className="flex-1">
+            <h4 className="font-bold text-white">Жильё критически переполнено!</h4>
+            <p className="text-white/60 text-sm mb-2">
+              Занято {housing.familySize}/{housing.capacity} мест (+
+              {Math.round(housing.overcrowdingPercent)}% переполнения)
+            </p>
+            <div className="flex gap-3 text-xs">
+              <span className="text-red-400">Счастье: -{housing.penalty}</span>
+              <span className="text-red-400">Рассудок: -{housing.penalty}</span>
+              <span className="text-red-400">Интеллект: -{Math.floor(housing.penalty / 2)}</span>
             </div>
-          )
-        })()}
+          </div>
+        </div>
+      )}
+
+      {player.housingId && housing.status === 'warning' && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-6 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center text-2xl">
+            ⚠️
+          </div>
+          <div className="flex-1">
+            <h4 className="font-bold text-white">Жильё переполнено</h4>
+            <p className="text-white/60 text-sm mb-2">
+              Занято {housing.familySize}/{housing.capacity} мест (+
+              {Math.round(housing.overcrowdingPercent)}% переполнения)
+            </p>
+            <div className="flex gap-3 text-xs">
+              <span className="text-amber-400">Счастье: -{housing.penalty}</span>
+              <span className="text-amber-400">Рассудок: -{housing.penalty}</span>
+              <span className="text-amber-400">Интеллект: -{Math.floor(housing.penalty / 2)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {player.housingId && housing.status === 'none' && (
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <p className="text-white/60 text-sm">
+            Занято {housing.familySize}/{housing.capacity} мест в жилье
+          </p>
+        </div>
+      )}
 
       {/* Family Members Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -186,11 +173,11 @@ export function FamilyActivity(): React.JSX.Element | null {
         <FamilyMemberCard isPlayer={true} />
 
         {/* Family Members */}
-        {familyMembers?.map((member) => (
+        {familyMembers.map((member) => (
           <FamilyMemberCard key={member.id} member={member} />
         ))}
 
-        {(!familyMembers || familyMembers.length === 0) && !potentialPartner && !isDating && (
+        {familyMembers.length === 0 && !potentialPartner && !isDating && (
           <div className="col-span-full text-center py-10 bg-white/5 rounded-2xl border border-white/10 border-dashed">
             <p className="text-white/40">У вас пока нет семьи</p>
           </div>
@@ -202,35 +189,35 @@ export function FamilyActivity(): React.JSX.Element | null {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {!hasPartner && !isDating && !potentialPartner && (
           <OpportunityCard
-            title="Найти партнера"
+            actionLabel={`Искать ($${prices.datingSearch.toLocaleString()}, ${String(FAMILY_PRICES.DATING_ENERGY_COST)} эн.)`}
             description="Начать активный поиск второй половинки. Требует времени и денег на свидания."
             icon={<Heart className="w-6 h-6 text-rose-400" />}
-            actionLabel={`Искать ($${prices.datingSearch.toLocaleString()}, ${FAMILY_PRICES.DATING_ENERGY_COST} эн.)`}
             onAction={startDating}
+            title="Найти партнера"
           />
         )}
 
         {hasPartner && !pregnancy && (
           <OpportunityCard
-            title="Завести ребенка"
+            actionLabel="Планировать"
             description="Серьезный шаг. Требует стабильного дохода и жилья. Беременность длится 9 месяцев."
             icon={<Baby className="w-6 h-6 text-blue-400" />}
-            actionLabel="Планировать"
             onAction={tryForBaby}
+            title="Завести ребенка"
           />
         )}
 
         <OpportunityCard
-          title="Завести питомца"
+          actionLabel="Выбрать питомца"
           description="Верный друг, который всегда поддержит. Выберите питомца по душе."
           icon={<Dog className="w-6 h-6 text-amber-400" />}
-          actionLabel="Выбрать питомца"
+          title="Завести питомца"
         >
           <div className="grid grid-cols-1 gap-3">
             {[
-              { type: 'dog' as const, name: 'Собака', price: 500 },
-              { type: 'cat' as const, name: 'Кот', price: 300 },
-              { type: 'hamster' as const, name: 'Хомяк', price: 50 },
+              { name: 'Собака', price: 500, type: 'dog' as const },
+              { name: 'Кот', price: 300, type: 'cat' as const },
+              { name: 'Хомяк', price: 50, type: 'hamster' as const },
             ].map((pet) => {
               const petPrice =
                 pet.type === 'dog'
@@ -240,8 +227,8 @@ export function FamilyActivity(): React.JSX.Element | null {
                     : prices.petHamster
               return (
                 <div
-                  key={pet.type}
                   className="bg-white/5 p-4 rounded-xl flex items-center justify-between"
+                  key={pet.type}
                 >
                   <div className="flex items-center gap-3">
                     <div className="text-2xl">
@@ -259,9 +246,11 @@ export function FamilyActivity(): React.JSX.Element | null {
                     </div>
                   </div>
                   <Button
-                    size="sm"
-                    onClick={() => adoptPet(pet.type, 'Имя', petPrice)}
                     className="bg-white/10 hover:bg-white/20"
+                    onClick={() => {
+                      adoptPet(pet.type, 'Имя', petPrice)
+                    }}
+                    size="sm"
                   >
                     ${petPrice.toLocaleString()}
                   </Button>

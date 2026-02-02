@@ -5,107 +5,109 @@ import type { MarketEvent } from '@/core/types'
  */
 
 interface MarketEventTemplate {
-  title: string
   description: string
-  impact: number
   duration: number
-  type: 'positive' | 'negative' | 'neutral'
+  impact: number
   probability: number // 0.0 - 1.0
+  title: string
+  type: 'positive' | 'negative' | 'neutral'
 }
 
 const MARKET_EVENT_TEMPLATES: MarketEventTemplate[] = [
   // Позитивные события (рост рынка)
   {
-    title: 'Экономический бум',
-    description: 'Мировая экономика переживает период бурного роста. Спрос на товары и услуги значительно вырос.',
-    impact: 0.5,
+    description:
+      'Мировая экономика переживает период бурного роста. Спрос на товары и услуги значительно вырос.',
     duration: 4,
+    impact: 0.5,
+    probability: 0.05,
+    title: 'Экономический бум',
     type: 'positive',
-    probability: 0.05
   },
   {
-    title: 'Технологический прорыв',
-    description: 'Новые технологии открывают новые возможности для бизнеса. Потребительский спрос растет.',
-    impact: 0.3,
+    description:
+      'Новые технологии открывают новые возможности для бизнеса. Потребительский спрос растет.',
     duration: 6,
+    impact: 0.3,
+    probability: 0.08,
+    title: 'Технологический прорыв',
     type: 'positive',
-    probability: 0.08
   },
   {
-    title: 'Снижение налогов',
-    description: 'Правительство снизило налоги для бизнеса. Покупательская способность населения выросла.',
-    impact: 0.2,
+    description:
+      'Правительство снизило налоги для бизнеса. Покупательская способность населения выросла.',
     duration: 8,
+    impact: 0.2,
+    probability: 0.1,
+    title: 'Снижение налогов',
     type: 'positive',
-    probability: 0.1
   },
   {
-    title: 'Рост потребительского доверия',
     description: 'Потребители стали более оптимистичны и активнее тратят деньги.',
-    impact: 0.15,
     duration: 3,
+    impact: 0.15,
+    probability: 0.15,
+    title: 'Рост потребительского доверия',
     type: 'positive',
-    probability: 0.15
   },
 
   // Негативные события (падение рынка)
   {
-    title: 'Экономический кризис',
     description: 'Мировая экономика вошла в рецессию. Спрос на товары и услуги немного упал.',
+    duration: 4, // Reduced from 6
     impact: -0.25, // Reduced from -0.6
-    duration: 4,   // Reduced from 6
+    probability: 0.02, // Reduced from 0.03
+    title: 'Экономический кризис',
     type: 'negative',
-    probability: 0.02 // Reduced from 0.03
   },
   {
-    title: 'Финансовый коллапс',
     description: 'Крах фондового рынка вызвал временную панику среди инвесторов.',
-    impact: -0.4,  // Reduced from -0.8
-    duration: 6,   // Reduced from 8
+    duration: 6, // Reduced from 8
+    impact: -0.4, // Reduced from -0.8
+    probability: 0.005, // Reduced from 0.01
+    title: 'Финансовый коллапс',
     type: 'negative',
-    probability: 0.005 // Reduced from 0.01
   },
   {
-    title: 'Рост инфляции',
     description: 'Инфляция немного снижает покупательскую способность населения.',
+    duration: 4,
     impact: -0.15, // Reduced from -0.3
-    duration: 4,
+    probability: 0.1,
+    title: 'Рост инфляции',
     type: 'negative',
-    probability: 0.1
   },
   {
-    title: 'Торговые войны',
     description: 'Международные торговые конфликты негативно влияют на мировую экономику.',
-    impact: -0.25,
     duration: 4,
+    impact: -0.25,
+    probability: 0.08,
+    title: 'Торговые войны',
     type: 'negative',
-    probability: 0.08
   },
   {
-    title: 'Энергетический кризис',
     description: 'Резкий рост цен на энергоносители увеличивает издержки бизнеса.',
-    impact: -0.2,
     duration: 3,
+    impact: -0.2,
+    probability: 0.1,
+    title: 'Энергетический кризис',
     type: 'negative',
-    probability: 0.1
   },
 
   // Нейтральные/стабилизирующие события
   {
-    title: 'Стабилизация рынка',
     description: 'Рынок постепенно возвращается к нормальным показателям.',
-    impact: 0.1,
     duration: 2,
+    impact: 0.1,
+    probability: 0.2,
+    title: 'Стабилизация рынка',
     type: 'neutral',
-    probability: 0.2
-  }
+  },
 ]
 
 /**
  * Генерирует случайное событие рынка на основе вероятностей
  */
-export function generateMarketEvent(currentTurn: number, currentYear: number): MarketEvent | null {
-
+export function generateMarketEvent(currentTurn: number): MarketEvent | null {
   // Выбираем событие на основе вероятностей
   const roll = Math.random()
   let cumulativeProbability = 0
@@ -114,15 +116,15 @@ export function generateMarketEvent(currentTurn: number, currentYear: number): M
     cumulativeProbability += template.probability
     if (roll <= cumulativeProbability) {
       return {
-        id: `market_event_${currentTurn}_${Date.now()}`,
-        title: template.title,
         description: template.description,
-        impact: template.impact,
-        turn: currentTurn,
         duration: template.duration,
-        type: template.type,
+        endTurn: currentTurn + template.duration,
+        id: `market_event_${String(currentTurn)}_${String(Date.now())}`,
+        impact: template.impact,
         startTurn: currentTurn,
-        endTurn: currentTurn + template.duration
+        title: template.title,
+        turn: currentTurn,
+        type: template.type,
       }
     }
   }
@@ -135,14 +137,18 @@ export function generateMarketEvent(currentTurn: number, currentYear: number): M
  */
 export function cleanupExpiredMarketEvents(
   events: MarketEvent[],
-  currentTurn: number
+  currentTurn: number,
 ): MarketEvent[] {
-  return events.filter((event) => event.endTurn! > currentTurn)
+  return events.filter((event) => (event.endTurn ?? 0) > currentTurn)
 }
 
 /**
  * Рассчитывает суммарное влияние всех активных событий на рынок
  */
 export function calculateTotalMarketImpact(events: MarketEvent[]): number {
-  return events.reduce((total, event) => total + event.impact, 0)
+  let total = 0
+  for (const event of events) {
+    total += event.impact
+  }
+  return total
 }

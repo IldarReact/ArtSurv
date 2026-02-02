@@ -3,8 +3,10 @@ import type { SkillRequirement } from '@/core/types/skill.types'
 import type { StatEffect } from '@/core/types/stats.types'
 
 export interface JobSlice {
-  pendingApplications: JobApplication[]
+  // ✅ Multiplayer Job Actions
+  acceptExternalJob: (jobTitle: string, company: string, salary: number, businessId: string) => void
 
+  acceptJobOffer: (applicationId: string) => void
   // Actions
   applyForJob: (
     jobTitle: string,
@@ -13,10 +15,8 @@ export interface JobSlice {
     cost: StatEffect,
     requirements: SkillRequirement[],
   ) => void
-  acceptJobOffer: (applicationId: string) => void
-  quitJob: (jobId: string) => void
   askForRaise: (jobId: string) => void
+  pendingApplications: JobApplication[]
 
-  // ✅ Multiplayer Job Actions
-  acceptExternalJob: (jobTitle: string, company: string, salary: number, businessId: string) => void
+  quitJob: (jobId: string) => void
 }

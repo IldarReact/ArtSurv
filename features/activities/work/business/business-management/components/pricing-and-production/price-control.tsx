@@ -1,26 +1,52 @@
 'use client'
 
+import { Target, CheckCircle2 } from 'lucide-react'
 import React from 'react'
 
+import type { BusinessGoal } from '@/core/types/business.types'
+
 interface PriceControlProps {
-  price: number
-  handlePriceChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   calculatedPrice?: number
   formatCurrency?: (value: number) => string
+  goal?: BusinessGoal
+  handlePriceChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  price: number
 }
 
 export function PriceControl({
-  price,
-  handlePriceChange,
   calculatedPrice,
   formatCurrency,
+  goal,
+  handlePriceChange,
+  price,
 }: PriceControlProps) {
+  const goalTarget = goal?.target ?? 0
+  const isGoalCompleted = goal?.isCompleted === true || (goal !== undefined && price >= goalTarget)
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <label className="text-sm font-medium text-white/80">Цена услуги/товара</label>
+      <div className="flex justify-between items-start">
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-white/80">Цена услуги/товара</label>
+          {goal && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/5 border border-white/10 w-fit">
+              {isGoalCompleted ? (
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              ) : (
+                <Target className="w-3 h-3 text-white/40" />
+              )}
+              <span
+                className={`text-[10px] font-bold uppercase tracking-wider ${
+                  isGoalCompleted ? 'text-emerald-400' : 'text-white/40'
+                }`}
+              >
+                Цель: {String(goalTarget)}
+              </span>
+            </div>
+          )}
+        </div>
         <div className="flex flex-col items-end">
-          <span className="text-2xl font-bold text-yellow-400">
+          <span className="text-2xl font-bold text-yellow-400" data-testid="price-display">
             {price} <span className="text-sm text-white/40">/ 10</span>
           </span>
           {calculatedPrice && formatCurrency && (
@@ -31,12 +57,12 @@ export function PriceControl({
         </div>
       </div>
       <input
-        type="range"
-        min="1"
-        max="10"
-        value={price}
-        onChange={handlePriceChange}
         className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-yellow-400"
+        max="10"
+        min="1"
+        onChange={handlePriceChange}
+        type="range"
+        value={price}
       />
       <div className="flex justify-between text-xs text-white/40">
         <div className="flex flex-col items-start">

@@ -5,6 +5,7 @@
 ## Шаги:
 
 ### 1. Создайте папку страны
+
 ```
 shared/data/world/countries/[country-id]/
 ```
@@ -12,11 +13,13 @@ shared/data/world/countries/[country-id]/
 ### 2. Создайте необходимые JSON файлы
 
 **Обязательные файлы:**
+
 - `economy.json` - экономические показатели
 - `characters.json` - стартовые персонажи для каждого архетипа
 - `npcs.json` - NPC (семья, друзья, коллеги)
 
 **Опциональные файлы:**
+
 - `businesses.json` - доступные типы бизнеса
 - `courses.json` - курсы обучения
 - `shop-categories/*.json` - товары в магазине
@@ -33,7 +36,7 @@ const rawCountries = {
   us: usEconomy,
   germany: germanyEconomy,
   brazil: brazilEconomy,
-  [country-id]: newCountryEconomy  // ← добавьте сюда
+  [country - id]: newCountryEconomy, // ← добавьте сюда
 } as const
 ```
 
@@ -48,7 +51,7 @@ const rawCountries = {
   "inflation": 3.0,
   "keyRate": 5.0,
   "unemployment": 4.5,
-  "taxRate": 0.30,
+  "taxRate": 0.3,
   "corporateTaxRate": 0.25,
   "salaryModifier": 1.0,
   "costOfLivingModifier": 1.0,

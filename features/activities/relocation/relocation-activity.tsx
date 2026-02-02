@@ -1,10 +1,10 @@
 'use client'
 
 import { useGameStore } from '@/core/model/store'
-import { Button } from '@/shared/ui/button'
+import { Button } from '@/shared/components/button'
 
 export function RelocationActivity(): React.JSX.Element | null {
-  const { player, countries } = useGameStore()
+  const { countries, player, relocateToCountry } = useGameStore()
 
   if (!player) return null
 
@@ -34,8 +34,8 @@ export function RelocationActivity(): React.JSX.Element | null {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {otherCountries.map((country) => (
               <div
-                key={country.id}
                 className="bg-white/5 p-6 rounded-xl border border-white/5 hover:bg-white/10 transition-colors"
+                key={country.id}
               >
                 <div className="flex justify-between items-start mb-4">
                   <h4 className="text-xl font-bold text-white">{country.name}</h4>
@@ -56,7 +56,12 @@ export function RelocationActivity(): React.JSX.Element | null {
                     <span className="text-white">x{country.costOfLivingModifier}</span>
                   </div>
                 </div>
-                <Button className="w-full bg-white text-black hover:bg-white/90">
+                <Button
+                  className="w-full bg-white text-black hover:bg-white/90"
+                  onClick={() => {
+                    relocateToCountry(country.id)
+                  }}
+                >
                   Переехать ($5,000)
                 </Button>
               </div>

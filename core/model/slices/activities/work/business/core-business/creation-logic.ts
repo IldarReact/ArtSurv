@@ -1,4 +1,3 @@
-import { applyStats } from '@/core/helpers/apply-stats'
 import { validateBusinessOpening, createBusinessObject } from '@/core/lib/business'
 import {
   shouldCreateNetwork,
@@ -6,7 +5,8 @@ import {
   addBranchToNetwork,
   updateNetworkBonuses,
 } from '@/core/lib/business/business-network'
-import type { Business, BusinessType } from '@/core/types'
+import type { Business } from '@/core/types'
+
 import type { GameStore } from '../../../../types'
 
 export const handleOpenBusiness = (
@@ -26,49 +26,50 @@ export const handleOpenBusiness = (
   )
 
   if (!validation.isValid) {
-    const errorMessage = validation.error || 'Неизвестная ошибка при открытии бизнеса'
-    console.warn(errorMessage)
-    state.pushNotification?.({
-      type: 'error',
-      title: 'Не удалось открыть бизнес',
+    const errorMessage = validation.error ?? 'Неизвестная ошибка при открытии бизнеса'
+    state.pushNotification({
       message: errorMessage,
+      title: 'Не удалось открыть бизнес',
+      type: 'error',
     })
     return
   }
 
-  const updatedStats = applyStats(state.player.stats, { money: -upfrontCost })
-  const updatedStatEffect = applyStats(
-    { ...state.player.personal.stats, money: 0 },
-    business.creationCost,
-  )
+  // Списываем деньги и энергию
+  if (
+    !state.performTransaction(
+      { money: -upfrontCost, ...business.creationCost },
+      { title: 'Открытие бизнеса' },
+    )
+  ) {
+    return
+  }
 
   let finalBusinesses = [...state.player.businesses]
   let finalNewBusiness = business
 
-  if (shouldCreateNetwork(state.player.businesses, business.type as BusinessType)) {
+  if (shouldCreateNetwork(state.player.businesses, business.type)) {
     const existingBusiness = state.player.businesses.find(
       (b: Business) => b.type === business.type && b.state !== 'frozen',
     )
 
     if (existingBusiness) {
-      const { main, branch, networkId } = createNetworkForBusinesses(existingBusiness, business)
+      const { branch, main } = createNetworkForBusinesses(existingBusiness, business)
       finalBusinesses = finalBusinesses.map((b) => (b.id === existingBusiness.id ? main : b))
       finalNewBusiness = branch
-      console.log(`[Business Network] Created network ${networkId} for type "${business.type}"`)
     }
   } else {
     const existingNetwork = state.player.businesses.find(
       (b: Business) => b.type === business.type && b.networkId && b.state !== 'frozen',
     )
 
-    if (existingNetwork && existingNetwork.networkId) {
+    if (existingNetwork?.networkId) {
       const mainBranch = state.player.businesses.find(
         (b: Business) => b.networkId === existingNetwork.networkId && b.isMainBranch,
       )
 
       if (mainBranch) {
         finalNewBusiness = addBranchToNetwork(business, existingNetwork.networkId, mainBranch.price)
-        console.log(`[Business Network] Added branch to network ${existingNetwork.networkId}`)
       }
     }
   }
@@ -79,22 +80,42 @@ export const handleOpenBusiness = (
     finalBusinesses = updateNetworkBonuses(finalBusinesses, finalNewBusiness.networkId)
   }
 
-  set({
-    player: {
-      ...state.player,
-      stats: updatedStats,
-      personal: {
-        ...state.player.personal,
-        stats: updatedStatEffect,
-      },
-      businesses: finalBusinesses,
-    },
-  })
+  state.updatePlayer(() => ({
+    businesses: finalBusinesses,
+  }))
 
-  state.pushNotification?.({
-    type: 'success',
-    title: 'Бизнес открыт',
+  state.pushNotification({
     message: `Вы успешно открыли "${business.name}"`,
+    title: 'Бизнес открыт',
+    type: 'success',
+  })
+}
+
+const SELL_PRICE_MULTIPLIER = 0.8
+
+export const handleSellBusiness = (
+  get: () => GameStore,
+  set: (patch: Partial<GameStore>) => void,
+  businessId: string,
+) => {
+  const state = get()
+  if (!state.player) return
+
+  const business = state.player.businesses.find((b) => b.id === businessId)
+  if (!business) return
+
+  const sellPrice = Math.round((business.currentValue || 0) * SELL_PRICE_MULTIPLIER) // 80% valuation
+
+  state.performTransaction({ money: sellPrice }, { title: `Продажа бизнеса: ${business.name}` })
+
+  state.updatePlayer((prev) => ({
+    businesses: prev.businesses.filter((b) => b.id !== businessId),
+  }))
+
+  state.pushNotification({
+    message: `Вы продали "${business.name}" за $${sellPrice.toLocaleString()}`,
+    title: 'Бизнес продан',
+    type: 'success',
   })
 }
 
@@ -110,22 +131,32 @@ export const handleOpenBranch = (
   if (!sourceBusiness) return
 
   const branchCost = sourceBusiness.initialCost
+
+  // Валидация денег перед созданием объекта
   if (state.player.stats.money < branchCost) {
-    console.warn('Not enough money to open branch')
+    state.pushNotification({
+      message: `Требуется $${branchCost.toLocaleString()}`,
+      title: 'Недостаточно средств',
+      type: 'error',
+    })
     return
   }
 
+  const openingQuarters = sourceBusiness.openingProgress?.totalDuration ?? 0
+  const totalCost = sourceBusiness.openingProgress?.totalCost ?? sourceBusiness.initialCost
+  const upfrontCost = sourceBusiness.openingProgress?.upfrontCost ?? sourceBusiness.initialCost
+
   const branch = createBusinessObject({
-    name: `${sourceBusiness.name} (Branch)`,
-    type: sourceBusiness.type,
-    description: sourceBusiness.description,
-    totalCost: sourceBusiness.openingProgress.totalCost,
-    upfrontCost: sourceBusiness.openingProgress.upfrontCost,
     creationCost: sourceBusiness.creationCost,
-    openingQuarters: sourceBusiness.openingProgress.totalQuarters,
-    maxEmployees: sourceBusiness.maxEmployees,
-    employeeRoles: sourceBusiness.employeeRoles,
     currentTurn: state.turn,
+    description: sourceBusiness.description,
+    employeeRoles: sourceBusiness.employeeRoles,
+    maxEmployees: sourceBusiness.maxEmployees,
+    name: `${sourceBusiness.name} (Branch)`,
+    openingQuarters,
+    totalCost,
+    type: sourceBusiness.type,
+    upfrontCost,
   })
 
   handleOpenBusiness(get, set, branch, branchCost)

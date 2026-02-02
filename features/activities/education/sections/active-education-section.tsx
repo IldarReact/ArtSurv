@@ -1,19 +1,19 @@
 import React from 'react'
 
+import type { ActiveUniversity, ActiveCourse } from '@/core/types'
+import { SectionSeparator } from '@/shared/components/section-separator'
+
 import { ActiveEducationCard } from '../components/active-education-card'
 
-import type { ActiveUniversity, ActiveCourse } from '@/core/types'
-import { SectionSeparator } from '@/shared/ui/section-separator'
-
 interface ActiveEducationSectionProps {
-  activeUniversity: ActiveUniversity[]
   activeCourses: ActiveCourse[]
+  activeUniversity: ActiveUniversity[]
   hasActiveEducation: boolean
 }
 
 export const ActiveEducationSection: React.FC<ActiveEducationSectionProps> = ({
-  activeUniversity,
   activeCourses,
+  activeUniversity,
   hasActiveEducation,
 }) => {
   if (!hasActiveEducation) return null
@@ -24,20 +24,20 @@ export const ActiveEducationSection: React.FC<ActiveEducationSectionProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {activeUniversity.map((uni) => (
           <ActiveEducationCard
+            energy={uni.costPerTurn?.energy ?? 0}
             key={uni.id}
-            title={uni.title || uni.programName}
             progress={uni.totalDuration - uni.remainingDuration}
+            title={uni.programName}
             total={uni.totalDuration}
-            energy={uni.costPerTurn?.energy || 0}
           />
         ))}
         {activeCourses.map((course) => (
           <ActiveEducationCard
+            energy={course.costPerTurn?.energy ?? 0}
             key={course.id}
-            title={course.title || course.courseName}
             progress={course.totalDuration - course.remainingDuration}
+            title={course.courseName}
             total={course.totalDuration}
-            energy={course.costPerTurn?.energy || 0}
           />
         ))}
       </div>

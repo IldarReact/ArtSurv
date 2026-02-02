@@ -1,7 +1,7 @@
-import type { TurnStep } from '../turn/turn-step'
-import { processJobs } from '../turns/jobs-processor'
-
 import { applyStatEffects } from '@/core/lib/stats/apply-effects'
+
+import { processJobs } from '../turns/jobs-processor'
+import type { TurnStep } from './step.types'
 
 export const jobsStep: TurnStep = (ctx, state) => {
   const res = processJobs(
@@ -19,11 +19,9 @@ export const jobsStep: TurnStep = (ctx, state) => {
 
   // Apply job costs
   state.player.jobs.forEach((job) => {
-    if (job.cost) {
-      // Jobs use 'subtract' for costs, but positive modifiers for gains
-      // The applyStatEffects will handle the sign based on the third argument
-      applyStatEffects(state.statModifiers, job.cost, 'add')
-    }
+    // Jobs use 'subtract' for costs, but positive modifiers for gains
+    // The applyStatEffects will handle the sign based on the third argument
+    applyStatEffects(state.statModifiers, job.cost, 'add')
   })
 
   res.protectedSkills.forEach((s) => state.protectedSkills.add(s))

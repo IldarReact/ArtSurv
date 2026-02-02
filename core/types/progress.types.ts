@@ -5,11 +5,11 @@ import type { StatEffect } from './stats.types'
  */
 
 export interface Progressable {
+  costPerTurn?: StatEffect
   id: string
+  remainingDuration: number
   title: string
   totalDuration: number
-  remainingDuration: number
-  costPerTurn?: StatEffect
 }
 
 export interface ProgressResult<T extends Progressable> {

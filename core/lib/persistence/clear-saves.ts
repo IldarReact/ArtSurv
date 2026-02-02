@@ -5,23 +5,19 @@
 
 export function clearAllSaves() {
   if (typeof window === 'undefined') {
-    console.warn('clearAllSaves can only be called in browser')
+    // console.warn('clearAllSaves can only be called in browser')
     return
   }
 
-  const keys = [
-    'artsurv-save-v1',
-    'artsurv-checksum',
-    'artsurv-backup'
-  ]
+  const keys = ['artsurv-save-v1', 'artsurv-checksum', 'artsurv-backup']
 
-  keys.forEach(key => {
+  keys.forEach((key) => {
     try {
       localStorage.removeItem(key)
-    } catch (error) {
+    } catch {
+      // Ignore errors when clearing localStorage
     }
   })
-
 }
 
 declare global {

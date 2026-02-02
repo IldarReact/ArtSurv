@@ -1,32 +1,32 @@
 import { Zap, AlertTriangle, Lightbulb } from 'lucide-react'
 
-import { Badge } from '@/shared/ui/badge'
-import { Button } from '@/shared/ui/button'
+import { Badge } from '@/shared/components/badge'
+import { Button } from '@/shared/components/button'
 
 interface StartupDetailCardProps {
+  description: string
+  energyCost: number
+  image: string
+  onStart?: () => void
+  potentialIncome: string
+  requirements: string
+  riskLevel: 'Низкий' | 'Средний' | 'Высокий' | 'Экстремальный'
+  stressImpact: string
   title: string
   type: string
-  description: string
-  potentialIncome: string
-  riskLevel: 'Низкий' | 'Средний' | 'Высокий' | 'Экстремальный'
-  energyCost: number
-  stressImpact: string
-  image: string
-  requirements: string
-  onStart?: () => void
 }
 
 export function StartupDetailCard({
+  description,
+  energyCost,
+  image,
+  onStart,
+  potentialIncome,
+  requirements,
+  riskLevel,
+  stressImpact,
   title,
   type,
-  description,
-  potentialIncome,
-  riskLevel,
-  energyCost,
-  stressImpact,
-  image,
-  requirements,
-  onStart,
 }: StartupDetailCardProps) {
   const getRiskColor = (risk: string) => {
     switch (risk) {
@@ -46,11 +46,12 @@ export function StartupDetailCard({
   return (
     <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden flex flex-col md:flex-row mb-4 hover:border-white/20 transition-colors">
       <div className="w-full md:w-1/3 h-48 md:h-auto relative">
-        <img src={image} alt={title} className="w-full h-full object-cover" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img alt={title} className="w-full h-full object-cover" src={image} />
         <div className="absolute top-2 left-2">
           <Badge
-            variant="secondary"
             className="bg-black/60 backdrop-blur-md text-white border-white/10"
+            variant="secondary"
           >
             {type}
           </Badge>
@@ -97,9 +98,9 @@ export function StartupDetailCard({
         </div>
 
         <Button
-          onClick={onStart}
           className="w-full bg-white text-black hover:bg-white/90 font-bold"
           disabled={true} // Пока отключено, так как нужна идея
+          onClick={onStart}
         >
           Нужна идея
         </Button>

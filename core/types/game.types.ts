@@ -1,14 +1,12 @@
 import type { Business } from './business.types'
 import type { CountryEconomy, GlobalEvent } from './economy.types'
 import type { Asset, Debt, QuarterlyReport } from './finance.types'
-import type { ActiveFreelanceGig } from './freelance.types'
-import type { FreelanceApplication } from './freelance.types'
+import type { ActiveFreelanceGig, FreelanceApplication } from './freelance.types'
 import type { BusinessIdea } from './idea.types'
-import type { Job } from './job.types'
-import type { JobApplication } from './job.types'
+import type { Job, JobApplication } from './job.types'
 import type { Notification } from './notification.types'
 import type { PersonalLife } from './personal.types'
-import { StatEffect } from './stats.types'
+import type { StatEffect } from './stats.types'
 
 export type GameStatus =
   | 'menu'
@@ -27,18 +25,41 @@ export type GameOverReason =
   | 'BANKRUPTCY' // Финансовый крах
 
 export interface Player {
-  id: string
-  name: string
-  countryId: string
+  // Freelance System
+  activeFreelanceGigs: ActiveFreelanceGig[]
+  freelanceGigs: unknown[] // From schema
+  // Lifestyle System
+  activeLifestyle: Partial<Record<string, string>> // category -> itemId
   age: number
-
   assets: Asset[]
+
+  // Business System
+  businesses: Business[]
+  // Business Ideas System
+  businessIdeas: BusinessIdea[]
+  countryId: string
+  creditScore: { value: number } | number
   debts: Debt[]
+
+  happinessMultiplier: number
+
+  // Housing System
+  housingId: string // ID текущего жилья из housing.json
+
+  id: string
+  // New Job System
+  currentJob: Job | null
+  jobs: Job[]
+
+  multipliers?: StatEffect
+  name: string
   personal: PersonalLife
   quarterlyReport: QuarterlyReport
-  creditScore: { value: number } | number
 
   quarterlySalary: number
+
+  gender: 'male' | 'female' | 'other'
+  avatar?: string
 
   stats: {
     money: number
@@ -49,52 +70,45 @@ export interface Player {
     intelligence: number
   }
 
-  multipliers?: StatEffect
-  happinessMultiplier: number
-
-  // New Job System
-  jobs: Job[]
-  // Freelance System
-  activeFreelanceGigs: ActiveFreelanceGig[]
-  // Business System
-  businesses: Business[]
-  // Business Ideas System
-  businessIdeas: BusinessIdea[]
-
-  // Lifestyle System
-  activeLifestyle: Partial<Record<string, string>> // category -> itemId
-
-  // Housing System
-  housingId: string // ID текущего жилья из housing.json
-
   // Traits System
   traits: string[]
 }
 
 export interface HistoryEntry {
-  turn: number
-  year: number
-  netWorth: number
+  eventDescription?: string
   happiness: number
   health: number
-  eventDescription?: string
-}
-
-export interface GameState {
+  netWorth: number
   turn: number
   year: number
-  isProcessingTurn: boolean
+}
+
+export type ActivityType =
+  | 'banking'
+  | 'education'
+  | 'events'
+  | 'family'
+  | 'investments'
+  | 'leisure'
+  | 'relocation'
+  | 'shop'
+  | 'work'
+
+export interface GameState {
+  activeActivity: ActivityType | null
+  countries: Record<string, CountryEconomy>
+  endReason: GameOverReason | null
   gameStatus: GameStatus
   globalEvents: GlobalEvent[]
-  countries: Record<string, CountryEconomy>
-  player: Player | null
   history: HistoryEntry[]
-  activeActivity: string | null
-  pendingEventNotification: GlobalEvent | null
-  setupCountryId: string | null
-  endReason: GameOverReason | null
+  isProcessingTurn: boolean
   // New fields
   notifications: Notification[]
   pendingApplications: JobApplication[]
+  pendingEventNotification: GlobalEvent | null
   pendingFreelanceApplications: FreelanceApplication[]
+  player: Player | null
+  setupCountryId: string | null
+  turn: number
+  year: number
 }

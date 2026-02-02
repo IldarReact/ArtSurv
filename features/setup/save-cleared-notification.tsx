@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react'
 
-import { Button } from '@/shared/ui/button'
+import { Button } from '@/shared/components/button'
 
 export function SaveClearedNotification() {
   const [show, setShow] = useState(false)
@@ -24,7 +24,9 @@ export function SaveClearedNotification() {
     checkCleared()
     // Проверяем каждую секунду на случай, если очистка произошла после монтирования
     const interval = setInterval(checkCleared, 1000)
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+    }
   }, [])
 
   if (!show) return null
@@ -38,8 +40,10 @@ export function SaveClearedNotification() {
           Пожалуйста, обновите страницу, чтобы начать новую игру.
         </p>
         <Button
-          onClick={() => window.location.reload()}
           className="w-full"
+          onClick={() => {
+            window.location.reload()
+          }}
           size="lg"
         >
           Обновить страницу

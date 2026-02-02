@@ -1,8 +1,5 @@
 import type { StateCreator } from 'zustand'
 
-import type { GameStore, IdeaSlice } from '../../types'
-
-import { applyStats } from '@/core/helpers/apply-stats'
 import { createBusinessPurchase } from '@/core/lib/business/purchase-logic'
 import {
   generateBusinessIdea,
@@ -10,48 +7,32 @@ import {
   canDevelopIdea,
 } from '@/core/lib/idea-generator'
 
+import type { GameStore, IdeaSlice } from '../../types'
+
+const ENERGY_COST_GENERATE_IDEA = 20
+const PROGRESS_MAX = 100
+
+const REPUTATION_BASE = 50
+const DEMAND_WEIGHT = 0.3
+const RISK_LOW_BONUS = 5
+const RISK_HIGH_PENALTY = -5
+const RISK_VERY_HIGH_PENALTY = -10
+const RANDOM_OFFSET = 0.5
+const RISK_VERY_HIGH_RANDOM_SCALE = 40
+const RISK_DEFAULT_RANDOM_SCALE = 20
+
+const EFFICIENCY_BASE = 50
+const POTENTIAL_RETURN_WEIGHT = 10
+
+const UNPROFITABLE_BUSINESS_INCOME = 0
+const UNPROFITABLE_BUSINESS_EXPENSES = 0
+const DEFAULT_UPFRONT_PAYMENT_PERCENTAGE = 0
+const MAX_EMPLOYEES_DEFAULT = 25
+const MIN_EMPLOYEES_DEFAULT = 1
+const CREATION_COST_ENERGY_DEFAULT = 0
+const CREATION_COST_MONEY_DEFAULT = 0
+
 export const createIdeaSlice: StateCreator<GameStore, [], [], IdeaSlice> = (set, get) => ({
-  generateIdea: () => {
-    const state = get()
-    if (!state.player) return
-
-    // Стоимость генерации (энергия)
-    const energyCost = 20
-    if (state.player.stats.energy < energyCost) {
-      console.log('[Idea] Недостаточно энергии для генерации идеи')
-      return
-    }
-
-    // Генерируем идею
-    const idea = generateBusinessIdea(
-      state.player.personal.skills,
-      state.turn,
-      state.globalMarket.value,
-    )
-
-    // Списываем энергию и добавляем идею
-    const updatedStats = applyStats(state.player.stats, {
-      energy: -energyCost,
-    })
-    const updatedPersonalStats = applyStats(state.player.personal.stats, {
-      energy: -energyCost,
-    })
-
-    set({
-      player: {
-        ...state.player,
-        stats: updatedStats,
-        personal: {
-          ...state.player.personal,
-          stats: updatedPersonalStats,
-        },
-        businessIdeas: [...state.player.businessIdeas, idea],
-      },
-    })
-
-    console.log(`[Idea] Сгенерирована идея: ${idea.name} (${idea.riskLevel} risk)`)
-  },
-
   developIdea: (ideaId: string, investment: number) => {
     const state = get()
     if (!state.player) return
@@ -63,13 +44,16 @@ export const createIdeaSlice: StateCreator<GameStore, [], [], IdeaSlice> = (set,
 
     // Проверка денег
     if (state.player.stats.money < investment) {
-      console.log('[Idea] Недостаточно денег для инвестиций')
       return
     }
 
     // Проверка требований навыков
     if (!canDevelopIdea(idea, state.player.personal.skills)) {
-      console.log('[Idea] Недостаточно навыков для развития идеи')
+      return
+    }
+
+    // Списываем деньги через транзакцию
+    if (!state.performTransaction({ money: -investment }, { title: 'Развитие идеи' })) {
       return
     }
 
@@ -79,42 +63,58 @@ export const createIdeaSlice: StateCreator<GameStore, [], [], IdeaSlice> = (set,
 
     // Прогресс развития
     const costForNextStage = calculateDevelopmentCost(idea)
-    const progressGain = (investment / costForNextStage) * 100
+    const progressGain = (investment / costForNextStage) * PROGRESS_MAX
 
     updatedIdea.developmentProgress += progressGain
 
     // Переход на следующую стадию
-    if (updatedIdea.developmentProgress >= 100) {
+    if (updatedIdea.developmentProgress >= PROGRESS_MAX) {
       updatedIdea.developmentProgress = 0
       if (updatedIdea.stage === 'idea') updatedIdea.stage = 'prototype'
       else if (updatedIdea.stage === 'prototype') updatedIdea.stage = 'mvp'
       else if (updatedIdea.stage === 'mvp') updatedIdea.stage = 'launched'
-
-      console.log(`[Idea] Идея перешла на стадию: ${updatedIdea.stage}`)
     }
-
-    // Списываем деньги и обновляем идею
-    const updatedStats = applyStats(state.player.stats, {
-      money: -investment,
-    })
-    const updatedPersonalStats = applyStats(state.player.personal.stats, {
-      money: -investment,
-    })
 
     const updatedIdeas = [...state.player.businessIdeas]
     updatedIdeas[ideaIndex] = updatedIdea
 
-    set({
-      player: {
-        ...state.player,
-        stats: updatedStats,
-        personal: {
-          ...state.player.personal,
-          stats: updatedPersonalStats,
-        },
-        businessIdeas: updatedIdeas,
-      },
-    })
+    state.updatePlayer((_prev) => ({
+      businessIdeas: updatedIdeas,
+    }))
+  },
+
+  discardIdea: (ideaId: string) => {
+    const state = get()
+    if (!state.player) return
+
+    const updatedIdeas = state.player.businessIdeas.filter((i) => i.id !== ideaId)
+
+    state.updatePlayer((_prev) => ({
+      businessIdeas: updatedIdeas,
+    }))
+  },
+
+  generateIdea: () => {
+    const state = get()
+    if (!state.player) return
+
+    // Списываем энергию через транзакцию
+    if (
+      !state.performTransaction({ energy: -ENERGY_COST_GENERATE_IDEA }, { title: 'Генерация идеи' })
+    ) {
+      return
+    }
+
+    // Генерируем идею
+    const idea = generateBusinessIdea(
+      state.player.personal.skills,
+      state.turn,
+      state.globalMarket.value,
+    )
+
+    state.updatePlayer((prev) => ({
+      businessIdeas: [...prev.businessIdeas, idea],
+    }))
   },
 
   launchBusinessFromIdea: (ideaId: string) => {
@@ -127,37 +127,28 @@ export const createIdeaSlice: StateCreator<GameStore, [], [], IdeaSlice> = (set,
     const idea = state.player.businessIdeas[ideaIndex]
 
     if (idea.stage !== 'launched' && idea.stage !== 'mvp') {
-      console.log('[Idea] Идея еще не готова к запуску')
       return
     }
-
-    // Создаем бизнес из идеи
-    // Используем существующий метод openBusiness, но с параметрами из идеи
-    // Нам нужно адаптировать параметры
 
     // Удаляем идею из списка
     const updatedIdeas = state.player.businessIdeas.filter((i) => i.id !== ideaId)
 
-    // Вызываем openBusiness через store action
-    // Но openBusiness требует много параметров.
-    // Упростим: создадим бизнес напрямую и добавим в массив
-
     const { business } = createBusinessPurchase(
       {
-        id: `biz_${Date.now()}`,
+        description: idea.description,
+        employeeRoles: [
+          { description: 'Manager', priority: 'required', role: 'manager' },
+          { description: 'Accountant', priority: 'required', role: 'accountant' },
+        ],
+        id: `biz_${String(Date.now())}`,
+        initialCost: idea.investedAmount,
+        maxEmployees: MAX_EMPLOYEES_DEFAULT,
+        minEmployees: MIN_EMPLOYEES_DEFAULT,
+        monthlyExpenses: UNPROFITABLE_BUSINESS_EXPENSES,
+        monthlyIncome: UNPROFITABLE_BUSINESS_INCOME,
         name: idea.name,
         type: idea.type,
-        description: idea.description,
-        initialCost: idea.investedAmount,
-        monthlyIncome: 0,
-        monthlyExpenses: 0,
-        maxEmployees: 25,
-        minEmployees: 1,
-        upfrontPaymentPercentage: 0, // Already paid via investment
-        employeeRoles: [
-          { role: 'manager', priority: 'required', description: 'Manager' },
-          { role: 'accountant', priority: 'required', description: 'Accountant' },
-        ],
+        upfrontPaymentPercentage: DEFAULT_UPFRONT_PAYMENT_PERCENTAGE, // Already paid via investment
       },
       idea.investedAmount,
       state.turn,
@@ -168,45 +159,37 @@ export const createIdeaSlice: StateCreator<GameStore, [], [], IdeaSlice> = (set,
       0,
       Math.min(
         100,
-        50 +
-          idea.marketDemand * 0.3 +
+        REPUTATION_BASE +
+          idea.marketDemand * DEMAND_WEIGHT +
           (idea.riskLevel === 'low'
-            ? 5
+            ? RISK_LOW_BONUS
             : idea.riskLevel === 'high'
-              ? -5
+              ? RISK_HIGH_PENALTY
               : idea.riskLevel === 'very_high'
-                ? -10
+                ? RISK_VERY_HIGH_PENALTY
                 : 0) +
-          (Math.random() - 0.5) * (idea.riskLevel === 'very_high' ? 40 : 20),
+          (Math.random() - RANDOM_OFFSET) *
+            (idea.riskLevel === 'very_high'
+              ? RISK_VERY_HIGH_RANDOM_SCALE
+              : RISK_DEFAULT_RANDOM_SCALE),
       ),
     )
-    business.efficiency = Math.max(0, Math.min(100, 50 + idea.potentialReturn * 10))
+    business.efficiency = Math.max(
+      0,
+      Math.min(100, EFFICIENCY_BASE + idea.potentialReturn * POTENTIAL_RETURN_WEIGHT),
+    )
     business.state = 'active' // Ideas are usually active immediately when launched
-    business.openingProgress.quartersLeft = 0 // Already developed
-    business.creationCost = { energy: 0, money: 0 } // Already paid
+    if (business.openingProgress) {
+      business.openingProgress.remainingDuration = 0 // Already developed
+    }
+    business.creationCost = {
+      energy: CREATION_COST_ENERGY_DEFAULT,
+      money: CREATION_COST_MONEY_DEFAULT,
+    } // Already paid
 
-    set({
-      player: {
-        ...state.player,
-        businessIdeas: updatedIdeas,
-        businesses: [...state.player.businesses, business],
-      },
-    })
-
-    console.log(`[Idea] Бизнес запущен: ${business.name}`)
-  },
-
-  discardIdea: (ideaId: string) => {
-    const state = get()
-    if (!state.player) return
-
-    const updatedIdeas = state.player.businessIdeas.filter((i) => i.id !== ideaId)
-
-    set({
-      player: {
-        ...state.player,
-        businessIdeas: updatedIdeas,
-      },
-    })
+    state.updatePlayer((prev) => ({
+      businesses: [...prev.businesses, business],
+      businessIdeas: updatedIdeas,
+    }))
   },
 })

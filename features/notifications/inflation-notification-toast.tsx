@@ -16,32 +16,41 @@
 
 import { useEffect, useState } from 'react'
 
-import { useGameStore } from "@/core/model/store"
+import { useGameStore } from '@/core/model/store'
 
 export function InflationNotificationToast() {
   const inflationNotification = useGameStore((state) => state.inflationNotification)
   const [isVisible, setIsVisible] = useState(false)
   const [animationKey, setAnimationKey] = useState(0)
 
-  useEffect(() => {
+  // Синхронизация состояния с пропсами (в данном случае из стора) без useEffect
+  const [prevNotification, setPrevNotification] = useState(inflationNotification)
+  if (inflationNotification !== prevNotification) {
+    setPrevNotification(inflationNotification)
     if (inflationNotification) {
       setIsVisible(true)
       setAnimationKey((prev) => prev + 1)
+    }
+  }
 
+  useEffect(() => {
+    if (inflationNotification && isVisible) {
       // Auto-hide after 8 seconds
       const timer = setTimeout(() => {
         setIsVisible(false)
       }, 8000)
 
-      return () => clearTimeout(timer)
+      return () => {
+        clearTimeout(timer)
+      }
     }
-  }, [inflationNotification])
+  }, [inflationNotification, isVisible])
 
   if (!inflationNotification || !isVisible) {
     return null
   }
 
-  const { inflationRate, inflationChange, keyRate, keyRateChange, countryName } =
+  const { countryName, inflationChange, inflationRate, keyRate, keyRateChange } =
     inflationNotification
 
   const inflationColor = inflationChange > 0 ? 'text-red-600' : 'text-green-600'
@@ -49,8 +58,8 @@ export function InflationNotificationToast() {
 
   return (
     <div
-      key={animationKey}
       className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom fade-in duration-300"
+      key={animationKey}
     >
       <div className="bg-linear-to-r from-slate-900 to-slate-800 rounded-lg shadow-2xl border border-slate-700 p-5 w-80 text-white">
         {/* Header */}

@@ -2,17 +2,16 @@
 
 import { useState } from 'react'
 
-import { CategoryTabs } from './components/category-tabs'
-import { ShopHeader } from './components/shop-header'
-import { ShopItemCard } from './components/shop-item-card'
-
 import { getShopItemsByCategory } from '@/core/lib/data-loaders/shop-loader'
 import { useGameStore } from '@/core/model/store'
 import type { ShopCategory } from '@/core/types/shop.types'
 
+import { CategoryTabs } from './components/category-tabs'
+import { ShopHeader } from './components/shop-header'
+import { ShopItemCard } from './components/shop-item-card'
 
 export const ShopActivity = () => {
-  const { player, buyItem, setLifestyle, setPlayerHousing } = useGameStore()
+  const { buyItem, player, setLifestyle, setPlayerHousing } = useGameStore()
   const [selectedCategory, setSelectedCategory] = useState<ShopCategory>('housing')
 
   if (!player) return null
@@ -22,20 +21,20 @@ export const ShopActivity = () => {
   return (
     <div className="space-y-6">
       <ShopHeader balance={player.stats.money} />
-      <CategoryTabs selected={selectedCategory} onSelect={setSelectedCategory} />
+      <CategoryTabs onSelect={setSelectedCategory} selected={selectedCategory} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {items.map((item) => (
           <ShopItemCard
-            key={item.id}
-            item={item}
             category={selectedCategory}
-            playerMoney={player.stats.money}
+            isActiveLifestyle={player.activeLifestyle[item.category] === item.id}
             isCurrentHousing={player.housingId === item.id}
-            isActiveLifestyle={player.activeLifestyle?.[item.category] === item.id}
+            item={item}
+            key={item.id}
             onBuyItem={buyItem}
             onSetHousing={setPlayerHousing}
             onSetLifestyle={setLifestyle}
+            playerMoney={player.stats.money}
           />
         ))}
       </div>

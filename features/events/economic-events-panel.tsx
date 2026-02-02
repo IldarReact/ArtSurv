@@ -12,34 +12,34 @@ import {
 
 import { useGameStore } from '@/core/model/store'
 import type { EconomicEvent } from '@/core/types'
-import { Badge } from '@/shared/ui/badge'
-import { Card } from '@/shared/ui/card'
+import { Badge } from '@/shared/components/badge'
+import { Card } from '@/shared/components/card'
 
 const eventIcons: Record<EconomicEvent['type'], React.ReactNode> = {
-  crisis: <AlertTriangle className="w-5 h-5 text-red-400" />,
   boom: <TrendingUp className="w-5 h-5 text-emerald-400" />,
-  recession: <TrendingDown className="w-5 h-5 text-orange-400" />,
+  crisis: <AlertTriangle className="w-5 h-5 text-red-400" />,
   inflation_spike: <Zap className="w-5 h-5 text-yellow-400" />,
-  rate_hike: <ArrowUp className="w-5 h-5 text-blue-400" />,
   rate_cut: <ArrowDown className="w-5 h-5 text-cyan-400" />,
+  rate_hike: <ArrowUp className="w-5 h-5 text-blue-400" />,
+  recession: <TrendingDown className="w-5 h-5 text-orange-400" />,
 }
 
 const eventColors: Record<EconomicEvent['type'], string> = {
-  crisis: 'bg-red-500/10 border-red-500/20',
   boom: 'bg-emerald-500/10 border-emerald-500/20',
-  recession: 'bg-orange-500/10 border-orange-500/20',
+  crisis: 'bg-red-500/10 border-red-500/20',
   inflation_spike: 'bg-yellow-500/10 border-yellow-500/20',
-  rate_hike: 'bg-blue-500/10 border-blue-500/20',
   rate_cut: 'bg-cyan-500/10 border-cyan-500/20',
+  rate_hike: 'bg-blue-500/10 border-blue-500/20',
+  recession: 'bg-orange-500/10 border-orange-500/20',
 }
 
 export function EconomicEventsPanel() {
-  const { player, countries } = useGameStore()
+  const { countries, player } = useGameStore()
 
   if (!player) return null
 
   const country = countries[player.countryId]
-  const activeEvents = country?.activeEvents || []
+  const activeEvents = country.activeEvents
 
   if (activeEvents.length === 0) {
     return null
@@ -53,14 +53,14 @@ export function EconomicEventsPanel() {
       </div>
 
       {activeEvents.map((event) => (
-        <Card key={event.id} className={`p-4 border ${eventColors[event.type]} backdrop-blur-sm`}>
+        <Card className={`p-4 border ${eventColors[event.type]} backdrop-blur-sm`} key={event.id}>
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-lg bg-white/5">{eventIcons[event.type]}</div>
 
             <div className="flex-1">
               <div className="flex items-start justify-between mb-2">
                 <h4 className="font-bold text-white">{event.title}</h4>
-                <Badge variant="outline" className="text-xs border-white/20 text-white/60">
+                <Badge className="text-xs border-white/20 text-white/60" variant="outline">
                   {event.duration} кв.
                 </Badge>
               </div>

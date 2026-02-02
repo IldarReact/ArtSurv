@@ -1,26 +1,26 @@
 export interface BusinessRequirement {
-  role: string
-  priority: 'required' | 'recommended' | 'optional'
   description: string
   icon: React.ReactNode
+  priority: 'required' | 'recommended' | 'optional'
+  role: string
 }
 
 export interface BusinessOption {
+  businessType: string
+  cost: number
+  description: string
+  energyCost: number
+  expenses: string
   id: string
+  image: string
+  income: string
+  maxEmployees: number
+  monthlyExpenses: number
+  monthlyIncome: number
+  requirements: BusinessRequirement[]
+  stressImpact: number
   title: string
   type: string
-  description: string
-  cost: number
-  income: string
-  expenses: string
-  monthlyIncome: number
-  monthlyExpenses: number
-  maxEmployees: number
-  energyCost: number
-  stressImpact: number
-  image: string
-  businessType: string
-  requirements: BusinessRequirement[]
 }
 
 export interface BusinessOpeningDialogProps {

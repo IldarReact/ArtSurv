@@ -18,10 +18,10 @@ export function EventsActivity(): React.JSX.Element | null {
               <p className="text-white/40 italic">В мире всё спокойно...</p>
             ) : (
               <div className="flex flex-wrap gap-3">
-                {globalEvents.map((event: GlobalEvent, i) => (
+                {globalEvents.map((event: GlobalEvent) => (
                   <div
-                    key={i}
                     className="bg-indigo-500/20 text-indigo-200 px-4 py-2 rounded-full border border-indigo-500/30"
+                    key={event.id || event.title}
                   >
                     {event.title}
                   </div>
@@ -39,10 +39,10 @@ export function EventsActivity(): React.JSX.Element | null {
                 history
                   .slice()
                   .reverse()
-                  .map((snap, indexInReversed) => (
+                  .map((snap) => (
                     <div
-                      key={`${snap.year}-${snap.turn}-${indexInReversed}`}
                       className="bg-white/5 p-4 rounded-xl flex justify-between items-center"
+                      key={`${String(snap.year)}-${String(snap.turn)}`}
                     >
                       <div>
                         <p className="font-bold text-white">Год {snap.year}</p>

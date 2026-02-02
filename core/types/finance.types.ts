@@ -4,75 +4,75 @@ export type AssetType = 'housing' | 'real_estate' | 'stock' | 'business' | 'depo
 export type DebtType = 'mortgage' | 'consumer_credit' | 'student_loan'
 
 export interface Asset {
-  id: string
-  name: string
-  type: AssetType
-  value: number // Deprecated: use currentValue instead
   currentValue: number // Текущая стоимость
-  purchasePrice: number // Цена покупки
-  unrealizedGain: number // Нереализованная прибыль (currentValue - purchasePrice)
-  income: number // Доход за месяц (дивиденды, рента)
   expenses: number // Расходы за месяц (обслуживание)
-  risk: 'low' | 'medium' | 'high'
-  liquidity: 'low' | 'medium' | 'high'
-  stockSymbol?: string
-  quantity?: number
+  id: string
+  income: number // Доход за месяц (дивиденды, рента)
   lastSoldPrice?: number // Цена последней продажи (если продавался)
+  liquidity: 'low' | 'medium' | 'high'
+  name: string
+  purchasePrice: number // Цена покупки
+  quantity?: number
+  risk: 'low' | 'medium' | 'high'
   soldAt?: number // Квартал продажи
+  stockSymbol?: string
+  type: AssetType
+  unrealizedGain: number // Нереализованная прибыль (currentValue - purchasePrice)
+  value: number // Deprecated: use currentValue instead
 }
 
 export interface Debt {
   id: string
-  name: string
-  type: DebtType
-  principalAmount: number // Основная сумма кредита
-  remainingAmount: number // Остаток долга
   interestRate: number // Процентная ставка (годовая)
+  name: string
+  principalAmount: number // Основная сумма кредита
+  quarterlyInterest: number // Проценты в платеже за квартал
   quarterlyPayment: number // Общий платеж за квартал
   quarterlyPrincipal: number // Основной долг в платеже за квартал
-  quarterlyInterest: number // Проценты в платеже за квартал
-  termQuarters: number // Срок в кварталах (всегда кратно 1, т.е. 3 месяца)
+  remainingAmount: number // Остаток долга
   remainingQuarters: number // Осталось кварталов
   startTurn: number // Когда взят кредит
+  termQuarters: number // Срок в кварталах (всегда кратно 1, т.е. 3 месяца)
+  type: DebtType
 }
 
 export interface IncomeBreakdown {
-  salary: number // Зарплата
-  businessRevenue: number // Доход от бизнеса
-  familyIncome: number // Доход от семьи
   assetIncome: number // Доход от активов (дивиденды, рента)
+  businessRevenue: number // Доход от бизнеса
   capitalGains: number // Прибыль от продажи активов
+  familyIncome: number // Доход от семьи
+  salary: number // Зарплата
   total: number // Общий доход
 }
 
 export interface ExpensesBreakdown {
-  living: number // Общие расходы на жизнь (сумма категорий ниже)
+  assetMaintenance: number // Обслуживание активов
+  business: number // Расходы бизнеса
+  credits: number // Потребительские кредиты
+  debtInterest: number // Общие проценты (сумма credits + mortgage)
+  family: number // Deprecated: теперь распределено по категориям
   food: number // Еда
   housing: number // Жилье
-  transport: number // Транспорт
-  credits: number // Потребительские кредиты
+
+  living: number // Общие расходы на жизнь (сумма категорий ниже)
   mortgage: number // Ипотека
   other: number // Другое (включая личные траты семьи)
-
-  family: number // Deprecated: теперь распределено по категориям
-  business: number // Расходы бизнеса
-  debtInterest: number // Общие проценты (сумма credits + mortgage)
-  assetMaintenance: number // Обслуживание активов
   total: number // Общие расходы
+  transport: number // Транспорт
 }
 
 export interface TaxesBreakdown {
-  income: number // Налог на доход (для наемных)
   business: number // Налог на прибыль бизнеса
   capital: number // Налог на прирост капитала
+  income: number // Налог на доход (для наемных)
   property: number // Налог на имущество
   total: number // Общие налоги
 }
 
 export interface QuarterlyReport {
-  income: IncomeBreakdown
   expenses: ExpensesBreakdown
-  taxes: TaxesBreakdown
+  income: IncomeBreakdown
   netProfit: number // Чистая прибыль
+  taxes: TaxesBreakdown
   warning: string | null // Предупреждение
 }

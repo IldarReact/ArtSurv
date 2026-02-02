@@ -1,21 +1,21 @@
 'use client'
 
-import { TopStatusBar } from '@/shared/ui/top-bar/top-status-bar'
-import { MultiplayerHud } from '@/features/multiplayer/multiplayer-hub'
-import { useGameStore } from '@/core/model/store'
-import { GameEnd } from '@/features/end/ui'
-import { EventModal } from '@/features/events/event-modal'
-import { ActivityNavigation, ActivityContent } from '@/features/gameplay/ui'
-
 // Утилита для очистки сохранений (доступна в консоли браузера)
 import '@/core/lib/persistence/clear-saves'
 
+import { useGameStore } from '@/core/model/store'
+import { GameEnd } from '@/features/end/components'
+import { EventModal } from '@/features/events/event-modal'
+import { ActivityNavigation, ActivityContent } from '@/features/gameplay/components'
 import { MainMenu } from '@/features/menu/main-menu'
+import { MultiplayerHud } from '@/features/multiplayer/multiplayer-hub'
 import { useOffersSync } from '@/features/multiplayer/use-offers-sync'
 import { OffersList } from '@/features/notifications/offers-list'
 import { YearReportModal } from '@/features/reports/year-report-modal'
 import { CharacterSelect } from '@/features/setup/components'
 import { WorldSelect } from '@/features/setup/components'
+import { NotificationsToast } from '@/shared/components/notifications-toast'
+import { TopStatusBar } from '@/shared/components/top-bar/top-status-bar'
 
 export default function Page() {
   const { gameStatus } = useGameStore()
@@ -60,6 +60,7 @@ export default function Page() {
       <YearReportModal />
 
       {/* Notifications & Overlays */}
+      <NotificationsToast />
       <OffersList />
 
       {/* Multiplayer */}

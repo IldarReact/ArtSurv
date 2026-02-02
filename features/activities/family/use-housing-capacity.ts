@@ -9,8 +9,8 @@ export function useHousingCapacity() {
   return useMemo(() => {
     if (!player?.housingId) {
       return {
-        familySize: 0,
         capacity: 0,
+        familySize: 0,
         isOvercrowded: false,
         overcrowdingPercent: 0,
         penalty: 0,
@@ -19,8 +19,8 @@ export function useHousingCapacity() {
     }
 
     const housing = getShopItem(player.housingId, player.countryId)
-    const familySize = 1 + (player.personal.familyMembers?.length || 0)
-    const capacity = (housing && 'capacity' in housing ? (housing.capacity as number) : 2) || 2
+    const familySize = 1 + player.personal.familyMembers.length
+    const capacity = housing?.capacity ?? 2
 
     const isOvercrowded = familySize > capacity
     const overcrowdingPercent = isOvercrowded ? ((familySize - capacity) / capacity) * 100 : 0
@@ -31,12 +31,12 @@ export function useHousingCapacity() {
     else if (overcrowdingPercent > 0) status = 'warning'
 
     return {
-      familySize,
       capacity,
+      familySize,
       isOvercrowded,
       overcrowdingPercent,
       penalty,
       status,
     }
-  }, [player?.housingId, player?.countryId, player?.personal.familyMembers])
+  }, [player])
 }

@@ -2,17 +2,33 @@ import type { Business, BusinessInventory } from '../../../types/business.types'
 import { BUSINESS_BALANCE } from '../../data-loaders/business-balance-loader'
 import { checkMinimumStaffing } from '../player-roles'
 
+const MIN_VALUE = 0.1
+const PRICE_NORMALIZATION_FACTOR = 5
+const MARKET_THRESHOLD = 0.9
+const HIGH_PRICE_THRESHOLD = 6
+const LOW_MARKET_PENALTY = 0.6
+const STAFFING_PENALTY = 0.5
+const MARKUP_FACTOR = 0.5
+const HIGH_MARKUP_THRESHOLD = 0.6
+const LOW_MARKUP_THRESHOLD = 0.3
+const HIGH_MARKUP_DEMAND_PENALTY = 0.7
+const LOW_MARKUP_DEMAND_BONUS = 1.1
+const RANDOM_DEMAND_BASE = 0.9
+const RANDOM_DEMAND_VARIATION = 0.2
+const PERCENT_DIVISOR = 100
+const FULL_STAFFING_MODIFIER = 1
+
 export interface RevenueResult {
-  salesIncome: number
   cogs: number
-  salesVolume: number
-  purchaseCost: number
-  purchaseAmount: number
-  productionCapacity: number
-  sellingPrice: number
-  unitCost: number
   marketDemand: number
   newInventory?: BusinessInventory
+  productionCapacity: number
+  purchaseAmount: number
+  purchaseCost: number
+  salesIncome: number
+  salesVolume: number
+  sellingPrice: number
+  unitCost: number
 }
 
 export function calculateRevenue(
@@ -23,7 +39,6 @@ export function calculateRevenue(
   salesBonusPct: number,
   isPreview: boolean,
 ): RevenueResult {
-  const { production, elasticity } = BUSINESS_BALANCE
   const inventory = business.inventory
 
   if (business.isServiceBased) {
@@ -34,29 +49,65 @@ export function calculateRevenue(
       globalMarketValue,
       salesBonusPct,
     )
-  } else if (inventory) {
-    return calculateProductRevenue(
-      business,
-      inventory,
-      currentEfficiency,
-      currentReputation,
-      globalMarketValue,
-      salesBonusPct,
-      isPreview,
-    )
   }
 
-  return {
-    salesIncome: 0,
-    cogs: 0,
-    salesVolume: 0,
-    purchaseCost: 0,
-    purchaseAmount: 0,
-    productionCapacity: 0,
-    sellingPrice: 0,
-    unitCost: 0,
-    marketDemand: 0,
+  return calculateProductRevenue(
+    business,
+    inventory,
+    currentEfficiency,
+    currentReputation,
+    globalMarketValue,
+    salesBonusPct,
+    isPreview,
+  )
+}
+
+function calculateServiceDemand(
+  business: Business,
+  currentEfficiency: number,
+  currentReputation: number,
+  globalMarketValue: number,
+  salesBonusPct: number,
+): number {
+  const { elasticity, production } = BUSINESS_BALANCE
+
+  const priceLevel = business.price
+  const baseServiceDemand = business.maxEmployees * production.baseServiceDemandPerMaxEmp
+
+  const efficiencyMod = currentEfficiency / PERCENT_DIVISOR
+  const reputationMod = currentReputation / PERCENT_DIVISOR
+
+  const normalizedPrice = Math.max(MIN_VALUE, priceLevel / PRICE_NORMALIZATION_FACTOR)
+  const effectiveSafeThreshold =
+    elasticity.safePriceThreshold + reputationMod * elasticity.reputationSafetyBonus
+
+  let priceMod = 1.0
+  if (normalizedPrice > effectiveSafeThreshold) {
+    priceMod = Math.pow(effectiveSafeThreshold / normalizedPrice, elasticity.demandExponent)
   }
+
+  // Market cycle impact on service
+  let cycleMod = globalMarketValue
+  const isMarketLow = cycleMod < MARKET_THRESHOLD
+  const isHighPrice = priceLevel > HIGH_PRICE_THRESHOLD
+  if (isMarketLow && isHighPrice) {
+    cycleMod *= LOW_MARKET_PENALTY
+  }
+
+  const staffingCheck = checkMinimumStaffing(business)
+  const staffingMod = staffingCheck.isValid ? FULL_STAFFING_MODIFIER : STAFFING_PENALTY
+
+  const salesBonusMod = 1 + salesBonusPct / PERCENT_DIVISOR
+
+  return (
+    baseServiceDemand *
+    efficiencyMod *
+    Math.max(MIN_VALUE, reputationMod) *
+    priceMod *
+    cycleMod *
+    staffingMod *
+    salesBonusMod
+  )
 }
 
 function calculateServiceRevenue(
@@ -66,62 +117,105 @@ function calculateServiceRevenue(
   globalMarketValue: number,
   salesBonusPct: number,
 ): RevenueResult {
-  const { production, elasticity } = BUSINESS_BALANCE
+  const { production } = BUSINESS_BALANCE
 
-  const priceLevel =
-    typeof business.price === 'number' && !isNaN(business.price) ? business.price : 5
-  const baseServiceDemand = (business.maxEmployees || 1) * production.baseServiceDemandPerMaxEmp
-
-  const efficiencyMod = (isNaN(currentEfficiency) ? 0 : currentEfficiency) / 100
-  const reputationMod = (isNaN(currentReputation) ? 0 : currentReputation) / 100
-
-  const normalizedPrice = Math.max(0.1, priceLevel / 5)
-  const effectiveSafeThreshold =
-    elasticity.safePriceThreshold + reputationMod * elasticity.reputationSafetyBonus
-
-  let priceMod = 1.0
-  if (normalizedPrice > effectiveSafeThreshold) {
-    priceMod = Math.pow(effectiveSafeThreshold / normalizedPrice, elasticity.demandExponent)
-  }
-
-  let cycleMod =
-    typeof globalMarketValue === 'number' && !isNaN(globalMarketValue) ? globalMarketValue : 1.0
-  if (cycleMod < 0.9 && priceLevel > 6) {
-    cycleMod *= 0.6
-  }
-
-  const staffingCheck = checkMinimumStaffing(business)
-  const staffingMod = staffingCheck.isValid ? 1 : 0.5 // Balanced: 50% penalty instead of 80%
-
-  let serviceDemand =
-    baseServiceDemand *
-    efficiencyMod *
-    Math.max(0.1, reputationMod) *
-    priceMod *
-    cycleMod *
-    staffingMod
-  if (isNaN(serviceDemand)) serviceDemand = 0
-
-  const marketDemand = serviceDemand
-  if (salesBonusPct > 0) {
-    serviceDemand *= 1 + salesBonusPct / 100
-  }
+  const priceLevel = business.price
+  const serviceDemand = calculateServiceDemand(
+    business,
+    currentEfficiency,
+    currentReputation,
+    globalMarketValue,
+    salesBonusPct,
+  )
 
   const sellingPrice = production.baseServiceRevenuePerLevel * priceLevel
   const salesVolume = Math.floor(serviceDemand)
-  const salesIncome = Math.floor(serviceDemand * sellingPrice)
+  const salesIncome = Math.floor(salesVolume * sellingPrice)
 
   return {
-    salesIncome: isNaN(salesIncome) ? 0 : salesIncome,
     cogs: 0,
-    salesVolume,
-    purchaseCost: 0,
-    purchaseAmount: 0,
+    marketDemand: serviceDemand,
     productionCapacity: 0,
-    sellingPrice,
+    purchaseAmount: 0,
+    purchaseCost: 0,
+    salesIncome: salesIncome,
+    salesVolume: salesVolume,
+    sellingPrice: sellingPrice,
     unitCost: 0,
-    marketDemand,
   }
+}
+
+function calculateProductPrice(inventory: BusinessInventory, priceLevel: number): number {
+  const unitCost = inventory.purchaseCost
+  const markup = priceLevel * MARKUP_FACTOR
+  const finalPrice = Math.round(unitCost * markup)
+  return priceLevel <= 0 ? 0 : finalPrice
+}
+
+function calculateProductDemand(
+  business: Business,
+  reputationMod: number,
+  globalMarketValue: number,
+  sellingPrice: number,
+  unitCost: number,
+  salesBonusPct: number,
+  isPreview: boolean,
+): { finalDemand: number; marketDemand: number } {
+  const { elasticity, production } = BUSINESS_BALANCE
+  const baseDemand = business.maxEmployees * production.baseProductDemandPerMaxEmp
+  const marketMod = globalMarketValue
+  const reputationEffect = Math.max(MIN_VALUE, reputationMod)
+
+  const effectiveSafeThreshold =
+    elasticity.safePriceThreshold + reputationMod * elasticity.reputationSafetyBonus
+  const currentMarkup = sellingPrice / Math.max(1, unitCost) - 1
+
+  let priceMod = 1.0
+  if (currentMarkup > effectiveSafeThreshold && currentMarkup > 0) {
+    priceMod = Math.pow(effectiveSafeThreshold / currentMarkup, elasticity.demandExponent)
+  }
+
+  // Market collapse impact
+  const isMarketCollapsed = marketMod < MARKET_THRESHOLD
+  if (isMarketCollapsed) {
+    const isHighMarkup = currentMarkup >= HIGH_MARKUP_THRESHOLD
+    const isLowMarkup = currentMarkup <= LOW_MARKUP_THRESHOLD
+    if (isHighMarkup) priceMod *= HIGH_MARKUP_DEMAND_PENALTY
+    else if (isLowMarkup) priceMod *= LOW_MARKUP_DEMAND_BONUS
+  }
+
+  let finalDemand =
+    baseDemand * reputationEffect * marketMod * priceMod * (1 + salesBonusPct / PERCENT_DIVISOR)
+
+  const marketDemand = finalDemand
+
+  if (!isPreview) {
+    finalDemand *= RANDOM_DEMAND_BASE + Math.random() * RANDOM_DEMAND_VARIATION
+  }
+
+  return { finalDemand, marketDemand }
+}
+
+function calculateProduction(
+  business: Business,
+  currentEfficiency: number,
+): { actualProduction: number; productionCapacity: number } {
+  const { production } = BUSINESS_BALANCE
+
+  let workersCount = business.employees.filter((e) => e.role === 'worker').length
+  if (business.playerRoles.operationalRole === 'worker') {
+    workersCount += 1
+  }
+
+  const efficiencyMod = currentEfficiency / 100
+
+  const productionCapacity = Math.floor(
+    (workersCount + STAFFING_PENALTY) * production.baseProductionPerWorker * efficiencyMod,
+  )
+  const planProduction = business.quantity
+  const actualProduction = Math.min(planProduction, productionCapacity)
+
+  return { actualProduction, productionCapacity }
 }
 
 function calculateProductRevenue(
@@ -133,95 +227,38 @@ function calculateProductRevenue(
   salesBonusPct: number,
   isPreview: boolean,
 ): RevenueResult {
-  const { production, elasticity } = BUSINESS_BALANCE
-
-  const unitCost =
-    typeof inventory.purchaseCost === 'number' && !isNaN(inventory.purchaseCost)
-      ? inventory.purchaseCost
-      : 50
-  const priceLevel =
-    typeof business.price === 'number' && !isNaN(business.price) ? business.price : 5
-  const normalizedPrice = priceLevel * 0.5
-
-  let sellingPrice = 0
-  const rawPricePerUnit = inventory.pricePerUnit
-  if (typeof rawPricePerUnit === 'number' && !isNaN(rawPricePerUnit)) {
-    sellingPrice = rawPricePerUnit === 0 ? 0 : Math.round(unitCost * normalizedPrice)
-  } else if (isNaN(rawPricePerUnit)) {
-    sellingPrice = 100
-  } else {
-    sellingPrice = Math.round(unitCost * normalizedPrice)
-  }
+  const unitCost = inventory.purchaseCost
+  const priceLevel = business.price
+  const sellingPrice = calculateProductPrice(inventory, priceLevel)
 
   // 1. Production
-  let workersCount = (business.employees || []).filter((e) => e.role === 'worker').length
-  if (business.playerRoles?.operationalRole === 'worker') {
-    workersCount += 1
-  }
-
-  const efficiencyMod = (isNaN(currentEfficiency) ? 0 : currentEfficiency) / 100
-  const reputationMod = (isNaN(currentReputation) ? 0 : currentReputation) / 100
-
-  const productionCapacity = Math.floor(
-    (workersCount + 0.5) * production.baseProductionPerWorker * efficiencyMod,
-  )
-  const planProduction =
-    typeof business.quantity === 'number' && !isNaN(business.quantity) ? business.quantity : 0
-  const actualProduction = Math.min(
-    planProduction,
-    isNaN(productionCapacity) ? 0 : productionCapacity,
-  )
+  const { actualProduction, productionCapacity } = calculateProduction(business, currentEfficiency)
 
   const purchaseAmount = actualProduction
-  const purchaseCost = actualProduction * unitCost
+  const purchaseCost = Math.round(actualProduction * unitCost)
 
-  // 2. Demand
-  const baseDemand = (business.maxEmployees || 1) * production.baseProductDemandPerMaxEmp
-  const marketMod =
-    typeof globalMarketValue === 'number' && !isNaN(globalMarketValue) ? globalMarketValue : 1.0
-  const reputationEffect = Math.max(0.1, reputationMod)
+  // 2. Demand & Sales
+  const reputationMod = currentReputation / 100
+  const { finalDemand, marketDemand } = calculateProductDemand(
+    business,
+    reputationMod,
+    globalMarketValue,
+    sellingPrice,
+    unitCost,
+    salesBonusPct,
+    isPreview,
+  )
 
-  const effectiveSafeThreshold =
-    elasticity.safePriceThreshold + reputationMod * elasticity.reputationSafetyBonus
-  const currentMarkup = sellingPrice / Math.max(1, unitCost) - 1
-
-  let priceMod = 1.0
-  if (currentMarkup > effectiveSafeThreshold && currentMarkup > 0) {
-    priceMod = Math.pow(effectiveSafeThreshold / currentMarkup, elasticity.demandExponent)
-  }
-
-  if (marketMod < 0.9) {
-    if (currentMarkup >= 0.6) priceMod *= 0.7
-    else if (currentMarkup <= 0.3) priceMod *= 1.1
-  }
-
-  let finalDemand = baseDemand * reputationEffect * marketMod * priceMod
-  if (isNaN(finalDemand)) finalDemand = 0
-  const marketDemand = finalDemand
-
-  if (salesBonusPct > 0) {
-    finalDemand *= 1 + salesBonusPct / 100
-  }
-
-  if (!isPreview) {
-    finalDemand *= 0.9 + Math.random() * 0.2
-  }
-
-  // 3. Sales
-  const stock =
-    typeof inventory.currentStock === 'number' && !isNaN(inventory.currentStock)
-      ? inventory.currentStock
-      : 0
+  const stock = inventory.currentStock
   const totalAvailable = stock + actualProduction
   const salesVolume = Math.min(totalAvailable, Math.floor(finalDemand))
 
-  const salesIncome = salesVolume * sellingPrice
-  const cogs = salesVolume * unitCost
+  const salesIncome = Math.floor(salesVolume * sellingPrice)
+  const cogs = Math.floor(salesVolume * unitCost)
 
-  // 4. Inventory Update
+  // 3. Inventory Update
   const remainingStock = Math.max(0, totalAvailable - salesVolume)
-  const maxStock =
-    typeof inventory.maxStock === 'number' && !isNaN(inventory.maxStock) ? inventory.maxStock : 1000
+  const maxStock = inventory.maxStock
 
   const newInventory: BusinessInventory = {
     ...inventory,
@@ -229,15 +266,15 @@ function calculateProductRevenue(
   }
 
   return {
-    salesIncome: isNaN(salesIncome) ? 0 : salesIncome,
-    cogs: isNaN(cogs) ? 0 : cogs,
-    salesVolume: isNaN(salesVolume) ? 0 : salesVolume,
-    purchaseCost: Math.round(purchaseCost),
-    purchaseAmount,
-    productionCapacity: isNaN(productionCapacity) ? 0 : productionCapacity,
-    sellingPrice,
-    unitCost,
+    cogs,
     marketDemand,
     newInventory,
+    productionCapacity,
+    purchaseAmount,
+    purchaseCost,
+    salesIncome,
+    salesVolume,
+    sellingPrice,
+    unitCost,
   }
 }

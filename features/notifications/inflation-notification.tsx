@@ -2,11 +2,11 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { TrendingUp, TrendingDown, AlertTriangle, X } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 import type { InflationNotification as InflationNotificationData } from '@/core/lib/calculations/inflation-engine'
 import { devLog } from '@/core/lib/debug'
-import { Button } from '@/shared/ui/button'
+import { Button } from '@/shared/components/button'
 
 interface InflationNotificationProps {
   data: InflationNotificationData | null
@@ -16,12 +16,15 @@ interface InflationNotificationProps {
 export function InflationNotification({ data, onClose }: InflationNotificationProps) {
   const [isVisible, setIsVisible] = useState(false)
 
-  useEffect(() => {
+  // Синхронизация состояния с пропсами без useEffect
+  const [prevData, setPrevData] = useState(data)
+  if (data !== prevData) {
+    setPrevData(data)
     if (data) {
       devLog('[InflationNotification] Data received:', data)
       setIsVisible(true)
     }
-  }, [data])
+  }
 
   const handleClose = () => {
     setIsVisible(false)
@@ -38,10 +41,10 @@ export function InflationNotification({ data, onClose }: InflationNotificationPr
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0, y: 50, x: 50 }}
-          animate={{ opacity: 1, y: 0, x: 0 }}
-          exit={{ opacity: 0, y: 50, x: 50 }}
+          animate={{ opacity: 1, x: 0, y: 0 }}
           className="fixed bottom-6 right-6 z-100 w-96"
+          exit={{ opacity: 0, x: 50, y: 50 }}
+          initial={{ opacity: 0, x: 50, y: 50 }}
         >
           <div
             className={`relative overflow-hidden rounded-2xl border-2 backdrop-blur-xl shadow-2xl ${
@@ -77,8 +80,8 @@ export function InflationNotification({ data, onClose }: InflationNotificationPr
                   </div>
                 </div>
                 <button
-                  onClick={handleClose}
                   className="text-zinc-400 hover:text-white transition-colors p-1"
+                  onClick={handleClose}
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -153,8 +156,8 @@ export function InflationNotification({ data, onClose }: InflationNotificationPr
 
               {/* Кнопка закрытия */}
               <Button
-                onClick={handleClose}
                 className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/20"
+                onClick={handleClose}
               >
                 Понятно
               </Button>

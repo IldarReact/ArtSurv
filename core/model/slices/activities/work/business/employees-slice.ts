@@ -1,6 +1,5 @@
 import type { GameStateCreator } from '../../../types'
 import type { BusinessSlice } from '../../../types/business.types'
-
 import {
   handleJoinBusinessAsEmployee,
   handleLeaveBusinessJob,
@@ -16,18 +15,6 @@ import {
 } from './employees/hire-logic'
 
 export const createEmployeesSlice: GameStateCreator<Partial<BusinessSlice>> = (set, get) => ({
-  hireEmployee: (businessId, candidate) => {
-    handleHireEmployee(get(), set, businessId, candidate)
-  },
-
-  fireEmployee: (businessId, employeeId) => {
-    handleFireEmployee(get(), set, businessId, employeeId)
-  },
-
-  hireFamilyMember: (businessId, familyMemberId, role) => {
-    handleHireFamilyMember(get(), set, businessId, familyMemberId, role)
-  },
-
   addEmployeeToBusiness: (businessId, employeeName, role, salary, playerId, extraData) => {
     handleAddEmployeeToBusiness(
       get(),
@@ -39,6 +26,18 @@ export const createEmployeesSlice: GameStateCreator<Partial<BusinessSlice>> = (s
       playerId,
       extraData,
     )
+  },
+
+  fireEmployee: (businessId, employeeId) => {
+    handleFireEmployee(get(), set, businessId, employeeId)
+  },
+
+  hireEmployee: (businessId, candidate) => {
+    handleHireEmployee(get(), set, businessId, candidate)
+  },
+
+  hireFamilyMember: (businessId, familyMemberId, role) => {
+    handleHireFamilyMember(get(), set, businessId, familyMemberId, role)
   },
 
   joinBusinessAsEmployee: (businessId, role, salary, productivity, effortPercent) => {
@@ -53,11 +52,11 @@ export const createEmployeesSlice: GameStateCreator<Partial<BusinessSlice>> = (s
     handleSetPlayerEmploymentEffort(get(), set, businessId, effortPercent)
   },
 
-  updateEmployeeInBusiness: (businessId, employeeId, updates) => {
-    handleUpdateEmployeeInBusiness(get(), set, businessId, employeeId, updates)
-  },
-
   setPlayerEmploymentSalary: (businessId, salary) => {
     handleSetPlayerEmploymentSalary(get(), set, businessId, salary)
+  },
+
+  updateEmployeeInBusiness: (businessId, employeeId, updates) => {
+    handleUpdateEmployeeInBusiness(get(), set, businessId, employeeId, updates)
   },
 })

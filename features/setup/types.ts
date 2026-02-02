@@ -1,64 +1,64 @@
 export interface CategoryCardProps {
-  title: string
-  icon: React.ReactNode
   count: string
-  onClick: () => void
+  icon: React.ReactNode
   image: string
+  onClick: () => void
+  title: string
 }
 
 export interface DetailCardProps {
-  title: string
-  subtitle: string
+  details?: { label: string; value: string }[]
   image: string
-  tags?: string[]
-  details?: Array<{ label: string; value: string }>
   isRed?: boolean
+  subtitle: string
+  tags?: string[]
+  title: string
 }
 
 export interface FamilyMember {
-  name: string
   age: number
   job?: string
+  name: string
 }
 
 export interface Asset {
-  name: string
-  value: number
-  mortgage?: number
+  image: string
   loan?: number
   monthly: number
-  image: string
+  mortgage?: number
+  name: string
+  value: number
 }
 
 export interface Debt {
-  name: string
-  remainingAmount: number
-  rate: number
   minPayment: number
+  name: string
+  rate: number
+  remainingAmount: number
 }
 
 export interface Saving {
-  name: string
   amount: number
+  name: string
   type: string
 }
 
 export interface Investment {
-  name: string
   amount: number
+  name: string
   type: string
 }
 
 export interface CharacterDetailedInfo {
-  family: {
-    spouse: FamilyMember
-    children: Array<Pick<FamilyMember, 'name' | 'age'>>
-    pet: { name: string; type: string }
-  }
   assets: Asset[]
   debts: Debt[]
-  savings: Saving[]
+  family: {
+    spouse: FamilyMember
+    children: Pick<FamilyMember, 'name' | 'age'>[]
+    pet: { name: string; type: string }
+  }
   investments: Investment[]
+  savings: Saving[]
 }
 
-export type ModalView = "main" | "family" | "assets" | "debts" | "savings" | "investments"
+export type ModalView = 'main' | 'family' | 'assets' | 'debts' | 'savings' | 'investments'

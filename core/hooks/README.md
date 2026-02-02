@@ -25,8 +25,10 @@ import { useInflatedPrices } from '@/core/hooks'
 
 // ✅ Для списка товаров
 const itemsWithPrices = useInflatedPrices(shopItems)
-itemsWithPrices.map(item => (
-  <div>{item.name}: ${item.inflatedPrice}</div>
+itemsWithPrices.map((item) => (
+  <div>
+    {item.name}: ${item.inflatedPrice}
+  </div>
 ))
 
 // ✅ Для списка работ
@@ -48,10 +50,12 @@ const economy = useEconomy()
 
 ```tsx
 // ❌ ОШИБКА! Хук внутри .map()
-{jobs.map(job => {
-  const salary = useInflatedPrice({ salary: job.salary }) // НАРУШЕНИЕ!
-  return <div>${salary}</div>
-})}
+{
+  jobs.map((job) => {
+    const salary = useInflatedPrice({ salary: job.salary }) // НАРУШЕНИЕ!
+    return <div>${salary}</div>
+  })
+}
 ```
 
 ### ✅ ПРАВИЛЬНО - Хук вне цикла
@@ -60,9 +64,9 @@ const economy = useEconomy()
 // ✅ Используй useInflatedPrices для массивов
 const jobsWithInflation = useInflatedPrices(jobs)
 
-{jobsWithInflation.map(job => (
-  <div>${job.inflatedPrice.toLocaleString()}</div>
-))}
+{
+  jobsWithInflation.map((job) => <div>${job.inflatedPrice.toLocaleString()}</div>)
+}
 ```
 
 ## 📚 Примеры использования
@@ -72,7 +76,7 @@ const jobsWithInflation = useInflatedPrices(jobs)
 ```tsx
 function ShopItemCard({ item }: { item: ShopItem }) {
   const price = useInflatedPrice(item)
-  
+
   return (
     <Card>
       <h3>{item.name}</h3>
@@ -87,10 +91,10 @@ function ShopItemCard({ item }: { item: ShopItem }) {
 ```tsx
 function ShopList({ items }: { items: ShopItem[] }) {
   const itemsWithPrices = useInflatedPrices(items)
-  
+
   return (
     <div>
-      {itemsWithPrices.map(item => (
+      {itemsWithPrices.map((item) => (
         <div key={item.id}>
           <span>{item.name}</span>
           <span>${item.inflatedPrice.toLocaleString()}</span>
@@ -106,7 +110,7 @@ function ShopList({ items }: { items: ShopItem[] }) {
 ```tsx
 function JobCard({ job }: { job: Job }) {
   const salary = useInflatedPrice({ salary: job.salary })
-  
+
   return <div>${salary.toLocaleString()}/мес</div>
 }
 ```
@@ -116,11 +120,11 @@ function JobCard({ job }: { job: Job }) {
 ```tsx
 function JobsList({ jobs }: { jobs: Job[] }) {
   const jobsWithInflation = useInflatedPrices(jobs)
-  
+
   return (
     <div>
-      {jobsWithInflation.map(job => (
-        <JobCard 
+      {jobsWithInflation.map((job) => (
+        <JobCard
           key={job.id}
           title={job.title}
           salary={job.inflatedPrice} // ← Уже с инфляцией!
@@ -136,17 +140,17 @@ function JobsList({ jobs }: { jobs: Job[] }) {
 ```tsx
 function FreelanceList({ gigs }: { gigs: FreelanceGig[] }) {
   // Маппим gigs в формат для хука
-  const gigsWithPrices = gigs.map(gig => ({ 
-    ...gig, 
-    price: gig.payment, 
-    category: 'services' as const 
+  const gigsWithPrices = gigs.map((gig) => ({
+    ...gig,
+    price: gig.payment,
+    category: 'services' as const,
   }))
-  
+
   const inflatedGigs = useInflatedPrices(gigsWithPrices)
-  
+
   return (
     <div>
-      {inflatedGigs.map(gig => (
+      {inflatedGigs.map((gig) => (
         <div key={gig.id}>
           <h3>{gig.title}</h3>
           <p>${gig.inflatedPrice.toLocaleString()}</p>
@@ -172,16 +176,16 @@ type PriceableItem =
 
 ## 📈 Категории инфляции
 
-| Категория | Мультипликатор | Пример |
-|-----------|----------------|--------|
-| `housing` | 1.5x | Недвижимость |
-| `education` | 1.2x | Курсы, университет |
-| `business` | 1.3x | Открытие бизнеса |
-| `food` | 0.5x | Еда |
-| `health` | 1.1x | Медицина |
-| `services` | 0.9x | Услуги, фриланс |
-| `transport` | 1.0x | Транспорт |
-| `salaries` | 0.95x | Зарплаты |
+| Категория   | Мультипликатор | Пример             |
+| ----------- | -------------- | ------------------ |
+| `housing`   | 1.5x           | Недвижимость       |
+| `education` | 1.2x           | Курсы, университет |
+| `business`  | 1.3x           | Открытие бизнеса   |
+| `food`      | 0.5x           | Еда                |
+| `health`    | 1.1x           | Медицина           |
+| `services`  | 0.9x           | Услуги, фриланс    |
+| `transport` | 1.0x           | Транспорт          |
+| `salaries`  | 0.95x          | Зарплаты           |
 
 ## 🚨 Частые ошибки
 
@@ -189,16 +193,18 @@ type PriceableItem =
 
 ```tsx
 // ❌ НЕПРАВИЛЬНО
-{items.map(item => {
-  const price = useInflatedPrice(item) // Rules of Hooks!
-  return <div>{price}</div>
-})}
+{
+  items.map((item) => {
+    const price = useInflatedPrice(item) // Rules of Hooks!
+    return <div>{price}</div>
+  })
+}
 
 // ✅ ПРАВИЛЬНО
 const itemsWithPrices = useInflatedPrices(items)
-{itemsWithPrices.map(item => (
-  <div>{item.inflatedPrice}</div>
-))}
+{
+  itemsWithPrices.map((item) => <div>{item.inflatedPrice}</div>)
+}
 ```
 
 ### Ошибка 2: Забыли category
@@ -223,13 +229,13 @@ const salary = useInflatedPrice({ salary: job.salary })
 
 ## 🎓 Когда использовать какой хук
 
-| Ситуация | Хук | Пример |
-|----------|-----|--------|
-| Один товар | `useInflatedPrice()` | Карточка товара |
-| Список товаров | `useInflatedPrices()` | Каталог магазина |
-| Одна зарплата | `useInflatedPrice()` | Карточка вакансии |
-| Список работ | `useInflatedPrices()` | Список вакансий |
-| Кастомная логика | `useEconomy()` | Сложные расчёты |
+| Ситуация         | Хук                   | Пример            |
+| ---------------- | --------------------- | ----------------- |
+| Один товар       | `useInflatedPrice()`  | Карточка товара   |
+| Список товаров   | `useInflatedPrices()` | Каталог магазина  |
+| Одна зарплата    | `useInflatedPrice()`  | Карточка вакансии |
+| Список работ     | `useInflatedPrices()` | Список вакансий   |
+| Кастомная логика | `useEconomy()`        | Сложные расчёты   |
 
 ## 📝 Чеклист миграции
 

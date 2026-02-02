@@ -2,29 +2,28 @@
 
 import { Globe, User } from 'lucide-react'
 
-import { Button } from '@/shared/ui/button'
-
 interface LobbySettingsProps {
-  selectedCountryName: string
-  selectedArchetypeName: string
-  selectedArchetype: string | null
-  onOpenCountryModal: () => void
   onOpenArchetypeModal: () => void
+  onOpenCountryModal: () => void
+  selectedArchetype: string | null
+  selectedArchetypeName: string
+  selectedCountryName: string
 }
 
 export function LobbySettings({
-  selectedCountryName,
-  selectedArchetypeName,
-  selectedArchetype,
-  onOpenCountryModal,
   onOpenArchetypeModal,
+  onOpenCountryModal,
+  selectedArchetype,
+  selectedArchetypeName,
+  selectedCountryName,
 }: LobbySettingsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {/* Карточка выбора страны */}
-      <div
+      <button
+        className="bg-slate-900 rounded-xl p-6 border border-slate-800 cursor-pointer hover:border-slate-600 transition-colors group text-left w-full"
         onClick={onOpenCountryModal}
-        className="bg-slate-900 rounded-xl p-6 border border-slate-800 cursor-pointer hover:border-slate-600 transition-colors group"
+        type="button"
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -36,19 +35,20 @@ export function LobbySettings({
               <p className="text-lg font-bold text-white">{selectedCountryName}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" className="text-slate-400 group-hover:text-white">
+          <div className="text-sm font-medium text-slate-400 group-hover:text-white px-3 py-1 rounded-md hover:bg-slate-800 transition-colors">
             Изменить
-          </Button>
+          </div>
         </div>
         <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
           <div className="h-full bg-blue-500 w-full" />
         </div>
-      </div>
+      </button>
 
       {/* Карточка выбора персонажа */}
-      <div
+      <button
+        className="bg-slate-900 rounded-xl p-6 border border-slate-800 cursor-pointer hover:border-slate-600 transition-colors group text-left w-full"
         onClick={onOpenArchetypeModal}
-        className="bg-slate-900 rounded-xl p-6 border border-slate-800 cursor-pointer hover:border-slate-600 transition-colors group"
+        type="button"
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
@@ -60,16 +60,16 @@ export function LobbySettings({
               <p className="text-lg font-bold text-white">{selectedArchetypeName}</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" className="text-slate-400 group-hover:text-white">
+          <div className="text-sm font-medium text-slate-400 group-hover:text-white px-3 py-1 rounded-md hover:bg-slate-800 transition-colors">
             Изменить
-          </Button>
+          </div>
         </div>
         <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
           <div
             className={`h-full w-full transition-all ${selectedArchetype ? 'bg-purple-500' : 'bg-transparent'}`}
           />
         </div>
-      </div>
+      </button>
     </div>
   )
 }

@@ -1,49 +1,48 @@
 import type { StateCreator } from 'zustand'
 
+import { formatGameDate } from '@/core/lib/quarter'
+import type { Notification } from '@/core/types'
+
 import type { GameStore, NotificationSlice } from './types'
 
-import { formatGameDate } from '@/core/lib/quarter'
+export const createNotificationSlice: StateCreator<GameStore, [], [], NotificationSlice> = (
+  set,
+) => {
+  return {
+    dismissEventNotification: () => {
+      set({ pendingEventNotification: null })
+    },
 
-export const createNotificationSlice: StateCreator<
-  GameStore,
-  [],
-  [],
-  NotificationSlice
-> = (set, get) => ({
-  // State
-  notifications: [],
-  pendingEventNotification: null,
+    dismissNotification: (id: string) => {
+      set((state) => ({
+        notifications: state.notifications.filter((n) => n.id !== id),
+      }))
+    },
 
-  // Actions
-  pushNotification: (notification: Omit<import('@/core/types').Notification, 'id' | 'isRead' | 'date'>) => {
-    set(state => ({
-      notifications: [
-        {
-          ...notification,
-          id: `notif_${Date.now()}_${Math.random()}`,
-          isRead: false,
-          date: formatGameDate(state.year, state.turn)
-        },
-        ...state.notifications
-      ]
-    }))
-  },
+    markNotificationAsRead: (id: string) => {
+      set((state) => ({
+        notifications: state.notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
+      }))
+    },
 
-  dismissNotification: (id: string) => {
-    set(state => ({
-      notifications: state.notifications.filter(n => n.id !== id)
-    }))
-  },
+    // State
+    notifications: [],
 
-  markNotificationAsRead: (id: string) => {
-    set(state => ({
-      notifications: state.notifications.map(n =>
-        n.id === id ? { ...n, isRead: true } : n
-      )
-    }))
-  },
+    pendingEventNotification: null,
 
-  dismissEventNotification: () => {
-    set({ pendingEventNotification: null })
+    // Actions
+    pushNotification: (notification: Omit<Notification, 'id' | 'isRead' | 'date'>) => {
+      set((state) => ({
+        notifications: [
+          {
+            ...notification,
+            date: formatGameDate(state.year, state.turn),
+            id: `notif_${String(Date.now())}_${String(Math.random())}`,
+            isRead: false,
+          },
+          ...state.notifications,
+        ],
+      }))
+    },
   }
-})
+}

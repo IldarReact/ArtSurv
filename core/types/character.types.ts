@@ -3,32 +3,34 @@ import type { Stats } from './stats.types'
 
 export interface CharacterSkill {
   id: string
-  name: string
   level: number
+  name: string
 }
 
 export interface CharacterDebt {
   id: string
-  name: string
-  type: Debt['type']
-  principalAmount: number
-  remainingAmount: number
   interestRate: number
+  name: string
+  principalAmount: number
   quarterlyPayment: number
-  termQuarters: number
+  remainingAmount: number
   remainingQuarters: number
+  termQuarters: number
+  type: Debt['type']
 }
 
 export interface CharacterData {
-  id: string
   archetype: string
-  name: string
   description: string
-  startingMoney: number
-  startingJobId?: string
-  startingSalary?: number
-  startingStats: Omit<Stats, 'money'>
-  startingSkills?: CharacterSkill[]
-  startingDebts?: CharacterDebt[]
+  id: string
   imageUrl: string
+  name: string
+  startingDebts?: CharacterDebt[]
+  startingJobId?: string
+  startingMoney: number
+  startingSalary?: number
+  startingSkills?: CharacterSkill[]
+  startingStats: Omit<Stats, 'money'>
+  startingTraits?: string[]
+  gender?: 'male' | 'female' | 'other'
 }

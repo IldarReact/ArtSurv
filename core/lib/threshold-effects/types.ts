@@ -1,22 +1,22 @@
 import type { StatEffect } from '@/core/types/stats.types'
 
 export interface ThresholdEffectsResult {
-  canWork: boolean
-  canStudy: boolean
+  businessEfficiency: number
   canManageBusiness: boolean
+  canStudy: boolean
 
-  medicalCosts: number
-  therapyCosts: number
-
-  events: Array<{
+  canWork: boolean
+  events: {
     type: 'health' | 'sanity' | 'intelligence' | 'happiness'
     severity: 'warning' | 'critical'
     message: string
-  }>
+  }[]
 
-  workEfficiency: number
-  businessEfficiency: number
   learningEfficiency: number
+
+  medicalCosts: number
+  therapyCosts: number
+  workEfficiency: number
 }
 
 export type ThresholdCheckInput = StatEffect

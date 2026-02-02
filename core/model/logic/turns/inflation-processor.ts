@@ -9,6 +9,8 @@ import { getQuarter } from '@/core/lib/quarter'
 import type { CountryEconomy } from '@/core/types'
 import type { Notification } from '@/core/types'
 
+import { devLog } from '../../../lib/debug'
+
 /**
  * Process yearly inflation for the player's country when appropriate.
  * Returns possibly-updated countries map and a ready-to-push notification.
@@ -25,63 +27,59 @@ export function processInflation(
 } {
   let updatedCountries = countries
   let inflationNotification: InflationNotification | null = null
-  let notification: Notification | undefined
 
   const country = countries[playerCountryId]
-  if (!country) return { updatedCountries, inflationNotification }
 
-  if (!shouldApplyInflationThisTurn(newTurn)) return { updatedCountries, inflationNotification }
+  if (!shouldApplyInflationThisTurn(newTurn)) return { inflationNotification, updatedCountries }
 
   const newInflation = generateYearlyInflation(country.inflation, country)
   const newKeyRate = calculateKeyRate(newInflation, country.keyRate)
   const inflationChange = newInflation - country.inflation
   const keyRateChange = newKeyRate - country.keyRate
 
-  const newInflationHistory = [newInflation, ...(country.inflationHistory || []).slice(0, 9)]
+  const MAX_HISTORY_LENGTH = 10
+  const HISTORY_SLICE_INDEX = MAX_HISTORY_LENGTH - 1
+  const newInflationHistory = [
+    newInflation,
+    ...(country.inflationHistory ?? []).slice(0, HISTORY_SLICE_INDEX),
+  ]
 
-  // Lazy devLog to avoid circular import issues in tests/environments
-  try {
-     
-    const { devLog } = require('../../../lib/debug') as { devLog?: (...a: unknown[]) => void }
-    if (devLog) {
-      devLog('[INFLATION UPDATE] Turn', newTurn, `${getQuarter(newTurn)}, Year`, newYear, {
-        oldInflation: country.inflation,
-        newInflation,
-        change: inflationChange,
-        oldHistory: country.inflationHistory,
-        newHistory: newInflationHistory,
-      })
-    }
-  } catch {}
+  devLog('[INFLATION UPDATE] Turn', newTurn, `${String(getQuarter(newTurn))}, Year`, newYear, {
+    change: inflationChange,
+    newHistory: newInflationHistory,
+    newInflation,
+    oldHistory: country.inflationHistory,
+    oldInflation: country.inflation,
+  })
 
   updatedCountries = {
     ...countries,
     [playerCountryId]: {
       ...country,
       inflation: newInflation,
-      keyRate: newKeyRate,
       inflationHistory: newInflationHistory,
+      keyRate: newKeyRate,
     },
   }
 
   inflationNotification = {
-    year: newYear,
-    inflationRate: newInflation,
+    countryName: country.name,
     inflationChange,
+    inflationRate: newInflation,
     keyRate: newKeyRate,
     keyRateChange,
-    countryName: country.name,
     timestamp: newTurn,
+    year: newYear,
   }
 
-  notification = {
-    id: `inflation_${newTurn}`,
-    type: 'info',
-    title: `📊 Экономика: Инфляция в ${country.name}`,
-    message: formatInflationNotification(inflationNotification),
-    date: `${newYear} Q1`,
+  const notification: Notification = {
+    date: `${String(newYear)} Q1`,
+    id: `inflation_${String(newTurn)}`,
     isRead: false,
+    message: formatInflationNotification(inflationNotification),
+    title: `📊 Экономика: Инфляция в ${country.name}`,
+    type: 'info',
   }
 
-  return { updatedCountries, inflationNotification, notification }
+  return { inflationNotification, notification, updatedCountries }
 }

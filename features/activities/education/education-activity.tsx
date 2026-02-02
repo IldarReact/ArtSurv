@@ -2,28 +2,28 @@
 
 import React from 'react'
 
+import { FeedbackAnimation } from '@/shared/components/feedback-animation'
+
 import { useEducation } from './hooks/use-education'
 import { ActiveEducationSection } from './sections/active-education-section'
 import { CoursesSection } from './sections/courses-section'
 import { SkillsSection } from './sections/skills-section'
 import { UniversitySection } from './sections/university-section'
 
-import { FeedbackAnimation } from '@/shared/ui/feedback-animation'
-
 export function EducationActivity(): React.JSX.Element | null {
   const {
-    player,
-    currentCountry,
-    skills,
     activeCourses,
     activeUniversity,
-    hasSkills,
-    hasActiveEducation,
+    currentCountry,
+    feedback,
     getInflatedCoursePrice,
     handleCourseEnroll,
     handleUniversityApply,
-    feedback,
+    hasActiveEducation,
+    hasSkills,
+    player,
     setFeedback,
+    skills,
   } = useEducation()
 
   if (!player) return null
@@ -31,18 +31,20 @@ export function EducationActivity(): React.JSX.Element | null {
   return (
     <React.Fragment>
       <FeedbackAnimation
+        message={feedback.message}
+        onComplete={() => {
+          setFeedback({ message: '', show: false, success: false })
+        }}
         show={feedback.show}
         success={feedback.success}
-        message={feedback.message}
-        onComplete={() => setFeedback({ show: false, success: false, message: '' })}
       />
 
       <div className="space-y-8 pb-10">
-        <SkillsSection skills={skills} hasSkills={hasSkills} />
+        <SkillsSection hasSkills={hasSkills} skills={skills} />
 
         <ActiveEducationSection
-          activeUniversity={activeUniversity}
           activeCourses={activeCourses}
+          activeUniversity={activeUniversity}
           hasActiveEducation={hasActiveEducation}
         />
 

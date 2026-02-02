@@ -2,8 +2,10 @@ import { createDebt } from '@/core/lib/calculations/debt-helpers'
 import { createEmptyQuarterlyReport } from '@/core/lib/calculations/financial-helpers'
 import { getCharacterByArchetype } from '@/core/lib/data-loaders/characters-loader'
 import { getStartingJob, getJobById } from '@/core/lib/data-loaders/jobs-loader'
+import { NEUTRAL_RELATION } from '@/core/types/business.types'
 import type { Player } from '@/core/types/game.types'
 import type { Job } from '@/core/types/job.types'
+import { LEVEL_0, LEVEL_5, type SkillLevel } from '@/core/types/skill.types'
 import type { Stats } from '@/core/types/stats.types'
 
 // Deprecated: use getCountry(id) instead
@@ -18,21 +20,21 @@ export function createInitialPlayer(archetype: string, countryId: string): Playe
   }
 
   const baseStats: Stats = {
-    money: characterData.startingMoney,
-    happiness: characterData.startingStats.happiness,
     energy: characterData.startingStats.energy,
+    happiness: characterData.startingStats.happiness,
     health: characterData.startingStats.health,
-    sanity: characterData.startingStats.sanity,
     intelligence: characterData.startingStats.intelligence,
+    money: characterData.startingMoney,
+    sanity: characterData.startingStats.sanity,
   }
 
   const statEffect = {
-    money: baseStats.money,
-    happiness: baseStats.happiness,
     energy: baseStats.energy,
+    happiness: baseStats.happiness,
     health: baseStats.health,
-    sanity: baseStats.sanity,
     intelligence: baseStats.intelligence,
+    money: baseStats.money,
+    sanity: baseStats.sanity,
   }
 
   // Получаем стартовую вакансию по ID из characters.json
@@ -40,82 +42,92 @@ export function createInitialPlayer(archetype: string, countryId: string): Playe
     ? getJobById(characterData.startingJobId, countryId)
     : getStartingJob(countryId, characterData.startingSkills)
 
-  const initialJob: Job = startingJob || {
-    // Fallback если вакансий нет (не должно случиться)
-    id: `job_${Date.now()}`,
-    title: characterData.name,
+  const DEFAULT_ENERGY_COST = -20
+  const initialJob: Job = startingJob ?? {
     company: 'Start Corp',
-    salary: characterData.startingSalary ?? 0,
     cost: {
-      energy: -20,
+      energy: DEFAULT_ENERGY_COST,
     },
-    imageUrl: characterData.imageUrl,
     description: characterData.description,
+    // Fallback если вакансий нет (не должно случиться)
+    id: `job_${String(Date.now())}`,
+    imageUrl: characterData.imageUrl,
+    salary: characterData.startingSalary ?? 0,
+    title: characterData.name,
   }
 
+  const ID_SLICE_START = 2
+  const ID_SLICE_END = 9
+  const RANDOM_BASE_36 = 36
+  const DEFAULT_AGE = 24
+  const DEFAULT_CREDIT_SCORE = 650
+  const QUARTERS_IN_YEAR = 3
   const base: Player = {
-    id: `player_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-    name: 'Player',
-    countryId,
-    age: 24,
-
-    stats: { ...baseStats },
-
-    multipliers: {
-      happiness: -1,
-    },
-    happinessMultiplier: -1,
-
-    assets: [],
-    debts: [],
-    creditScore: { value: 650 },
-
-    personal: {
-      stats: { ...statEffect },
-
-      relations: {
-        family: 50,
-        friends: 50,
-        colleagues: 50,
-      },
-
-      skills:
-        characterData.startingSkills?.map((s) => ({
-          ...s,
-          level: Math.min(5, Math.max(0, s.level)) as 0 | 1 | 2 | 3 | 4 | 5,
-          progress: 0,
-          lastPracticedTurn: -1,
-        })) ?? [],
-      activeCourses: [],
-      activeUniversity: [],
-      buffs: [],
-      familyMembers: [],
-      lifeGoals: [],
-
-      isDating: false,
-      potentialPartner: null,
-      pregnancy: null,
-    },
-
-    quarterlyReport: createEmptyQuarterlyReport(),
-    quarterlySalary: (characterData.startingSalary ?? 0) * 3,
-
-    jobs: [],
     activeFreelanceGigs: [],
-    businesses: [],
-    businessIdeas: [],
-
     // Обязательные расходы (нельзя снизить до 0)
     activeLifestyle: {
       food: 'food_home', // Дефолт: готовит сам
       transport: 'tr_public', // Дефолт: общественный транспорт
     },
+    age: DEFAULT_AGE,
+    assets: [],
+
+    businesses: [],
+
+    businessIdeas: [],
+    countryId,
+    creditScore: { value: DEFAULT_CREDIT_SCORE },
+    currentJob: null,
+    debts: [],
+
+    freelanceGigs: [],
+    gender: characterData.gender ?? 'male',
+    happinessMultiplier: -1,
 
     // Текущее жильё (обязательно)
     housingId: 'housing_room', // Дефолт: комната в аренде
 
+    id: `player_${String(Date.now())}_${Math.random().toString(RANDOM_BASE_36).slice(ID_SLICE_START, ID_SLICE_END)}`,
+    jobs: [],
+
+    multipliers: {
+      happiness: -1,
+    },
+    name: 'Player',
+    personal: {
+      activeCourses: [],
+
+      activeUniversity: [],
+
+      buffs: [],
+      familyMembers: [],
+      isDating: false,
+      lifeGoals: [],
+      potentialPartner: null,
+      pregnancy: null,
+
+      relations: {
+        colleagues: NEUTRAL_RELATION,
+        family: NEUTRAL_RELATION,
+        friends: NEUTRAL_RELATION,
+      },
+      skills:
+        characterData.startingSkills?.map((s) => ({
+          ...s,
+          lastPracticedTurn: -1,
+          level: Math.min(LEVEL_5, Math.max(LEVEL_0, s.level)) as SkillLevel,
+          progress: 0,
+        })) ?? [],
+      stats: { ...statEffect },
+    },
+    quarterlyReport: createEmptyQuarterlyReport(),
+
+    quarterlySalary: (characterData.startingSalary ?? 0) * QUARTERS_IN_YEAR,
+
+    stats: { ...baseStats },
+
     // Начальные черты (для теста)
-    traits: ['ambitious'],
+    traits: characterData.startingTraits ?? ['ambitious'],
   }
 
   const finalState = { ...base }
@@ -126,15 +138,15 @@ export function createInitialPlayer(archetype: string, countryId: string): Playe
       finalState.debts.push(
         createDebt({
           id: debt.id,
-          name: debt.name,
-          type: debt.type,
-          principalAmount: debt.principalAmount,
-          remainingAmount: debt.remainingAmount,
           interestRate: debt.interestRate,
+          name: debt.name,
+          principalAmount: debt.principalAmount,
           quarterlyPayment: debt.quarterlyPayment,
-          termQuarters: debt.termQuarters,
+          remainingAmount: debt.remainingAmount,
           remainingQuarters: debt.remainingQuarters,
           startTurn: 0,
+          termQuarters: debt.termQuarters,
+          type: debt.type,
         }),
       )
     })

@@ -15,28 +15,34 @@ import type {
 import type { CountryEconomy, GlobalEvent } from '@/core/types/economy.types'
 
 export interface TurnState {
-  // meta
-  turn: number
-  year: number
-  gameStatus: GameStatus
-  isAborted: boolean
-  gameOverReason: GameOverReason | null
-
-  // snapshot
-  player: Player
-  countries: Record<string, CountryEconomy>
-  country: CountryEconomy
-  globalEvents: GlobalEvent[]
-
-  // market
-  marketEvents: MarketEvent[]
-  globalMarketValue: number
-
   // buffs
   buffs: TimedBuff[]
-  statModifiers: Partial<Stats> & { income?: number }
-  moneyDelta: number
+  // business (aggregated result of turn)
+  business: {
+    totalIncome: number
+    totalExpenses: number
+    totalTax: number
+  }
+  countries: Record<string, CountryEconomy>
+  country: CountryEconomy
+  // finance
+  financial: {
+    quarterlyReport: QuarterlyReport
+    netProfit: number
+    adjustedNetProfit: number
+  }
 
+  gameOverReason: GameOverReason | null
+  gameStatus: GameStatus
+  globalEvents: GlobalEvent[]
+  globalMarketValue: number
+
+  // history
+  historyEntry: HistoryEntry | null
+  // economy
+  inflationNotification: InflationNotification | null
+
+  isAborted: boolean
   // lifestyle
   lifestyle: {
     expenses: number
@@ -51,35 +57,29 @@ export interface TurnState {
     }
     modifiers: Partial<Stats>
   }
+  // market
+  marketEvents: MarketEvent[]
 
-  // business (aggregated result of turn)
-  business: {
-    totalIncome: number
-    totalExpenses: number
-    totalTax: number
-  }
+  moneyDelta: number
+
+  // system
+  notifications: Notification[]
+
+  // jobs / education / freelance
+  pendingApplications: JobApplication[]
+
+  pendingFreelanceApplications: FreelanceApplication[]
+
+  // snapshot
+  player: Player
+  protectedSkills: Set<string>
+  statModifiers: Partial<Stats> & { income?: number }
 
   // working stats (before commit)
   stats: Stats
 
-  // finance
-  financial: {
-    quarterlyReport: QuarterlyReport
-    netProfit: number
-    adjustedNetProfit: number
-  }
+  // meta
+  turn: number
 
-  // jobs / education / freelance
-  pendingApplications: JobApplication[]
-  pendingFreelanceApplications: FreelanceApplication[]
-  protectedSkills: Set<string>
-
-  // economy
-  inflationNotification: InflationNotification | null
-
-  // history
-  historyEntry: HistoryEntry | null
-
-  // system
-  notifications: Notification[]
+  year: number
 }

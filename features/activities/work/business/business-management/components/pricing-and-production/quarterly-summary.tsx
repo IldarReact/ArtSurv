@@ -2,27 +2,26 @@
 
 import React from 'react'
 
-import { Button } from '@/shared/ui/button'
-import { Business } from '@/core/types/business.types'
+import type { Business } from '@/core/types/business.types'
+import { Button } from '@/shared/components/button'
 
 interface QuarterlySummaryProps {
-  lastQuarterSummary?: Business['lastQuarterSummary']
   formatCurrency: (value: number) => string
+  lastQuarterSummary?: Business['lastQuarterSummary']
 }
 
-export function QuarterlySummary({ lastQuarterSummary, formatCurrency }: QuarterlySummaryProps) {
-  const sanitize = (val: number | undefined | null) =>
-    val === null || val === undefined || isNaN(val) ? 0 : val
+export function QuarterlySummary({ formatCurrency, lastQuarterSummary }: QuarterlySummaryProps) {
+  const sanitize = (val: number | undefined | null) => (val && Number.isFinite(val) ? val : 0)
 
   const summary = lastQuarterSummary
     ? {
-        sold: sanitize(lastQuarterSummary.sold),
-        priceUsed: sanitize(lastQuarterSummary.priceUsed),
-        revenue: sanitize(lastQuarterSummary.salesIncome),
-        taxes: sanitize(lastQuarterSummary.taxes),
         expenses: sanitize(lastQuarterSummary.expenses),
         expensesBreakdown: lastQuarterSummary.expensesBreakdown,
         netProfit: sanitize(lastQuarterSummary.netProfit),
+        priceUsed: sanitize(lastQuarterSummary.priceUsed),
+        revenue: sanitize(lastQuarterSummary.salesIncome),
+        sold: sanitize(lastQuarterSummary.sold),
+        taxes: sanitize(lastQuarterSummary.taxes),
       }
     : null
 
@@ -30,9 +29,9 @@ export function QuarterlySummary({ lastQuarterSummary, formatCurrency }: Quarter
     <div className="md:col-span-2 mt-4">
       <div className="flex items-center justify-between">
         <Button
-          variant="outline"
-          size="sm"
           className="border-white/20 text-white/60 hover:bg-white/10"
+          size="sm"
+          variant="outline"
         >
           Прошлый квартал
         </Button>

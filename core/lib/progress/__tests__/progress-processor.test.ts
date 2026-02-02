@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest'
 
-import { processProgress } from '../progress-processor'
-
 import type { Progressable } from '@/core/types/progress.types'
+
+import { processProgress } from '../progress-processor'
 
 describe('progress-processor', () => {
   it('should decrement remainingDuration for active items', () => {
     const items: Progressable[] = [
-      { id: '1', title: 'Test 1', totalDuration: 5, remainingDuration: 3 },
-      { id: '2', title: 'Test 2', totalDuration: 10, remainingDuration: 10 },
+      { id: '1', remainingDuration: 3, title: 'Test 1', totalDuration: 5 },
+      { id: '2', remainingDuration: 10, title: 'Test 2', totalDuration: 10 },
     ]
 
     const result = processProgress(items)
@@ -21,8 +21,8 @@ describe('progress-processor', () => {
 
   it('should move items to completed when remainingDuration reaches 0', () => {
     const items: Progressable[] = [
-      { id: '1', title: 'Test 1', totalDuration: 5, remainingDuration: 1 },
-      { id: '2', title: 'Test 2', totalDuration: 10, remainingDuration: 5 },
+      { id: '1', remainingDuration: 1, title: 'Test 1', totalDuration: 5 },
+      { id: '2', remainingDuration: 5, title: 'Test 2', totalDuration: 10 },
     ]
 
     const result = processProgress(items)
@@ -37,7 +37,7 @@ describe('progress-processor', () => {
 
   it('should handle items that are already completed', () => {
     const items: Progressable[] = [
-      { id: '1', title: 'Test 1', totalDuration: 5, remainingDuration: 0 },
+      { id: '1', remainingDuration: 0, title: 'Test 1', totalDuration: 5 },
     ]
 
     const result = processProgress(items)
@@ -53,7 +53,7 @@ describe('progress-processor', () => {
     }
 
     const items: ExtendedProgress[] = [
-      { id: '1', title: 'Test 1', totalDuration: 5, remainingDuration: 3, extra: 'foo' },
+      { extra: 'foo', id: '1', remainingDuration: 3, title: 'Test 1', totalDuration: 5 },
     ]
 
     const result = processProgress(items)

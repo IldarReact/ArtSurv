@@ -2,36 +2,47 @@ import type { ThresholdEffectsResult } from './types'
 
 export function checkSanityEffects(sanity: number): Partial<ThresholdEffectsResult> {
   const result: Partial<ThresholdEffectsResult> = {
-    canManageBusiness: true,
-    therapyCosts: 0,
-    events: [],
     businessEfficiency: 1.0,
+    canManageBusiness: true,
+    events: [],
+    therapyCosts: 0,
   }
 
-  if (sanity < 10) {
+  const THRESHOLD_CRITICAL_LOW = 10
+  const THRESHOLD_CRITICAL = 20
+  const THRESHOLD_WARNING = 30
+
+  const THERAPY_COSTS_CRITICAL_LOW = 1000
+  const THERAPY_COSTS_CRITICAL = 500
+
+  const EFFICIENCY_CRITICAL_LOW = 0.3
+  const EFFICIENCY_CRITICAL = 0.6
+  const EFFICIENCY_WARNING = 0.8
+
+  if (sanity < THRESHOLD_CRITICAL_LOW) {
     result.canManageBusiness = false
-    result.therapyCosts = 1000
-    result.events!.push({
-      type: 'sanity',
-      severity: 'critical',
+    result.therapyCosts = THERAPY_COSTS_CRITICAL_LOW
+    result.events?.push({
       message: 'ПАНИКА! Вы теряете контроль. Управление бизнесом невозможно.',
-    })
-    result.businessEfficiency = 0.3
-  } else if (sanity < 20) {
-    result.therapyCosts = 500
-    result.events!.push({
-      type: 'sanity',
       severity: 'critical',
-      message: 'Вы на грани срыва. Высокий риск ошибок и конфликтов!',
-    })
-    result.businessEfficiency = 0.6
-  } else if (sanity < 30) {
-    result.events!.push({
       type: 'sanity',
-      severity: 'warning',
-      message: 'Повышенная тревожность. Рекомендуется отдых или помощь психолога.',
     })
-    result.businessEfficiency = 0.8
+    result.businessEfficiency = EFFICIENCY_CRITICAL_LOW
+  } else if (sanity < THRESHOLD_CRITICAL) {
+    result.therapyCosts = THERAPY_COSTS_CRITICAL
+    result.events?.push({
+      message: 'Вы на грани срыва. Высокий риск ошибок и конфликтов!',
+      severity: 'critical',
+      type: 'sanity',
+    })
+    result.businessEfficiency = EFFICIENCY_CRITICAL
+  } else if (sanity < THRESHOLD_WARNING) {
+    result.events?.push({
+      message: 'Повышенная тревожность. Рекомендуется отдых или помощь психолога.',
+      severity: 'warning',
+      type: 'sanity',
+    })
+    result.businessEfficiency = EFFICIENCY_WARNING
   }
 
   return result

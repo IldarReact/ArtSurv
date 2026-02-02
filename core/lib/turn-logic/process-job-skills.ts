@@ -6,14 +6,15 @@
  * ✅ Single responsibility: handle skill progression from work
  */
 
+import type { Skill, SkillLevel, Job, Notification } from '@/core/types'
+import { LEVEL_4 } from '@/core/types/skill.types'
+
 import { formatGameDate } from '../quarter'
 
-import type { Skill, SkillLevel, Job, Notification } from '@/core/types'
-
 export interface JobSkillProgressionResult {
-  skillUpdates: Skill[]
   notifications: Notification[]
   protectedSkills: Set<string>
+  skillUpdates: Skill[]
 }
 
 /**
@@ -49,22 +50,24 @@ export function processJobSkillProgression(
           const skill = { ...updatedSkills[skillIdx] }
 
           // Only progress below level 4
-          if (skill.level < 4) {
-            skill.progress += 15
+          const PROGRESS_INCREMENT = 15
+          const PROGRESS_MAX = 100
+          if (skill.level < LEVEL_4) {
+            skill.progress += PROGRESS_INCREMENT
             skill.lastPracticedTurn = currentTurn
             skill.isBeingUsedAtWork = true
 
             // Level up on 100+ progress
-            if (skill.progress >= 100) {
+            if (skill.progress >= PROGRESS_MAX) {
               skill.level = (skill.level + 1) as SkillLevel
               skill.progress = 0
               notifications.push({
-                id: `work_lvl_${Date.now()}_${Math.random()}`,
-                type: 'success',
-                title: 'Профессиональный рост',
-                message: `Благодаря работе ваш навык ${skill.name} повысился до уровня ${skill.level}!`,
                 date: formatGameDate(currentYear, currentTurn),
+                id: `work_lvl_${String(Date.now())}_${String(Math.random())}`,
                 isRead: false,
+                message: `Благодаря работе ваш навык ${skill.name} повысился до уровня ${String(skill.level)}!`,
+                title: 'Профессиональный рост',
+                type: 'success',
               })
             }
 
@@ -76,8 +79,8 @@ export function processJobSkillProgression(
   })
 
   return {
-    skillUpdates: updatedSkills,
     notifications,
     protectedSkills,
+    skillUpdates: updatedSkills,
   }
 }

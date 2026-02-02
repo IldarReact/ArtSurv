@@ -7,10 +7,12 @@ import { SKILL_STAR_DIVISOR } from '@/features/activities/work/shared-constants'
  */
 export function calculateStarsFromSkills(skills?: EmployeeSkills): number {
   if (!skills || Object.keys(skills).length === 0) return 1
-  
-  const values = Object.values(skills)
+
+  const values = Object.values(skills).filter((v): v is number => typeof v === 'number')
+  if (values.length === 0) return 1
+
   const maxSkill = Math.max(...values)
-  
+
   // Используем тот же делитель, что и в остальных частях системы
   return Math.max(1, Math.min(5, Math.round(maxSkill / SKILL_STAR_DIVISOR)))
 }
@@ -22,10 +24,10 @@ export function formatExperience(months?: number): string {
   if (months === undefined || months === 0) return 'Без опыта'
   const years = Math.floor(months / 12)
   const remainingMonths = months % 12
-  
+
   let result = ''
-  if (years > 0) result += `${years}г `
-  if (remainingMonths > 0 || years === 0) result += `${remainingMonths}м`
-  
+  if (years > 0) result += `${String(years)}г `
+  if (remainingMonths > 0 || years === 0) result += `${String(remainingMonths)}м`
+
   return result.trim()
 }

@@ -10,55 +10,48 @@ import type { Business, BusinessType } from '@/core/types/business.types'
  */
 export function shouldCreateNetwork(
   existingBusinesses: Business[],
-  newBusinessType: BusinessType
+  newBusinessType: BusinessType,
 ): boolean {
   const sameTypeBusinesses = existingBusinesses.filter(
-    b => b.type === newBusinessType && b.state !== 'frozen'
+    (b) => b.type === newBusinessType && b.state !== 'frozen',
   )
 
   // Если это будет второй бизнес этого типа, создаем сеть
-  return sameTypeBusinesses.length === 1
+  return sameTypeBusinesses.length === SINGLE_BUSINESS_COUNT
 }
+
+const BASE_MARKETING_BONUS = 5
+const BASE_REPUTATION_BONUS = 3
+const EXTRA_BRANCH_BONUS = 2
+const MIN_NETWORK_BRANCHES = 2
+const SINGLE_BUSINESS_COUNT = 1
 
 /**
  * Создает ID сети на основе типа бизнеса и временной метки
  */
 export function generateNetworkId(businessType: BusinessType): string {
-  return `network_${businessType}_${Date.now()}`
+  return `network_${businessType}_${String(Date.now())}`
 }
 
 /**
  * Находит главный филиал в сети
  */
-export function findMainBranch(
-  businesses: Business[],
-  networkId: string
-): Business | null {
-  return businesses.find(
-    b => b.networkId === networkId && b.isMainBranch
-  ) || null
+export function findMainBranch(businesses: Business[], networkId: string): Business | null {
+  return businesses.find((b) => b.networkId === networkId && b.isMainBranch) ?? null
 }
 
 /**
  * Находит все филиалы в сети (включая главный)
  */
-export function findNetworkBranches(
-  businesses: Business[],
-  networkId: string
-): Business[] {
-  return businesses.filter(b => b.networkId === networkId)
+export function findNetworkBranches(businesses: Business[], networkId: string): Business[] {
+  return businesses.filter((b) => b.networkId === networkId)
 }
 
 /**
  * Находит все филиалы в сети (исключая главный)
  */
-export function findSubordinateBranches(
-  businesses: Business[],
-  networkId: string
-): Business[] {
-  return businesses.filter(
-    b => b.networkId === networkId && !b.isMainBranch
-  )
+export function findSubordinateBranches(businesses: Business[], networkId: string): Business[] {
+  return businesses.filter((b) => b.networkId === networkId && !b.isMainBranch)
 }
 
 /**
@@ -67,13 +60,13 @@ export function findSubordinateBranches(
 export function syncPriceToNetwork(
   businesses: Business[],
   networkId: string,
-  newPrice: number
+  newPrice: number,
 ): Business[] {
-  return businesses.map(business => {
+  return businesses.map((business) => {
     if (business.networkId === networkId) {
       return {
         ...business,
-        price: newPrice
+        price: newPrice,
       }
     }
     return business
@@ -86,32 +79,32 @@ export function syncPriceToNetwork(
  */
 export function createNetworkForBusinesses(
   existingBusiness: Business,
-  newBusiness: Business
+  newBusiness: Business,
 ): { main: Business; branch: Business; networkId: string } {
   const networkId = generateNetworkId(existingBusiness.type)
 
   const mainBranch: Business = {
     ...existingBusiness,
-    networkId,
     isMainBranch: true,
     networkBonus: {
-      marketingBonus: 5,  // +5% к маркетингу
-      reputationBonus: 3  // +3% к репутации
-    }
+      marketingBonus: BASE_MARKETING_BONUS, // +5% к маркетингу
+      reputationBonus: BASE_REPUTATION_BONUS, // +3% к репутации
+    },
+    networkId,
   }
 
   const subordinateBranch: Business = {
     ...newBusiness,
-    networkId,
     isMainBranch: false,
-    price: existingBusiness.price,  // Наследуем цену от главного
     networkBonus: {
-      marketingBonus: 5,
-      reputationBonus: 3
-    }
+      marketingBonus: BASE_MARKETING_BONUS,
+      reputationBonus: BASE_REPUTATION_BONUS,
+    },
+    networkId,
+    price: existingBusiness.price, // Наследуем цену от главного
   }
 
-  return { main: mainBranch, branch: subordinateBranch, networkId }
+  return { branch: subordinateBranch, main: mainBranch, networkId }
 }
 
 /**
@@ -120,17 +113,17 @@ export function createNetworkForBusinesses(
 export function addBranchToNetwork(
   newBusiness: Business,
   networkId: string,
-  mainBranchPrice: number
+  mainBranchPrice: number,
 ): Business {
   return {
     ...newBusiness,
-    networkId,
     isMainBranch: false,
-    price: mainBranchPrice,  // Наследуем цену от главного
     networkBonus: {
-      marketingBonus: 5,
-      reputationBonus: 3
-    }
+      marketingBonus: BASE_MARKETING_BONUS,
+      reputationBonus: BASE_REPUTATION_BONUS,
+    },
+    networkId,
+    price: mainBranchPrice, // Наследуем цену от главного
   }
 }
 
@@ -156,34 +149,31 @@ export function calculateNetworkBonuses(branchCount: number): {
   reputationBonus: number
 } {
   // Базовые бонусы
-  const baseMarketing = 5
-  const baseReputation = 3
+  const baseMarketing = BASE_MARKETING_BONUS
+  const baseReputation = BASE_REPUTATION_BONUS
 
   // Дополнительные бонусы за каждый филиал сверх 2
-  const extraBranches = Math.max(0, branchCount - 2)
-  const bonusPerBranch = 2
+  const extraBranches = Math.max(0, branchCount - MIN_NETWORK_BRANCHES)
+  const bonusPerBranch = EXTRA_BRANCH_BONUS
 
   return {
-    marketingBonus: baseMarketing + (extraBranches * bonusPerBranch),
-    reputationBonus: baseReputation + (extraBranches * bonusPerBranch)
+    marketingBonus: baseMarketing + extraBranches * bonusPerBranch,
+    reputationBonus: baseReputation + extraBranches * bonusPerBranch,
   }
 }
 
 /**
  * Обновляет бонусы сети для всех филиалов
  */
-export function updateNetworkBonuses(
-  businesses: Business[],
-  networkId: string
-): Business[] {
+export function updateNetworkBonuses(businesses: Business[], networkId: string): Business[] {
   const branches = findNetworkBranches(businesses, networkId)
   const bonuses = calculateNetworkBonuses(branches.length)
 
-  return businesses.map(business => {
+  return businesses.map((business) => {
     if (business.networkId === networkId) {
       return {
         ...business,
-        networkBonus: bonuses
+        networkBonus: bonuses,
       }
     }
     return business
@@ -195,7 +185,7 @@ export function updateNetworkBonuses(
  */
 export function getNetworkInfo(
   businesses: Business[],
-  networkId: string
+  networkId: string,
 ): {
   branchCount: number
   mainBranch: Business | null
@@ -210,14 +200,15 @@ export function getNetworkInfo(
 
   const totalIncome = branches.reduce((sum, b) => sum + b.quarterlyIncome, 0)
   const totalExpenses = branches.reduce((sum, b) => sum + b.quarterlyExpenses, 0)
+
   const bonuses = calculateNetworkBonuses(branches.length)
 
   return {
+    bonuses,
     branchCount: branches.length,
     mainBranch,
     subordinateBranches,
-    totalIncome,
     totalExpenses,
-    bonuses
+    totalIncome,
   }
 }

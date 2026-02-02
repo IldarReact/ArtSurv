@@ -1,11 +1,9 @@
 import type { GameStore } from '../../slices/types'
-
 import { commitTurn } from './commit-turn'
 import { initTurnState } from './init-turn-state'
 import type { TurnContext } from './turn-context'
 import type { TurnState } from './turn-state'
-import { STEPS, TurnStep } from './turn-step'
-
+import { STEPS } from './turn-step'
 
 type GetState = () => GameStore
 type SetState = (partial: Partial<GameStore> | ((s: GameStore) => Partial<GameStore>)) => void
@@ -19,7 +17,7 @@ export function processTurn(get: GetState, set: SetState): void {
   const ctx: TurnContext = { prev, turn: prev.turn, year: prev.year }
   const state: TurnState = initTurnState(ctx)
 
-  for (const step of STEPS as TurnStep[]) {
+  for (const step of STEPS) {
     if (state.isAborted) break
     step(ctx, state)
   }

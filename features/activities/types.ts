@@ -9,13 +9,13 @@ export interface ActivityStat {
 }
 
 export interface ActivityCard {
-  id: string
-  title: string
-  subtitle: string
+  actions: ActivityAction[]
   description: string
+  id: string
   image: string
   stats: ActivityStat[]
-  actions: ActivityAction[]
+  subtitle: string
+  title: string
 }
 
 export interface ActivityGridProps {

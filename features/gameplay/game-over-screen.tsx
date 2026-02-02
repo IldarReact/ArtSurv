@@ -6,16 +6,14 @@ import { getGameOverMessage } from '@/core/lib/defeat-conditions'
 import { getQuarter } from '@/core/lib/quarter'
 import { useGameStore } from '@/core/model/store'
 import type { GameOverReason } from '@/core/types/game.types'
-import { Button } from '@/shared/ui/button'
-
-
+import { Button } from '@/shared/components/button'
 
 export function GameOverScreen() {
-  const { endReason, turn, year, player, resetGame } = useGameStore()
+  const { endReason, player, resetGame, turn, year } = useGameStore()
 
   if (!endReason) return null
 
-  const { title, message } = getGameOverMessage(endReason as GameOverReason)
+  const { message, title } = getGameOverMessage(endReason as GameOverReason)
 
   // Иконка в зависимости от причины
   const getIcon = () => {
@@ -34,7 +32,7 @@ export function GameOverScreen() {
   }
 
   // Цвет фона в зависимости от причины
-  const getBgGradient = () => {
+  const getBgGradient = (): string => {
     switch (endReason) {
       case 'DEATH':
         return 'from-red-950/50 to-black'
@@ -46,6 +44,8 @@ export function GameOverScreen() {
         return 'from-blue-950/50 to-black'
       case 'BANKRUPTCY':
         return 'from-yellow-950/50 to-black'
+      default:
+        return 'from-zinc-950/50 to-black'
     }
   }
 
@@ -54,22 +54,18 @@ export function GameOverScreen() {
   const currentQuarter = getQuarter(quartersPlayed)
 
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-linear-to-b ${getBgGradient()} backdrop-blur-sm`}>
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-linear-to-b ${getBgGradient()} backdrop-blur-sm`}
+    >
       <div className="max-w-2xl w-full mx-4 bg-black/60 backdrop-blur-md border border-white/10 rounded-3xl p-8 shadow-2xl">
         {/* Иконка */}
-        <div className="flex justify-center mb-6">
-          {getIcon()}
-        </div>
+        <div className="flex justify-center mb-6">{getIcon()}</div>
 
         {/* Заголовок */}
-        <h1 className="text-4xl font-bold text-center mb-4 text-white">
-          {title}
-        </h1>
+        <h1 className="text-4xl font-bold text-center mb-4 text-white">{title}</h1>
 
         {/* Описание */}
-        <p className="text-lg text-center text-white/80 mb-8">
-          {message}
-        </p>
+        <p className="text-lg text-center text-white/80 mb-8">{message}</p>
 
         {/* Статистика */}
         <div className="bg-white/5 rounded-2xl p-6 mb-8 border border-white/10">
@@ -79,8 +75,11 @@ export function GameOverScreen() {
             <div className="bg-white/5 rounded-xl p-4">
               <div className="text-sm text-white/60 mb-1">Прожито времени</div>
               <div className="text-2xl font-bold text-white">
-                {yearsPlayed > 0 && `${yearsPlayed} ${yearsPlayed === 1 ? 'год' : yearsPlayed < 5 ? 'года' : 'лет'}`}
-                {currentQuarter > 0 && ` ${currentQuarter} кв.`}
+                {yearsPlayed > 0 &&
+                  `${String(yearsPlayed)} ${
+                    yearsPlayed === 1 ? 'год' : yearsPlayed < 5 ? 'года' : 'лет'
+                  }`}
+                {currentQuarter > 0 && ` ${String(currentQuarter)} кв.`}
               </div>
             </div>
 
@@ -100,16 +99,14 @@ export function GameOverScreen() {
 
                 <div className="bg-white/5 rounded-xl p-4">
                   <div className="text-sm text-white/60 mb-1">Бизнесов</div>
-                  <div className="text-2xl font-bold text-white">
-                    {player.businesses.length}
-                  </div>
+                  <div className="text-2xl font-bold text-white">{player.businesses.length}</div>
                 </div>
 
                 {player.personal.familyMembers.length > 0 && (
                   <div className="bg-white/5 rounded-xl p-4 col-span-2">
                     <div className="text-sm text-white/60 mb-1">Семья</div>
                     <div className="text-lg text-white">
-                      {player.personal.familyMembers.map(m => m.name).join(', ')}
+                      {player.personal.familyMembers.map((m) => m.name).join(', ')}
                     </div>
                   </div>
                 )}
@@ -121,8 +118,8 @@ export function GameOverScreen() {
         {/* Кнопки */}
         <div className="flex gap-4">
           <Button
-            onClick={resetGame}
             className="flex-1 bg-white/10 hover:bg-white/20 text-white border border-white/20 py-6 text-lg rounded-xl transition-all duration-300"
+            onClick={resetGame}
           >
             Начать новую жизнь
           </Button>

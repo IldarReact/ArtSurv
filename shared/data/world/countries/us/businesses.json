@@ -128,7 +128,7 @@
         "description": "Бариста и приготовление напитков"
       },
       {
-        "role": "worker",
+        "role": "technician",
         "priority": "recommended",
         "description": "Помощник бариста"
       }

@@ -1,44 +1,45 @@
 import { DollarSign, Clock, Zap, Lightbulb } from 'lucide-react'
 import React from 'react'
 
-import { Badge } from '@/shared/ui/badge'
-import { Button } from '@/shared/ui/button'
+import { Badge } from '@/shared/components/badge'
+import { Button } from '@/shared/components/button'
 
 export interface CourseCardProps {
-  title: string
-  description: string
   cost: number
+  description: string
   duration: string
   energyCost: number
-  intelligenceBonus: number
-  skillBonus?: string
   image: string
-  onEnroll?: () => void
   inflatedCost?: number
+  intelligenceBonus: number
+  onEnroll?: () => void
+  skillBonus?: string
+  title: string
 }
 
 export function CourseCard({
-  title,
-  description,
   cost,
+  description,
   duration,
   energyCost,
-  intelligenceBonus,
-  skillBonus,
   image,
-  onEnroll,
   inflatedCost,
+  intelligenceBonus,
+  onEnroll,
+  skillBonus,
+  title,
 }: CourseCardProps) {
   const displayCost = inflatedCost ?? cost
 
   return (
     <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden flex flex-col md:flex-row mb-4 hover:border-white/20 transition-colors">
       <div className="w-full md:w-1/3 h-48 md:h-auto relative">
-        <img src={image} alt={title} className="w-full h-full object-cover" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img alt={title} className="w-full h-full object-cover" src={image} />
         <div className="absolute top-2 left-2">
           <Badge
-            variant="secondary"
             className="bg-black/60 backdrop-blur-md text-white border-white/10"
+            variant="secondary"
           >
             Курс
           </Badge>
@@ -67,7 +68,7 @@ export function CourseCard({
             <div className="bg-white/5 rounded-lg p-2">
               <span className="text-xs text-white/50 block mb-1">Энергия</span>
               <span className="text-amber-400 font-semibold text-sm flex items-center gap-1">
-                < Zap className="w-3 h-3" /> -{energyCost}
+                <Zap className="w-3 h-3" /> -{energyCost}
               </span>
             </div>
             <div className="bg-white/5 rounded-lg p-2">
@@ -86,8 +87,8 @@ export function CourseCard({
         </div>
 
         <Button
-          onClick={onEnroll}
           className="w-full bg-white text-black hover:bg-white/90 font-bold"
+          onClick={onEnroll}
         >
           Записаться
         </Button>

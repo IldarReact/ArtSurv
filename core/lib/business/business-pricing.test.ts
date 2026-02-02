@@ -1,79 +1,80 @@
 import { describe, it, expect } from 'vitest'
 
-import { calculateBusinessFinancials } from './business-utils'
-
 import type { Business, Employee } from '@/core/types'
+
+import { calculateBusinessFinancials } from './business-utils'
 
 describe('Business Pricing & Market Tests', () => {
   const createBaseBusiness = (overrides?: Partial<Business>): Business => ({
-    id: 'test-biz',
-    name: 'Test Business',
-    type: 'retail',
-    description: 'Test',
-    state: 'active',
-    price: 5,
-    quantity: 100,
-    isServiceBased: false,
-    networkId: undefined,
-    isMainBranch: true,
-    partners: [],
-    proposals: [],
-    lastQuarterlyUpdate: 0,
-    createdAt: 0,
-    monthlyIncome: 0,
-    monthlyExpenses: 0,
     autoPurchaseAmount: 0,
-    initialCost: 10000,
-    quarterlyIncome: 0,
-    quarterlyExpenses: 0,
-    quarterlyTax: 0,
-    currentValue: 10000,
-    employees: [],
-    maxEmployees: 5,
-    minEmployees: 1,
-    reputation: 50,
-    efficiency: 50,
-    taxRate: 20,
-    hasInsurance: false,
-    insuranceCost: 0,
+    createdAt: 0,
     creationCost: { energy: 0, money: 0 },
-    playerRoles: { managerialRoles: [], operationalRole: null },
+    currentValue: 10000,
+    description: 'Test',
+    efficiency: 50,
     employeeRoles: [],
+    employees: [],
+    eventsHistory: [],
+    foundedTurn: 1,
+    hasInsurance: false,
+    id: 'test-biz',
+    initialCost: 10000,
+    insuranceCost: 0,
     inventory: {
+      autoPurchaseAmount: 0,
       currentStock: 1000,
       maxStock: 1000,
       pricePerUnit: 50,
       purchaseCost: 20,
-      autoPurchaseAmount: 0,
     },
+    isMainBranch: true,
+    isServiceBased: false,
+    lastQuarterlyUpdate: 0,
+    maxEmployees: 5,
+    minEmployees: 1,
+    monthlyExpenses: 0,
+    monthlyIncome: 0,
+    name: 'Test Business',
+    networkId: undefined,
     openingProgress: {
       id: 'test-opening',
-      title: 'Opening Test Business',
-      totalDuration: 0,
-      remainingDuration: 0,
-      totalQuarters: 0,
-      quartersLeft: 0,
       investedAmount: 0,
+      quartersLeft: 0,
+      remainingDuration: 0,
+      title: 'Opening Test Business',
       totalCost: 0,
+      totalDuration: 0,
+      totalQuarters: 0,
       upfrontCost: 0,
     },
-    eventsHistory: [],
-    foundedTurn: 1,
+    partners: [],
+    playerRoles: { managerialRoles: [], operationalRole: null },
+    price: 5,
+    proposals: [],
+    quantity: 100,
+    quarterlyExpenses: 0,
+    quarterlyIncome: 0,
+    quarterlyTax: 0,
+    reputation: 50,
+    state: 'active',
+    taxRate: 20,
+    type: 'retail',
+    valuation: 10000,
     ...overrides,
   })
 
-  const createMockEmployee = (role: Employee['role'], stars: number = 3): Employee => ({
+  const createMockEmployee = (role: Employee['role'], stars: Employee['stars'] = 3): Employee => ({
+    experience: 4,
+    humanTraits: [],
     id: `emp-${role}`,
     name: 'Test Employee',
+    productivity: 100,
     role,
-    stars: stars as any,
+    salary: 1000,
     skills: {
       efficiency: 50,
     },
-    salary: 1000,
-    productivity: 100,
-    experience: 4,
-    humanTraits: [],
+    stars,
   })
 
   describe('Price Impact on Demand', () => {
@@ -81,27 +82,27 @@ describe('Business Pricing & Market Tests', () => {
       const worker = createMockEmployee('worker')
 
       const lowPriceBusiness = createBaseBusiness({
-        price: 3,
         employees: [worker],
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 1000,
           maxStock: 1000,
           pricePerUnit: 30, // Low price
           purchaseCost: 20,
-          autoPurchaseAmount: 0,
         },
+        price: 3,
       })
 
       const highPriceBusiness = createBaseBusiness({
-        price: 8,
         employees: [worker],
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 1000,
           maxStock: 1000,
           pricePerUnit: 80, // High price
           purchaseCost: 20,
-          autoPurchaseAmount: 0,
         },
+        price: 8,
       })
 
       const lowPriceResult = calculateBusinessFinancials(lowPriceBusiness, true, undefined, 1.0)
@@ -114,8 +115,8 @@ describe('Business Pricing & Market Tests', () => {
     it('should handle minimum price (1)', () => {
       const worker = createMockEmployee('worker')
       const business = createBaseBusiness({
-        price: 1,
         employees: [worker],
+        price: 1,
       })
 
       const result = calculateBusinessFinancials(business, true, undefined, 1.0)
@@ -125,8 +126,8 @@ describe('Business Pricing & Market Tests', () => {
     it('should handle maximum price (10)', () => {
       const worker = createMockEmployee('worker')
       const business = createBaseBusiness({
-        price: 10,
         employees: [worker],
+        price: 10,
       })
 
       const result = calculateBusinessFinancials(business, true, undefined, 1.0)
@@ -179,15 +180,15 @@ describe('Business Pricing & Market Tests', () => {
     it('should use quantity as target stock level', () => {
       const worker = createMockEmployee('worker')
       const business = createBaseBusiness({
-        quantity: 500, // Target 500 units
         employees: [worker],
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 1000,
           maxStock: 1000,
           pricePerUnit: 50,
           purchaseCost: 20,
-          autoPurchaseAmount: 0,
         },
+        quantity: 500, // Target 500 units
       })
 
       const result = calculateBusinessFinancials(business, true, undefined, 1.0)
@@ -199,9 +200,10 @@ describe('Business Pricing & Market Tests', () => {
     it('should not affect service-based businesses', () => {
       const worker = createMockEmployee('worker')
       const serviceBusiness = createBaseBusiness({
-        isServiceBased: true,
-        quantity: 0,
         employees: [worker],
+        isServiceBased: true,
+        playerRoles: { managerialRoles: ['manager'], operationalRole: null },
+        quantity: 0,
       })
 
       const result = calculateBusinessFinancials(serviceBusiness, true, undefined, 1.0)
@@ -215,8 +217,8 @@ describe('Business Pricing & Market Tests', () => {
     it('should apply taxes to gross profit', () => {
       const worker = createMockEmployee('worker')
       const business = createBaseBusiness({
-        taxRate: 0.2, // 20% tax
         employees: [worker],
+        taxRate: 0.2, // 20% tax
       })
 
       const result = calculateBusinessFinancials(business, true, undefined, 1.0)
@@ -257,14 +259,14 @@ describe('Business Pricing & Market Tests', () => {
 
       const baseBusiness = createBaseBusiness({
         employees: [worker],
-        taxRate: 0.2,
         playerRoles: { managerialRoles: [], operationalRole: null },
+        taxRate: 0.2,
       })
 
       const playerAccountantBusiness = createBaseBusiness({
         employees: [worker],
-        taxRate: 0.2,
         playerRoles: { managerialRoles: ['accountant'], operationalRole: null },
+        taxRate: 0.2,
       })
 
       const control = calculateBusinessFinancials(baseBusiness, true, [], 1.0)
@@ -274,10 +276,10 @@ describe('Business Pricing & Market Tests', () => {
         [
           {
             id: 'skill_accounting',
-            name: 'Бухгалтерия',
-            level: 4,
-            progress: 0,
             lastPracticedTurn: 0,
+            level: 4,
+            name: 'Бухгалтерия',
+            progress: 0,
           },
         ],
         1.0,
@@ -294,9 +296,9 @@ describe('Business Pricing & Market Tests', () => {
     it('should handle price + market + quantity together', () => {
       const worker = createMockEmployee('worker')
       const business = createBaseBusiness({
+        employees: [worker],
         price: 7,
         quantity: 300,
-        employees: [worker],
       })
 
       const result = calculateBusinessFinancials(business, true, undefined, 1.2)
@@ -312,11 +314,11 @@ describe('Business Pricing & Market Tests', () => {
       const business = createBaseBusiness({
         employees: [worker],
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 500,
           maxStock: 1000,
           pricePerUnit: 50,
           purchaseCost: 20,
-          autoPurchaseAmount: 0,
         },
       })
 
@@ -333,25 +335,25 @@ describe('Business Pricing & Market Tests', () => {
       const worker = createMockEmployee('worker')
       const lowMarginBusiness = createBaseBusiness({
         employees: [worker],
-        price: 2, // Low price slider
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 1000,
           maxStock: 1000,
           pricePerUnit: 26,
           purchaseCost: 20,
-          autoPurchaseAmount: 0,
         },
+        price: 2, // Low price slider
       })
       const highMarginBusiness = createBaseBusiness({
         employees: [worker],
-        price: 8, // High price slider
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 1000,
           maxStock: 1000,
           pricePerUnit: 80,
           purchaseCost: 20,
-          autoPurchaseAmount: 0,
         },
+        price: 8, // High price slider
       })
 
       const crisisValue = 0.7
@@ -374,14 +376,14 @@ describe('Business Pricing & Market Tests', () => {
       const worker = createMockEmployee('worker')
       const lowMarginBusiness = createBaseBusiness({
         employees: [worker],
-        price: 1, // Minimum price slider
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 1000,
           maxStock: 1000,
           pricePerUnit: 26,
           purchaseCost: 20,
-          autoPurchaseAmount: 0,
         },
+        price: 1, // Minimum price slider
       })
       const normal = calculateBusinessFinancials(lowMarginBusiness, true, undefined, 1.0)
       const crisis = calculateBusinessFinancials(lowMarginBusiness, true, undefined, 0.7)
@@ -392,11 +394,11 @@ describe('Business Pricing & Market Tests', () => {
       const highMarginBusiness = createBaseBusiness({
         employees: [worker],
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 1000,
           maxStock: 1000,
           pricePerUnit: 80,
           purchaseCost: 20,
-          autoPurchaseAmount: 0,
         },
       })
       const normal = calculateBusinessFinancials(highMarginBusiness, true, undefined, 1.0)
@@ -412,21 +414,21 @@ describe('Business Pricing & Market Tests', () => {
       const noWorkersBiz = createBaseBusiness({
         employees: [],
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 1000,
           maxStock: 1000,
           pricePerUnit: 50,
           purchaseCost: 20,
-          autoPurchaseAmount: 0,
         },
       })
       const twoWorkersBiz = createBaseBusiness({
         employees: [worker, { ...worker, id: 'emp-worker-2' }],
         inventory: {
+          autoPurchaseAmount: 0,
           currentStock: 1000,
           maxStock: 1000,
           pricePerUnit: 50,
           purchaseCost: 20,
-          autoPurchaseAmount: 0,
         },
       })
 

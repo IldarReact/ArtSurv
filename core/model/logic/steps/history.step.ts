@@ -1,16 +1,19 @@
-import type { TurnStep } from '../turn/turn-step'
-
 import type { HistoryEntry } from '@/core/types'
 
+import type { TurnStep } from './step.types'
+
 export const historyStep: TurnStep = (ctx, state) => {
-  const totalAssetValue = state.player.assets.reduce((acc, a) => acc + a.currentValue, 0)
+  let totalAssetValue = 0
+  for (const a of state.player.assets) {
+    totalAssetValue += a.currentValue
+  }
 
   const entry: HistoryEntry = {
-    turn: ctx.turn,
-    year: ctx.year,
-    netWorth: state.stats.money + totalAssetValue,
     happiness: state.stats.happiness,
     health: state.stats.health,
+    netWorth: state.stats.money + totalAssetValue,
+    turn: ctx.turn,
+    year: ctx.year,
   }
 
   state.historyEntry = entry

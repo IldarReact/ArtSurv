@@ -5,7 +5,7 @@ import React from 'react'
 
 import { canMakeDirectChanges, requiresApproval } from '@/core/lib/business/partnership-permissions'
 import type { Business, Player } from '@/core/types'
-import { Badge } from '@/shared/ui/badge'
+import { Badge } from '@/shared/components/badge'
 
 interface PartnershipManagementProps {
   business: Business
@@ -64,8 +64,8 @@ export function PartnershipManagement({
         <p className="text-sm font-semibold text-white/70 uppercase tracking-wider">Владельцы:</p>
         {business.partners.map((partner) => (
           <div
-            key={partner.id}
             className="flex items-center justify-between p-3 bg-white/5 rounded-lg"
+            key={partner.id}
           >
             <div className="flex items-center gap-3">
               <div
@@ -100,17 +100,17 @@ export function PartnershipManagement({
               .slice(-3)
               .reverse()
               .map((proposal) => (
-                <div key={proposal.id} className="p-3 bg-white/5 rounded-lg border border-white/5">
+                <div className="p-3 bg-white/5 rounded-lg border border-white/5" key={proposal.id}>
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <p className="text-sm font-medium text-white">
                         {proposal.changeType === 'price' &&
-                          `Изменение цены на ${proposal.data.newPrice}`}
+                          `Изменение цены на ${String(proposal.data.newPrice)}`}
                         {proposal.changeType === 'quantity' &&
-                          `Изменение производства на ${proposal.data.newQuantity}`}
+                          `Изменение производства на ${String(proposal.data.newQuantity)}`}
                         {proposal.changeType === 'branch' && 'Открытие филиала'}
                         {proposal.changeType === 'dividend' &&
-                          `Вывод дивидендов $${proposal.data.amount}`}
+                          `Вывод дивидендов $${String(proposal.data.amount)}`}
                       </p>
                       <p className="text-xs text-white/40">
                         Квартал {new Date(proposal.createdAt).toLocaleDateString()}
@@ -138,11 +138,11 @@ export function PartnershipManagement({
                         if (!partner) return null
                         return (
                           <div
-                            key={partnerId}
                             className={`px-2 py-1 rounded text-xs ${
                               vote ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
                             }`}
-                            title={`${partner.name}: ${vote ? 'ЗА' : 'ПРОТИВ'} (${partner.share}%)`}
+                            key={partnerId}
+                            title={`${partner.name}: ${vote ? 'ЗА' : 'ПРОТИВ'} (${String(partner.share)}%)`}
                           >
                             {partner.name.split(' ')[0]}: {vote ? '👍' : '👎'}
                           </div>

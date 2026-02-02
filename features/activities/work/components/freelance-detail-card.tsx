@@ -3,62 +3,64 @@
 import { Star } from 'lucide-react'
 import { useState } from 'react'
 
-import { EmployeeCard } from '../../../../shared/components/business/employee-card'
-
-import { Button } from '@/shared/ui/button'
+import { Button } from '@/shared/components/button'
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/shared/ui/dialog'
+} from '@/shared/components/dialog'
+
+import { EmployeeCard } from '../../../../shared/components/business/employee-card'
 
 interface FreelanceDetailCardProps {
-  title: string
   category: string
   description: string
-  payment: number
-  energyCost: number
   duration: number
-  requirements: Array<{ skill: string; level: number }>
+  energyCost: number
   image: string
   onApply?: () => void
+  payment: number
+  requirements: { skill: string; level: number }[]
+  title: string
 }
 
 export function FreelanceDetailCard({
-  title,
   category,
   description,
-  payment,
-  energyCost,
   duration,
-  requirements,
+  energyCost,
   image,
   onApply,
+  payment,
+  requirements,
+  title,
 }: FreelanceDetailCardProps) {
   const [showDetails, setShowDetails] = useState(false)
 
   return (
     <>
       <EmployeeCard
+        actionLabel="Взять заказ"
+        avatar={image}
+        cost={{ energy: -energyCost }}
         id={`freelance-${title}`}
         name={title}
+        onAction={onApply}
+        onSecondaryAction={() => {
+          setShowDetails(true)
+        }}
+        requirements={requirements}
         role="worker"
         roleLabel={category}
         salary={payment}
         salaryLabel=""
-        stars={Math.max(1, ...requirements.map((r) => r.level), 1)}
-        avatar={image}
-        requirements={requirements}
-        cost={{ energy: -energyCost }}
-        onAction={onApply}
-        actionLabel="Взять заказ"
-        onSecondaryAction={() => setShowDetails(true)}
         secondaryActionLabel="Подробнее"
+        stars={Math.max(1, ...requirements.map((r) => r.level), 1)}
       />
 
-      <Dialog open={showDetails} onOpenChange={setShowDetails}>
+      <Dialog onOpenChange={setShowDetails} open={showDetails}>
         <DialogContent className="bg-black/95 border-white/20 text-white max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl">{title}</DialogTitle>
@@ -88,19 +90,19 @@ export function FreelanceDetailCard({
             <div>
               <p className="text-sm text-white/50 mb-2">Требуемые навыки:</p>
               <div className="space-y-2">
-                {requirements.map((req, i) => (
+                {requirements.map((req) => (
                   <div
-                    key={i}
                     className="flex items-center justify-between bg-white/5 rounded-lg p-3"
+                    key={req.skill}
                   >
                     <span className="text-white">{req.skill}</span>
                     <div className="flex gap-1">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Star
-                          key={star}
                           className={`w-4 h-4 ${
                             star <= req.level ? 'text-yellow-400 fill-yellow-400' : 'text-white/20'
                           }`}
+                          key={`${req.skill}-star-${String(star)}`}
                         />
                       ))}
                     </div>
@@ -109,7 +111,7 @@ export function FreelanceDetailCard({
               </div>
             </div>
 
-            <Button onClick={onApply} className="w-full bg-white text-black hover:bg-white/90">
+            <Button className="w-full bg-white text-black hover:bg-white/90" onClick={onApply}>
               ВЗЯТЬ ЗАКАЗ (-{energyCost}⚡)
             </Button>
           </div>

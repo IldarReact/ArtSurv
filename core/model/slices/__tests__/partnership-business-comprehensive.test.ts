@@ -1,9 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import type { StoreApi } from 'zustand'
+
+import type { Player } from '@/core/types'
+import type { Business } from '@/core/types/business.types'
+import type { StatEffect } from '@/core/types/stats.types'
 
 import { createPartnershipBusinessSlice } from '../activities/work/business/partnership-business-slice'
 import type { GameStore } from '../types'
-
-import type { Business } from '@/core/types/business.types'
 
 // Mock broadcastEvent
 vi.mock('@/core/lib/multiplayer', () => ({
@@ -17,81 +20,97 @@ describe('Partnership Business Slice - Comprehensive Actions', () => {
   beforeEach(() => {
     // Create a mock store with partnership slice
     const mockPlayer = {
+      businesses: [],
       id: 'player_1',
       name: 'Player 1',
-      stats: { money: 20000 },
       personal: { stats: { money: 20000 } },
-      businesses: [],
+      stats: { money: 20000 },
     }
 
     mockBusiness = {
-      id: 'biz_123',
-      name: 'Test Business',
-      type: 'retail',
+      createdAt: 0,
       description: 'Test business description',
-      state: 'active',
-      price: 100,
-      quantity: 10,
-      isServiceBased: false,
-      networkId: undefined,
+      efficiency: 100,
+      employees: [],
+      id: 'biz_123',
       isMainBranch: false,
+      isServiceBased: false,
+      lastQuarterlyUpdate: 0,
+      maxEmployees: 10,
+      name: 'Test Business',
+      networkId: undefined,
       partnerBusinessId: undefined,
       partnerId: 'player_2',
       partnerName: 'Player 2',
-      playerShare: 50,
-      playerInvestment: 50000,
       partners: [
         {
           id: 'player_1',
-          name: 'Player 1',
-          type: 'player',
-          share: 50,
           investedAmount: 50000,
+          name: 'Player 1',
           relation: 100,
+          share: 50,
+          type: 'player',
         },
         {
           id: 'player_2',
-          name: 'Player 2',
-          type: 'player',
-          share: 50,
           investedAmount: 50000,
+          name: 'Player 2',
           relation: 50,
+          share: 50,
+          type: 'player',
         },
       ],
+      playerInvestment: 50000,
+      playerShare: 50,
+      price: 100,
       proposals: [],
-      employees: [],
-      maxEmployees: 10,
-      efficiency: 100,
-      createdAt: 0,
-      lastQuarterlyUpdate: 0,
+      quantity: 10,
+      state: 'active',
+      type: 'retail',
     } as Partial<Business> as Business
 
     // Mock store
     store = {
+      approveBusinessChange: vi.fn(),
+      businessProposals: [],
+      performTransaction: (cost: StatEffect) => {
+        if (cost.money && store.player!.stats.money + cost.money < 0) return false
+        if (cost.money) {
+          store.player!.stats.money += cost.money
+          store.player!.personal.stats.money += cost.money
+        }
+        if (cost.energy) {
+          store.player!.stats.energy += cost.energy
+          store.player!.personal.stats.energy += cost.energy
+        }
+        return true
+      },
       player: {
         ...mockPlayer,
         businesses: [mockBusiness],
       },
-      businessProposals: [],
-      turn: 1,
       // We will overwrite these with the actual slice implementation
       proposeBusinessChange: vi.fn(),
-      approveBusinessChange: vi.fn(),
-      rejectBusinessChange: vi.fn(),
-      updateBusinessDirectly: vi.fn(),
       pushNotification: vi.fn(),
-    } as any
+      rejectBusinessChange: vi.fn(),
+      turn: 1,
+      updateBusinessDirectly: vi.fn(),
+      updatePlayer: (updater: Partial<Player> | ((prev: Player) => Partial<Player>)) => {
+        const patch = typeof updater === 'function' ? updater(store.player!) : updater
+        store.player = { ...store.player, ...patch } as Player
+      },
+    } as unknown as GameStore
 
     // Create the slice with a working 'set' function
     const slice = createPartnershipBusinessSlice(
-      (updater: any) => {
+      (updater: Partial<GameStore> | ((s: GameStore) => Partial<GameStore>)) => {
         // Handle both function and object updates
         const newState = typeof updater === 'function' ? updater(store) : updater
         // Merge updates into store
         Object.assign(store, newState)
       },
       () => store,
-      vi.fn() as any,
+      vi.fn() as unknown as StoreApi<GameStore>,
     )
 
     // Bind slice methods to store
@@ -181,8 +200,8 @@ describe('Partnership Business Slice - Comprehensive Actions', () => {
   describe('Branch Opening Proposals', () => {
     it('should create proposal for opening branch when share is 50%', () => {
       store.proposeBusinessChange('biz_123', 'open_branch', {
-        branchName: 'Branch 2',
         branchCost: 100000,
+        branchName: 'Branch 2',
       })
 
       expect(store.businessProposals).toHaveLength(1)
@@ -196,14 +215,14 @@ describe('Partnership Business Slice - Comprehensive Actions', () => {
       // Create a proposal first
       store.businessProposals = [
         {
-          id: 'proposal_1',
           businessId: 'biz_123',
           changeType: 'price',
+          createdAt: 1,
+          data: { newPrice: 150 },
+          id: 'proposal_1',
           initiatorId: 'player_2',
           initiatorName: 'Player 2',
           status: 'pending',
-          createdAt: 1,
-          data: { newPrice: 150 },
         },
       ]
 
@@ -216,14 +235,14 @@ describe('Partnership Business Slice - Comprehensive Actions', () => {
     it('should reject proposal without applying changes', () => {
       store.businessProposals = [
         {
-          id: 'proposal_1',
           businessId: 'biz_123',
           changeType: 'price',
+          createdAt: 1,
+          data: { newPrice: 150 },
+          id: 'proposal_1',
           initiatorId: 'player_2',
           initiatorName: 'Player 2',
           status: 'pending',
-          createdAt: 1,
-          data: { newPrice: 150 },
         },
       ]
 
@@ -281,8 +300,8 @@ describe('Partnership Business Slice - Comprehensive Actions', () => {
       expect(store.businessProposals).toHaveLength(0)
       expect(store.pushNotification).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: 'error',
           title: 'Недостаточно прав',
+          type: 'error',
         }),
       )
     })

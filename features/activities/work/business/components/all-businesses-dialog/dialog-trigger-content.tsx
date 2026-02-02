@@ -1,15 +1,15 @@
 import { Store, Info } from 'lucide-react'
 import React from 'react'
 
-import { BusinessTemplate } from '@/core/lib/data-loaders/businesses-loader'
-import { Button } from '@/shared/ui/button'
+import type { BusinessTemplate } from '@/core/lib/data-loaders/businesses-loader'
+import { Button } from '@/shared/components/button'
 
 interface DialogTriggerContentProps extends React.HTMLAttributes<HTMLDivElement> {
   businessTemplates: BusinessTemplate[]
 }
 
 export function DialogTriggerContent({ businessTemplates, ...props }: DialogTriggerContentProps) {
-  if (!businessTemplates || businessTemplates.length === 0) {
+  if (businessTemplates.length === 0) {
     return null
   }
 

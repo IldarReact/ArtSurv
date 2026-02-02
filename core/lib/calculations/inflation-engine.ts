@@ -18,6 +18,7 @@
  */
 
 import type { CountryEconomy, EconomicEvent } from '../../types/economy.types'
+import { devLog } from '../debug'
 
 /**
  * Category-specific inflation multipliers
@@ -26,16 +27,17 @@ import type { CountryEconomy, EconomicEvent } from '../../types/economy.types'
  * Example: housing at 1.5x means housing prices rise 1.5x faster than base inflation
  */
 export const INFLATION_MULTIPLIERS = {
+  business: 1.3, // 💼 Бизнес (сложнее, дорожает)
+  default: 1.0, // 📊 По умолчанию
+  education: 1.2, // 📚 Образование
+  food: 0.5, // 🍎 Еда (медленнее, конкуренция)
+  health: 1.1, // 🏥 Здравоохранение
   housing: 1.5, // 🏠 Недвижимость (дорожает быстро)
   realEstate: 1.5, // 🏢 Коммерческая недвижимость
-  business: 1.3, // 💼 Бизнес (сложнее, дорожает)
-  education: 1.2, // 📚 Образование
-  health: 1.1, // 🏥 Здравоохранение
-  transport: 1.0, // 🚗 Транспорт (средний уровень)
   salaries: 0.95, // 💰 Зарплаты (почти как инфляция, но чуть медленнее)
   services: 0.9, // 💇 Услуги (медленнее)
-  food: 0.5, // 🍎 Еда (медленнее, конкуренция)
-  default: 1.0, // 📊 По умолчанию
+  shop: 1.0, // 🛒 Магазинные товары
+  transport: 1.0, // 🚗 Транспорт (средний уровень)
 } as const
 
 export type PriceCategory = keyof typeof INFLATION_MULTIPLIERS
@@ -44,11 +46,11 @@ export type PriceCategory = keyof typeof INFLATION_MULTIPLIERS
  * Inflation Settings: Controls how inflation behaves
  */
 export const INFLATION_SETTINGS = {
-  minInflation: 0.1, // 🔻 Minimum possible inflation (0.1%)
-  maxInflation: 20, // 🔺 Maximum possible inflation (20%)
-  dampingFactor: 0.6, // 📉 How much previous inflation affects this year (60% = trend-following)
-  volatility: 0.8, // 📊 Random variance (0-1, higher = more volatile)
   crisisMultiplier: 2.5, // 🔥 Inflation multiplier during crisis
+  dampingFactor: 0.6, // 📉 How much previous inflation affects this year (60% = trend-following)
+  maxInflation: 20, // 🔺 Maximum possible inflation (20%)
+  minInflation: 0.1, // 🔻 Minimum possible inflation (0.1%)
+  volatility: 0.8, // 📊 Random variance (0-1, higher = more volatile)
 } as const
 
 /**
@@ -61,6 +63,22 @@ export const INFLATION_SETTINGS = {
 function isInCrisis(events: EconomicEvent[] = []): boolean {
   return events.some((event) => event.type === 'crisis' || event.type === 'inflation_spike')
 }
+
+const WORLD_AVERAGE_INFLATION = 2.5
+const MAX_DEVIATION_RATIO = 0.3
+const RANDOM_OFFSET = 0.5
+const INFLATION_ROUNDING = 10
+const KEY_RATE_STABILITY_PREMIUM = 1.5
+const KEY_RATE_RANDOM_SPAN = 0.5
+const KEY_RATE_MAX_CHANGE = 1.0
+const KEY_RATE_MIN = 0.1
+const PERCENT_DIVISOR = 100
+const CRISIS_TREND_DAMPING_MULTIPLIER = 1.2
+const MAX_RANGE_MULTIPLIER = 2
+
+const QUARTERS_IN_YEAR = 4
+const FIRST_QUARTER = 1
+const MIN_TURN = 0
 
 /**
  * Calculates target inflation range for the year
@@ -83,18 +101,21 @@ function calculateInflationTargets(economy: CountryEconomy): {
 
   if (isInCrisis_) {
     volatility *= INFLATION_SETTINGS.crisisMultiplier
-    trendDamping *= 1.2 // Trend becomes more pronounced in crisis
+    trendDamping *= CRISIS_TREND_DAMPING_MULTIPLIER // Trend becomes more pronounced in crisis
   }
 
   // Ожидаемый диапазон для этого года
   const halfRange = currentInflation * volatility
   const min = Math.max(INFLATION_SETTINGS.minInflation, currentInflation - halfRange)
-  const max = Math.min(INFLATION_SETTINGS.maxInflation, currentInflation + halfRange * 2)
+  const max = Math.min(
+    INFLATION_SETTINGS.maxInflation,
+    currentInflation + halfRange * MAX_RANGE_MULTIPLIER,
+  )
 
   // КЛЮЧЕВАЯ ЧАСТЬ: Долгосрочный тренд не только следует за прошлой инфляцией,
   // но и стремится к мировому среднему уровню (~2-3%)
   // Это обеспечивает рост цен в долгосрочной перспективе
-  const worldAverageInflation = 2.5 // Мировой средний уровень инфляции
+  const worldAverageInflation = WORLD_AVERAGE_INFLATION // Мировой средний уровень инфляции
 
   // Target: следует прошлой инфляции (damping factor) + тянется к мировому среднему
   // Если текущая инфляция ниже среднего мира - тянется вверх
@@ -104,7 +125,7 @@ function calculateInflationTargets(economy: CountryEconomy): {
     Math.min(max, currentInflation * trendDamping + worldAverageInflation * (1 - trendDamping)),
   )
 
-  return { min, max, targetTrend }
+  return { max, min, targetTrend }
 }
 
 /**
@@ -127,19 +148,19 @@ function calculateInflationTargets(economy: CountryEconomy): {
  * // Year 3 with crisis: might jump to 4-5%, but still follows trend
  */
 export function generateYearlyInflation(currentInflation: number, economy: CountryEconomy): number {
-  const { min, max, targetTrend } = calculateInflationTargets(economy)
+  const { max, min, targetTrend } = calculateInflationTargets(economy)
 
   // Base: previous inflation with damping (trend-following)
   let newInflation = targetTrend
 
   // Add controlled random component (not wild swings)
-  const maxDeviation = (max - min) * 0.3 // Max 30% of range deviation
-  const randomComponent = (Math.random() - 0.5) * maxDeviation
+  const maxDeviation = (max - min) * MAX_DEVIATION_RATIO // Max 30% of range deviation
+  const randomComponent = (Math.random() - RANDOM_OFFSET) * maxDeviation
   newInflation += randomComponent
 
   // Apply event effects
-  for (const event of economy.activeEvents || []) {
-    if (event.effects?.inflationChange) {
+  for (const event of economy.activeEvents) {
+    if (event.effects.inflationChange !== undefined) {
       newInflation += event.effects.inflationChange
     }
   }
@@ -151,7 +172,7 @@ export function generateYearlyInflation(currentInflation: number, economy: Count
   )
 
   // Round to 1 decimal place (0.1%)
-  return Math.round(newInflation * 10) / 10
+  return Math.round(newInflation * INFLATION_ROUNDING) / INFLATION_ROUNDING
 }
 
 /**
@@ -165,14 +186,15 @@ export function generateYearlyInflation(currentInflation: number, economy: Count
 export function calculateKeyRate(inflation: number, currentKeyRate: number): number {
   // Target: inflation + 1.5% (stability premium)
   // with slight random component
-  const targetRate = inflation + 1.5 + (Math.random() - 0.5) * 0.5
+  const targetRate =
+    inflation + KEY_RATE_STABILITY_PREMIUM + (Math.random() - RANDOM_OFFSET) * KEY_RATE_RANDOM_SPAN
 
   // Smooth adjustment (max ±1% per year for stability)
-  const maxChange = 1.0
+  const maxChange = KEY_RATE_MAX_CHANGE
   const change = Math.max(-maxChange, Math.min(maxChange, targetRate - currentKeyRate))
 
-  const newRate = Math.max(0.1, currentKeyRate + change)
-  return Math.round(newRate * 100) / 100
+  const newRate = Math.max(KEY_RATE_MIN, currentKeyRate + change)
+  return Math.round(newRate * PERCENT_DIVISOR) / PERCENT_DIVISOR
 }
 
 /**
@@ -199,7 +221,7 @@ export function applyInflation(
   }
 
   const multiplier = INFLATION_MULTIPLIERS[category]
-  const effectiveInflation = (inflationRate * multiplier) / 100
+  const effectiveInflation = (inflationRate * multiplier) / PERCENT_DIVISOR
 
   const newPrice = basePrice * (1 + effectiveInflation)
   return Math.round(newPrice)
@@ -229,26 +251,24 @@ export function getCumulativeInflationMultiplier(
   let product = 1
   const steps: string[] = []
 
+  const YEAR_PRECISION = 1
+  const MULTIPLIER_PRECISION = 6
+
   for (const inflation of inflationHistory) {
     const safeInflation = Math.max(0, inflation) // Protect from negative
-    const effectiveInflation = (safeInflation * multiplier) / 100
+    const effectiveInflation = (safeInflation * multiplier) / PERCENT_DIVISOR
     const yearMultiplier = 1 + effectiveInflation
     product = product * yearMultiplier
-    steps.push(`${safeInflation.toFixed(1)}% → ×${yearMultiplier.toFixed(6)}`)
+    steps.push(
+      `${safeInflation.toFixed(YEAR_PRECISION)}% → ×${yearMultiplier.toFixed(MULTIPLIER_PRECISION)}`,
+    )
   }
 
   // DEBUG: Log multiplier calculation
-  try {
-    // import devLog lazily to avoid circular issues in some test environments
-     
-    const { devLog } = require('../debug') as { devLog?: (...a: unknown[]) => void }
-    if (devLog && inflationHistory.length > 0) {
-      devLog(
-        `[getCumulativeInflationMultiplier] category=${category}, steps=[${steps.join(', ')}], result=${product.toFixed(6)}`,
-      )
-    }
-  } catch {
-    // ignore
+  if (inflationHistory.length > 0) {
+    devLog(
+      `[getCumulativeInflationMultiplier] category=${category}, steps=[${steps.join(', ')}], result=${product.toFixed(MULTIPLIER_PRECISION)}`,
+    )
   }
 
   return product
@@ -279,13 +299,13 @@ export function applyInflationToAll(
  * Information about inflation notification to show to player
  */
 export interface InflationNotification {
-  year: number
-  inflationRate: number // Current year's inflation
+  countryName: string // Country name for display
   inflationChange: number // Change from previous year (+/-)
+  inflationRate: number // Current year's inflation
   keyRate: number // Central bank key rate
   keyRateChange: number // Change from previous year
-  countryName: string // Country name for display
   timestamp: number // When this happened (turn number)
+  year: number
 }
 
 /**
@@ -298,7 +318,7 @@ export function formatInflationNotification(notification: InflationNotification)
   const inflationEmoji = notification.inflationChange > 0 ? '📈' : '📉'
   const rateEmoji = notification.keyRateChange > 0 ? '⬆️' : '⬇️'
 
-  return `${inflationEmoji} Инфляция: ${notification.inflationRate}% (${notification.inflationChange > 0 ? '+' : ''}${notification.inflationChange}%)\n${rateEmoji} Ставка: ${notification.keyRate}% (${notification.keyRateChange > 0 ? '+' : ''}${notification.keyRateChange}%)`
+  return `${inflationEmoji} Инфляция: ${String(notification.inflationRate)}% (${notification.inflationChange > 0 ? '+' : ''}${String(notification.inflationChange)}%)\n${rateEmoji} Ставка: ${String(notification.keyRate)}% (${notification.keyRateChange > 0 ? '+' : ''}${String(notification.keyRateChange)}%)`
 }
 
 /**
@@ -308,5 +328,5 @@ export function formatInflationNotification(notification: InflationNotification)
  * @returns true if this is Q1 (start of new year)
  */
 export function shouldApplyInflationThisTurn(turn: number): boolean {
-  return turn > 0 && turn % 4 === 1
+  return turn > MIN_TURN && turn % QUARTERS_IN_YEAR === FIRST_QUARTER
 }

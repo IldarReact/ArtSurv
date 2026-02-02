@@ -1,17 +1,16 @@
 import { CharacterDataSchema } from '@/core/schemas/game.schema'
 import type { CharacterData } from '@/core/types/character.types'
-
 // Country imports
 import brCharacters from '@/shared/data/world/countries/brazil/characters.json'
 import geCharacters from '@/shared/data/world/countries/germany/characters.json'
 import usCharacters from '@/shared/data/world/countries/us/characters.json'
 
-function loadCharacters(data: unknown[], source: string): CharacterData[] {
+function loadCharacters(data: unknown[], _source: string): CharacterData[] {
   return data
     .map((item) => {
       const result = CharacterDataSchema.safeParse(item)
       if (!result.success) {
-        console.error(`Invalid character in ${source}:`, item, result.error.format())
+        // console.error(`Invalid character in ${source}:`, item, result.error.format())
         return null
       }
       return result.data as CharacterData
@@ -20,9 +19,9 @@ function loadCharacters(data: unknown[], source: string): CharacterData[] {
 }
 
 const COUNTRY_CHARACTERS: Record<string, CharacterData[]> = {
-  us: loadCharacters(usCharacters, 'us/characters.json'),
-  germany: loadCharacters(geCharacters, 'germany/characters.json'),
   brazil: loadCharacters(brCharacters, 'brazil/characters.json'),
+  germany: loadCharacters(geCharacters, 'germany/characters.json'),
+  us: loadCharacters(usCharacters, 'us/characters.json'),
 }
 
 /**
@@ -37,7 +36,7 @@ export function getCharactersForCountry(countryId: string): CharacterData[] {
  */
 export function getCharacterByArchetype(
   archetype: string,
-  countryId: string = 'us',
+  countryId = 'us',
 ): CharacterData | undefined {
   const characters = getCharactersForCountry(countryId)
   return characters.find((char) => char.archetype === archetype)
@@ -46,7 +45,7 @@ export function getCharacterByArchetype(
 /**
  * Get character by ID
  */
-export function getCharacterById(id: string, countryId: string = 'us'): CharacterData | undefined {
+export function getCharacterById(id: string, countryId = 'us'): CharacterData | undefined {
   const characters = getCharactersForCountry(countryId)
   return characters.find((char) => char.id === id)
 }

@@ -1,4 +1,4 @@
-import type { EmployeeRole } from './business.types'
+import type { BusinessRoleTemplate, EmployeeRole } from './business.types'
 
 /**
  * Универсальная система предложений (offers) между игроками
@@ -22,33 +22,33 @@ export type OfferStatus =
 export interface JobOfferDetails {
   businessId: string
   businessName: string
+  description?: string
+  kpiBonus: number // Процент бонуса за KPI
   role: EmployeeRole
   salary: number // Квартальная зарплата
-  kpiBonus: number // Процент бонуса за KPI
-  description?: string
 }
 
 // Детали предложения партнерства
 export interface PartnershipOfferDetails {
-  businessId: string // ID создаваемого/существующего бизнеса
-  businessType: string
-  businessName: string
   businessDescription: string
-  totalCost: number
-  partnerShare: number // Процент доли партнера
+  businessId: string // ID создаваемого/существующего бизнеса
+  businessName: string
+  businessType: string
+  employeeRoles: BusinessRoleTemplate[]
   partnerInvestment: number // Сумма инвестиций партнера
-  yourShare: number // Процент доли получателя
+  partnerShare: number // Процент доли партнера
+  totalCost: number
   yourInvestment: number // Сумма инвестиций получателя
-  employeeRoles: import('./business.types').BusinessRoleTemplate[]
+  yourShare: number // Процент доли получателя
 }
 
 // Детали предложения купить/продать долю
 export interface ShareSaleOfferDetails {
   businessId: string
   businessName: string
-  sharePercent: number // Процент доли для продажи
-  price: number // Цена за долю
   currentValue: number // Текущая стоимость бизнеса
+  price: number // Цена за долю
+  sharePercent: number // Процент доли для продажи
 }
 
 // Объединенный тип деталей
@@ -56,35 +56,35 @@ export type OfferDetails = JobOfferDetails | PartnershipOfferDetails | ShareSale
 
 // Базовый интерфейс предложения
 export interface BaseGameOffer {
-  id: string
+  createdTurn: number
+  expiresInTurns: number // Через сколько кварталов истечет
   // Отправитель
   fromPlayerId: string
   fromPlayerName: string
+  id: string
+  // Дополнительная информация
+  message?: string // Сообщение от отправителя
+  // Метаданные
+  status: OfferStatus
   // Получатель
   toPlayerId: string
   toPlayerName: string
-  // Метаданные
-  status: OfferStatus
-  createdTurn: number
-  expiresInTurns: number // Через сколько кварталов истечет
-  // Дополнительная информация
-  message?: string // Сообщение от отправителя
 }
 
 // Специализированные типы предложений
 export interface JobOffer extends BaseGameOffer {
-  type: 'job_offer'
   details: JobOfferDetails
+  type: 'job_offer'
 }
 
 export interface PartnershipOffer extends BaseGameOffer {
-  type: 'business_partnership'
   details: PartnershipOfferDetails
+  type: 'business_partnership'
 }
 
 export interface ShareSaleOffer extends BaseGameOffer {
-  type: 'share_sale'
   details: ShareSaleOfferDetails
+  type: 'share_sale'
 }
 
 // Основной тип предложения - теперь это дискриминированное объединение
@@ -105,7 +105,11 @@ export function isShareSaleOffer(
   return offer.type === 'share_sale'
 }
 
+const RADIX_36 = 36
+const ID_SLICE_START = 2
+const ID_SLICE_END = 11
+
 // Хелпер для создания ID
 export function generateOfferId(): string {
-  return `offer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  return `offer_${String(Date.now())}_${Math.random().toString(RADIX_36).slice(ID_SLICE_START, ID_SLICE_END)}`
 }

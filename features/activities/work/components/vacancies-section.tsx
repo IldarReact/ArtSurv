@@ -3,13 +3,13 @@
 import { Briefcase } from 'lucide-react'
 import React from 'react'
 
-import { VacancyDetailCard } from './vacancy-detail-card'
-
 import { useInflatedPrices } from '@/core/hooks'
 import { getAllJobsForCountry } from '@/core/lib/data-loaders/jobs-loader'
 import { useGameStore } from '@/core/model/store'
-import { StatEffect } from '@/core/types'
-import { OpportunityCard } from '@/features/activities/ui/opportunity-card'
+import type { StatEffect } from '@/core/types'
+import { OpportunityCard } from '@/features/activities/components/opportunity-card'
+
+import { VacancyDetailCard } from './vacancy-detail-card'
 
 interface VacanciesSectionProps {
   onApply: (
@@ -17,14 +17,14 @@ interface VacanciesSectionProps {
     company: string,
     salary: number,
     cost: StatEffect,
-    requirements: Array<{ skill: string; level: number }>,
+    requirements: { skill: string; level: number }[],
   ) => void
 }
 
 export function VacanciesSection({ onApply }: VacanciesSectionProps) {
   const player = useGameStore((state) => state.player)
   const pendingApplications = useGameStore((state) => state.pendingApplications)
-  const countryId = player?.countryId || 'us'
+  const countryId = player?.countryId ?? 'us'
 
   const jobs = getAllJobsForCountry(countryId)
   const jobsWithInflation = useInflatedPrices(jobs)
@@ -33,11 +33,11 @@ export function VacanciesSection({ onApply }: VacanciesSectionProps) {
 
   return (
     <OpportunityCard
-      title="Найти новую работу"
+      actionLabel="Смотреть вакансии"
       description="Просмотрите вакансии на рынке труда. Откликнитесь сейчас, чтобы получить ответ в следующем квартале."
       icon={<Briefcase className="w-6 h-6 text-blue-400" />}
       image="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=600&fit=crop"
-      actionLabel="Смотреть вакансии"
+      title="Найти новую работу"
     >
       <div className="space-y-4">
         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-4">
@@ -52,26 +52,26 @@ export function VacanciesSection({ onApply }: VacanciesSectionProps) {
             const isApplied = appliedJobTitles.has(job.title)
             return (
               <VacancyDetailCard
-                key={job.id}
-                title={job.title}
                 company={job.company}
-                salary={job.inflatedPrice}
-                energyCost={job.cost.energy || 0}
-                requirements={
-                  job.requirements?.skills?.map((s) => ({ skill: s.name, level: s.level })) || []
-                }
+                energyCost={job.cost.energy ?? 0}
                 image={job.imageUrl}
-                jobCost={job.cost}
                 isApplied={isApplied}
-                onApply={() =>
+                jobCost={job.cost}
+                key={job.id}
+                onApply={() => {
                   onApply(
                     job.title,
                     job.company,
                     job.inflatedPrice,
                     job.cost,
-                    job.requirements?.skills?.map((s) => ({ skill: s.name, level: s.level })) || [],
+                    job.requirements?.skills?.map((s) => ({ level: s.level, skill: s.name })) ?? [],
                   )
+                }}
+                requirements={
+                  job.requirements?.skills?.map((s) => ({ level: s.level, skill: s.name })) ?? []
                 }
+                salary={job.inflatedPrice}
+                title={job.title}
               />
             )
           })}

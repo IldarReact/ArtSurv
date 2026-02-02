@@ -3,19 +3,19 @@
 import { Loader2, Users, CheckCircle2, Circle } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import { Player } from './multiplayer-hub'
-
 import { getOnlinePlayers, subscribeToTurnReadyStatus, setTurnReady } from '@/core/lib/multiplayer'
-import { Button } from '@/shared/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
+import { Button } from '@/shared/components/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/dialog'
+
+import type { Player } from './multiplayer-hub'
 
 interface TurnSyncModalProps {
   isOpen: boolean
-  onCancel: () => void
   onAllReady: () => void
+  onCancel: () => void
 }
 
-export function TurnSyncModal({ isOpen, onCancel, onAllReady }: TurnSyncModalProps) {
+export function TurnSyncModal({ isOpen, onAllReady, onCancel }: TurnSyncModalProps) {
   const [players, setPlayers] = useState<Player[]>([])
   const [readyCount, setReadyCount] = useState(0)
   const [totalPlayers, setTotalPlayers] = useState(0)
@@ -54,7 +54,12 @@ export function TurnSyncModal({ isOpen, onCancel, onAllReady }: TurnSyncModalPro
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
+    <Dialog
+      onOpenChange={(open) => {
+        if (!open) handleCancel()
+      }}
+      open={isOpen}
+    >
       <DialogContent className="bg-linear-to-br from-slate-900 to-slate-800 border-white/10 text-white max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
@@ -76,7 +81,9 @@ export function TurnSyncModal({ isOpen, onCancel, onAllReady }: TurnSyncModalPro
           <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
             <div
               className="bg-linear-to-r from-blue-500 to-emerald-500 h-full transition-all duration-500 ease-out"
-              style={{ width: `${totalPlayers > 0 ? (readyCount / totalPlayers) * 100 : 0}%` }}
+              style={{
+                width: `${String(totalPlayers > 0 ? (readyCount / totalPlayers) * 100 : 0)}%`,
+              }}
             />
           </div>
 
@@ -88,8 +95,8 @@ export function TurnSyncModal({ isOpen, onCancel, onAllReady }: TurnSyncModalPro
             </div>
             {players.map((player) => (
               <div
-                key={player.clientId}
                 className="flex items-center justify-between bg-white/5 rounded-lg px-4 py-3 border border-white/10"
+                key={player.clientId}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: player.color }} />
@@ -117,9 +124,9 @@ export function TurnSyncModal({ isOpen, onCancel, onAllReady }: TurnSyncModalPro
 
           {/* Кнопка отмены */}
           <Button
+            className="w-full bg-white/5 hover:bg-white/10 text-white border-white/10"
             onClick={handleCancel}
             variant="outline"
-            className="w-full bg-white/5 hover:bg-white/10 text-white border-white/10"
           >
             Отменить и продолжить играть
           </Button>

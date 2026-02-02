@@ -1,7 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
-
-import { SALARY_CONFIG, KPI_CONFIG } from '../../shared-constants'
-import { createPlayerCandidate } from '../utils/employee-utils'
+import { useMemo, useState } from 'react'
 
 import { generateCandidates } from '@/core/lib/business/employee-generator'
 import { getInflatedBaseSalary } from '@/core/lib/calculations/price-helpers'
@@ -9,45 +6,59 @@ import { getOnlinePlayers } from '@/core/lib/multiplayer'
 import { useGameStore } from '@/core/model/store'
 import type { EmployeeCandidate } from '@/core/types'
 
+import { KPI_CONFIG, SALARY_CONFIG } from '../../shared-constants'
+import { createPlayerCandidate } from '../utils/employee-utils'
+
 export function useHireDialog(isOpen: boolean, initialCandidates: EmployeeCandidate[]) {
-  const { countries, player } = useGameStore()
+  const countries = useGameStore((state) => state.countries)
+  const player = useGameStore((state) => state.player)
   const country = player ? countries[player.countryId] : undefined
 
   // Применяем инфляцию к минимальной зарплате
-  const inflatedMinSalary = useMemo(() => {
-    return country ? getInflatedBaseSalary(SALARY_CONFIG.MIN, country) : SALARY_CONFIG.MIN
-  }, [country])
+  const inflatedMinSalary = useMemo(
+    () => (country ? getInflatedBaseSalary(SALARY_CONFIG.MIN, country) : SALARY_CONFIG.MIN),
+    [country],
+  )
 
-  const inflatedDefaultSalary = useMemo(() => {
-    return country ? getInflatedBaseSalary(SALARY_CONFIG.DEFAULT, country) : SALARY_CONFIG.DEFAULT
-  }, [country])
+  const inflatedDefaultSalary = useMemo(
+    () => (country ? getInflatedBaseSalary(SALARY_CONFIG.DEFAULT, country) : SALARY_CONFIG.DEFAULT),
+    [country],
+  )
 
-  const [npcCandidates, setNpcCandidates] = useState<EmployeeCandidate[]>(initialCandidates)
+  const npcCandidates = useMemo(() => {
+    if (!isOpen) return []
+    // Если кандидаты не переданы извне, генерируем их здесь
+    if (initialCandidates.length === 0 && player) {
+      // Берем дефолтную роль, если список пуст (обычно это не должно случаться)
+      const role = 'worker'
+      return generateCandidates(role, 5, country, player.countryId)
+    }
+    return initialCandidates
+  }, [isOpen, initialCandidates, player, country])
+
   const [selectedCandidate, setSelectedCandidate] = useState<EmployeeCandidate | null>(null)
   const [activeTab, setActiveTab] = useState<'npc' | 'players'>('npc')
-  const [onlinePlayers, setOnlinePlayers] = useState<any[]>([])
+  const onlinePlayers = useMemo(() => {
+    if (isOpen && activeTab === 'players') {
+      return getOnlinePlayers()
+    }
+    return []
+  }, [isOpen, activeTab])
+
   const [customSalary, setCustomSalary] = useState<number>(inflatedDefaultSalary)
   const [customKPI, setCustomKPI] = useState<number>(KPI_CONFIG.DEFAULT)
 
-  useEffect(() => {
+  // Сброс состояния при открытии диалога
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen)
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen)
     if (isOpen) {
-      // Если кандидаты не переданы извне, генерируем их здесь
-      if ((!initialCandidates || initialCandidates.length === 0) && player) {
-        // Берем дефолтную роль, если список пуст (обычно это не должно случаться)
-        const role = 'worker'
-        const generated = generateCandidates(role, 5, country, player.countryId)
-        setNpcCandidates(generated)
-      } else {
-        setNpcCandidates(initialCandidates)
-      }
-
-      if (activeTab === 'players') {
-        setOnlinePlayers(getOnlinePlayers())
-      }
       setSelectedCandidate(null)
       setCustomSalary(inflatedDefaultSalary)
     }
-  }, [isOpen, activeTab, initialCandidates, player, country, inflatedDefaultSalary]) // Добавлены зависимости
+  }
+
+  // useEffect теперь не нужен для синхронного сброса
 
   const displayCandidates = useMemo(() => {
     if (activeTab === 'npc') return npcCandidates
@@ -56,9 +67,9 @@ export function useHireDialog(isOpen: boolean, initialCandidates: EmployeeCandid
     const playerCandidates = onlinePlayers.map((p) =>
       createPlayerCandidate(
         p,
-        npcCandidates[0]?.role || 'worker',
+        npcCandidates[0]?.role ?? 'worker',
         customSalary,
-        p.isLocal ? player || undefined : undefined,
+        p.isLocal ? (player ?? undefined) : undefined,
       ),
     )
 
@@ -66,11 +77,11 @@ export function useHireDialog(isOpen: boolean, initialCandidates: EmployeeCandid
     const hasLocalPlayer = onlinePlayers.some((p) => p.isLocal)
 
     if (!hasLocalPlayer && player) {
-      const playerClientId = player.id || 'local'
+      const playerClientId = player.id
       playerCandidates.unshift(
         createPlayerCandidate(
-          { clientId: playerClientId, name: player.name, isLocal: true },
-          npcCandidates[0]?.role || 'worker',
+          { clientId: playerClientId, isLocal: true, name: player.name },
+          npcCandidates[0]?.role ?? 'worker',
           customSalary,
           player,
         ),
@@ -81,15 +92,15 @@ export function useHireDialog(isOpen: boolean, initialCandidates: EmployeeCandid
   }, [activeTab, npcCandidates, onlinePlayers, player, customSalary])
 
   return {
-    selectedCandidate,
-    setSelectedCandidate,
     activeTab,
-    setActiveTab,
-    displayCandidates,
-    customSalary,
-    setCustomSalary,
     customKPI,
-    setCustomKPI,
+    customSalary,
+    displayCandidates,
     inflatedMinSalary,
+    selectedCandidate,
+    setActiveTab,
+    setCustomKPI,
+    setCustomSalary,
+    setSelectedCandidate,
   }
 }

@@ -6,27 +6,35 @@ export function checkHappinessEffects(happiness: number): Partial<ThresholdEffec
     workEfficiency: 1.0,
   }
 
-  if (happiness < 10) {
-    result.events!.push({
-      type: 'happiness',
-      severity: 'critical',
+  const THRESHOLD_CRITICAL_LOW = 10
+  const THRESHOLD_CRITICAL = 20
+  const THRESHOLD_WARNING = 30
+
+  const EFFICIENCY_CRITICAL_LOW = 0.4
+  const EFFICIENCY_CRITICAL = 0.6
+  const EFFICIENCY_WARNING = 0.8
+
+  if (happiness < THRESHOLD_CRITICAL_LOW) {
+    result.events?.push({
       message: 'Глубокая депрессия. Вы не видите смысла в жизни. Все кажется бессмысленным.',
-    })
-    result.workEfficiency = 0.4
-  } else if (happiness < 20) {
-    result.events!.push({
-      type: 'happiness',
       severity: 'critical',
-      message: 'Эмоциональное истощение. Жизнь теряет краски. Необходим отдых!',
-    })
-    result.workEfficiency = 0.6
-  } else if (happiness < 30) {
-    result.events!.push({
       type: 'happiness',
-      severity: 'warning',
-      message: 'Вы чувствуете себя несчастным. Найдите время для хобби и близких.',
     })
-    result.workEfficiency = 0.8
+    result.workEfficiency = EFFICIENCY_CRITICAL_LOW
+  } else if (happiness < THRESHOLD_CRITICAL) {
+    result.events?.push({
+      message: 'Эмоциональное истощение. Жизнь теряет краски. Необходим отдых!',
+      severity: 'critical',
+      type: 'happiness',
+    })
+    result.workEfficiency = EFFICIENCY_CRITICAL
+  } else if (happiness < THRESHOLD_WARNING) {
+    result.events?.push({
+      message: 'Вы чувствуете себя несчастным. Найдите время для хобби и близких.',
+      severity: 'warning',
+      type: 'happiness',
+    })
+    result.workEfficiency = EFFICIENCY_WARNING
   }
 
   return result

@@ -2,7 +2,7 @@
 
 import { useGameStore } from '@/core/model/store'
 import type { CountryEconomy } from '@/core/types'
-import { ExpandableCard } from '@/shared/ui/expandable-card'
+import { ExpandableCard } from '@/shared/components/expandable-card'
 
 export function CountrySelector() {
   const { countries, setSetupCountry } = useGameStore()
@@ -20,10 +20,10 @@ export function CountrySelector() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {countryList.map((country: CountryEconomy) => (
             <ExpandableCard
+              description={country.archetype.replace(/_/g, ' ')}
+              image={`/placeholder.svg?height=120&width=120&query=flag+${country.name}`}
               key={country.id}
               title={country.name}
-              description={`${country.archetype.replace(/_/g, ' ')}`}
-              image={`/placeholder.svg?height=120&width=120&query=flag+${country.name}`}
             >
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -45,8 +45,10 @@ export function CountrySelector() {
                   </div>
                 </div>
                 <button
-                  onClick={() => setSetupCountry(country.id)}
                   className="w-full px-4 py-2 bg-accent text-white rounded hover:opacity-90 transition font-semibold"
+                  onClick={() => {
+                    setSetupCountry(country.id)
+                  }}
                 >
                   Выбрать
                 </button>

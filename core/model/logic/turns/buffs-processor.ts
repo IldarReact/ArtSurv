@@ -5,9 +5,9 @@ import type { Stats } from '@/core/types'
 
 export interface BuffsProcessResult {
   activeBuffs: TimedBuff[]
-  statModifiers: Partial<Stats>
   moneyDelta: number
   notifications: Notification[]
+  statModifiers: Partial<Stats>
 }
 
 export function processBuffs(
@@ -24,9 +24,9 @@ export function processBuffs(
   // Синхронизируем старые поля для обратной совместимости
   const syncedBuffs = buffs.map((b) => ({
     ...b,
-    totalDuration: b.totalDuration || b.duration || 1,
-    remainingDuration: b.remainingDuration ?? b.duration ?? 1,
-    title: b.title || b.source || 'Эффект',
+    remainingDuration: b.remainingDuration,
+    title: b.title,
+    totalDuration: b.totalDuration,
   }))
 
   const progress = processProgress(syncedBuffs)
@@ -34,22 +34,16 @@ export function processBuffs(
   // 🧹 баффы, которые закончились в этом ходу
   progress.completed.forEach((buff) => {
     notifications.push({
-      id: `buff_end_${buff.id}_${ctx.turn}`,
-      type: 'info',
-      title: 'Эффект закончился',
-      message: buff.description,
+      id: `buff_end_${buff.id}_${String(ctx.turn)}`,
       isRead: false,
+      message: buff.description,
+      title: 'Эффект закончился',
+      type: 'info',
     })
   })
 
   // 📊 применяем эффекты для активных баффов
   progress.active.forEach((buff) => {
-    // Синхронизируем обратно для совместимости
-    const activeBuff = {
-      ...buff,
-      duration: buff.remainingDuration,
-    }
-
     for (const key in buff.effects) {
       const stat = key as keyof Stats
       const value = buff.effects[stat]
@@ -65,8 +59,8 @@ export function processBuffs(
 
   return {
     activeBuffs: progress.active.map((b) => ({ ...b, duration: b.remainingDuration })),
-    statModifiers,
     moneyDelta,
     notifications,
+    statModifiers,
   }
 }

@@ -2,26 +2,25 @@
 
 import React from 'react'
 
+import type { Country } from '@/core/types'
+import type { BusinessFinancials } from '@/core/types/business.types'
 import { cn } from '@/shared/utils/utils'
-import { BusinessFinancials } from '@/core/types/business.types'
-import { Country } from '@/core/types'
 
 interface BusinessForecastProps {
-  isServiceBased: boolean
+  country?: Country
   forecastDebug?: BusinessFinancials['debug']
   forecastProfit?: number
-  country?: Country
+  isServiceBased: boolean
 }
 
 export function BusinessForecast({
-  isServiceBased,
+  country,
   forecastDebug,
   forecastProfit,
-  country,
+  isServiceBased,
 }: BusinessForecastProps) {
   // Защита от NaN для всех значений прогноза
-  const sanitize = (val: number | undefined | null) =>
-    val === null || val === undefined || isNaN(val) ? 0 : val
+  const sanitize = (val: number | undefined | null) => (val && Number.isFinite(val) ? val : 0)
 
   const purchaseAmount = sanitize(forecastDebug?.purchaseAmount)
   const unitCost = sanitize(forecastDebug?.unitCost)
@@ -30,10 +29,10 @@ export function BusinessForecast({
   const priceUsed = sanitize(forecastDebug?.priceUsed)
   const revenue = sanitize(salesVolume * priceUsed)
 
-  const empExp = sanitize(forecastDebug?.expensesBreakdown?.employees)
-  const rentExp = sanitize(forecastDebug?.expensesBreakdown?.rent)
-  const equipExp = sanitize(forecastDebug?.expensesBreakdown?.equipment)
-  const otherExp = sanitize(forecastDebug?.expensesBreakdown?.other)
+  const empExp = sanitize(forecastDebug?.expensesBreakdown.employees)
+  const rentExp = sanitize(forecastDebug?.expensesBreakdown.rent)
+  const equipExp = sanitize(forecastDebug?.expensesBreakdown.equipment)
+  const otherExp = sanitize(forecastDebug?.expensesBreakdown.other)
   const taxAmount = sanitize(forecastDebug?.taxAmount)
   const totalProfit = sanitize(forecastProfit)
 

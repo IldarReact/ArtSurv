@@ -1,21 +1,25 @@
-import { useBusinessActionExecutor } from './action-executor'
-
 import type { Business } from '@/core/types'
 
-export function useOperationalActions(business: Business) {
+import { useBusinessActionExecutor } from './action-executor'
+
+export function useOperationalActions(business: Business | undefined) {
   const { executeAction } = useBusinessActionExecutor(business)
 
   const handlePriceChange = (
     newPrice: number,
     onChangePrice: (businessId: string, price: number) => void,
   ) => {
+    if (!business) return
+
     executeAction({
-      directAction: () => onChangePrice(business.id, newPrice),
-      proposalType: 'price',
-      proposalData: { newPrice },
-      notificationTitle: 'Предложение отправлено',
-      notificationMessage: `Предложение об изменении цены на ${newPrice} отправлено партнёру`,
+      directAction: () => {
+        onChangePrice(business.id, newPrice)
+      },
       errorMessage: 'У вас недостаточно доли в бизнесе для изменения цены (требуется минимум 50%)',
+      notificationMessage: `Предложение об изменении цены на ${String(newPrice)} отправлено партнёру`,
+      notificationTitle: 'Предложение отправлено',
+      proposalData: { newPrice },
+      proposalType: 'price',
     })
   }
 
@@ -23,14 +27,18 @@ export function useOperationalActions(business: Business) {
     newQuantity: number,
     onSetQuantity: (businessId: string, quantity: number) => void,
   ) => {
+    if (!business) return
+
     executeAction({
-      directAction: () => onSetQuantity(business.id, newQuantity),
-      proposalType: 'quantity',
-      proposalData: { newQuantity },
-      notificationTitle: 'Предложение отправлено',
-      notificationMessage: `Предложение об изменении производства на ${newQuantity} отправлено партнёру`,
+      directAction: () => {
+        onSetQuantity(business.id, newQuantity)
+      },
       errorMessage:
         'У вас недостаточно доли в бизнесе для изменения производства (требуется минимум 50%)',
+      notificationMessage: `Предложение об изменении производства на ${String(newQuantity)} отправлено партнёру`,
+      notificationTitle: 'Предложение отправлено',
+      proposalData: { newQuantity },
+      proposalType: 'quantity',
     })
   }
 

@@ -6,8 +6,9 @@ export const processGoalCompletion = (player: Player, goalId: string) => {
   if (!goal || goal.isCompleted) return null
 
   const updatedStats = applyStats(player.personal.stats, { happiness: 10, sanity: 10 })
-  
+
   return {
+    goalTitle: goal.title,
     personal: {
       ...player.personal,
       lifeGoals: player.personal.lifeGoals.map((g) =>
@@ -19,6 +20,5 @@ export const processGoalCompletion = (player: Player, goalId: string) => {
         sanity: Math.min(100, updatedStats.sanity),
       },
     },
-    goalTitle: goal.title,
   }
 }

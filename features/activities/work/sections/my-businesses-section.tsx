@@ -2,40 +2,20 @@
 
 import React from 'react'
 
+import type { BusinessProposal, Player } from '@/core/types'
+import { SectionSeparator } from '@/shared/components/section-separator'
+
 import { BusinessManagement } from '../business/business-management/business-management'
 import { BusinessProposals } from '../business/components/business-proposals'
 
-import { BusinessSlice } from '@/core/model/slices/types/business.types'
-import type { BusinessProposal, Player } from '@/core/types'
-import { SectionSeparator } from '@/shared/ui/section-separator'
-
 interface MyBusinessesSectionProps {
-  player: Player
   businessProposals: BusinessProposal[]
-  hireEmployee: BusinessSlice['hireEmployee']
-  fireEmployee: BusinessSlice['fireEmployee']
-  changePrice: BusinessSlice['changePrice']
-  setQuantity: BusinessSlice['setQuantity']
-  openBranch: BusinessSlice['openBranch']
-  joinBusinessAsEmployee: BusinessSlice['joinBusinessAsEmployee']
-  leaveBusinessJob: BusinessSlice['leaveBusinessJob']
-  unassignPlayerRole: BusinessSlice['unassignPlayerRole']
+  player: Player
 }
 
-export function MyBusinessesSection({
-  player,
-  businessProposals,
-  hireEmployee,
-  fireEmployee,
-  changePrice,
-  setQuantity,
-  openBranch,
-  joinBusinessAsEmployee,
-  leaveBusinessJob,
-  unassignPlayerRole,
-}: MyBusinessesSectionProps) {
-  if (!player.businesses || player.businesses.length === 0) return null
- 
+export function MyBusinessesSection({ businessProposals, player }: MyBusinessesSectionProps) {
+  if (player.businesses.length === 0) return null
+
   return (
     <div className="space-y-4">
       <SectionSeparator title="Мои бизнесы" />
@@ -48,18 +28,9 @@ export function MyBusinessesSection({
 
           return (
             <BusinessManagement
-              key={business.id}
               business={business}
-              playerCash={player?.stats?.money || 0}
+              key={business.id}
               proposalsCount={proposalsCount}
-              onHireEmployee={hireEmployee}
-              onFireEmployee={fireEmployee}
-              onChangePrice={changePrice}
-              onSetQuantity={setQuantity}
-              onOpenBranch={openBranch}
-              onJoinAsEmployee={joinBusinessAsEmployee}
-              onLeaveJob={leaveBusinessJob}
-              onUnassignRole={unassignPlayerRole}
             />
           )
         })}

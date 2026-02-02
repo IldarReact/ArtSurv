@@ -6,7 +6,7 @@ import { useGameStore } from '@/core/model/store'
 import type { GlobalEvent } from '@/core/types'
 
 export function EventModal() {
-  const { pendingEventNotification, dismissEventNotification } = useGameStore()
+  const { dismissEventNotification, pendingEventNotification } = useGameStore()
 
   // Don't show modal if no pending event
   if (!pendingEventNotification) return null
@@ -31,8 +31,8 @@ export function EventModal() {
             </div>
           </div>
           <button
-            onClick={dismissEventNotification}
             className="text-muted-foreground hover:text-foreground transition"
+            onClick={dismissEventNotification}
           >
             <X className="w-5 h-5" />
           </button>
@@ -89,8 +89,8 @@ export function EventModal() {
         </div>
 
         <button
-          onClick={dismissEventNotification}
           className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition font-semibold"
+          onClick={dismissEventNotification}
         >
           Продолжить
         </button>

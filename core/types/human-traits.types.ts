@@ -1,30 +1,30 @@
 // Human traits types
-import { StatEffect } from './stats.types';
+import type { StatEffect } from './stats.types'
 
 /**
  * Человеческая черта характера или состояние
  */
 export interface HumanTrait {
-  id: string;
-  name: string;
-  description: string;
-  type: 'positive' | 'negative' | 'neutral' | 'medical';
-
+  description: string
   // Эффекты на статы персонажа
   effects: StatEffect & {
     // Дополнительные эффекты для бизнеса/работы
-    productivity?: number;      // -100 до +100
-    socialSkills?: number;      // -100 до +100
-    stressResistance?: number;  // -100 до +100
-    learningSpeed?: number;     // -100 до +100
-  };
-
-  // Влияние на отношения
-  relationshipModifier?: number; // -50 до +50
-
+    productivity?: number // -100 до +100
+    socialSkills?: number // -100 до +100
+    stressResistance?: number // -100 до +100
+    learningSpeed?: number // -100 до +100
+  }
+  id: string
   // Может ли черта быть приобретена/потеряна в игре
-  isDynamic: boolean;
+  isDynamic: boolean
+
+  name: string
 
   // Редкость черты (влияет на генерацию NPC)
-  rarity: 'common' | 'uncommon' | 'rare' | 'very_rare';
+  rarity: 'common' | 'uncommon' | 'rare' | 'very_rare'
+
+  // Влияние на отношения
+  relationshipModifier?: number // -50 до +50
+
+  type: 'positive' | 'negative' | 'neutral' | 'medical'
 }

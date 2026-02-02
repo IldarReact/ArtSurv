@@ -1,6 +1,8 @@
+import type { Business, BusinessType, BusinessRoleTemplate, BusinessInventory } from '@/core/types'
+
 import { createBusinessPurchase } from './purchase-logic'
 
-import type { Business, BusinessType, BusinessRoleTemplate, BusinessInventory } from '@/core/types'
+const DEFAULT_MAX_EMPLOYEES = 25
 
 export function createPartnerBusiness(
   offer: {
@@ -24,45 +26,36 @@ export function createPartnerBusiness(
   },
   currentTurn: number,
   playerId: string,
-  isInitiator: boolean = false,
+  isInitiator = false,
 ): Business & { partnerBusinessId?: string } {
   const now = Date.now()
-  const businessId = offer.details.businessId || `biz_${now}`
-  const partnerBusinessId = isInitiator ? undefined : `biz_${now + 1}`
-
-  console.log('[createPartnerBusiness] Creating business:', {
-    playerId,
-    fromPlayerId: offer.fromPlayerId,
-    fromPlayerName: offer.fromPlayerName,
-    isInitiator,
-    yourShare: offer.details.yourShare,
-    yourInvestment: offer.details.yourInvestment,
-  })
+  const businessId = offer.details.businessId ?? `biz_${String(now)}`
+  const partnerBusinessId = isInitiator ? undefined : `biz_${String(now + 1)}`
 
   const { business } = createBusinessPurchase(
     {
-      id: businessId,
-      type: offer.details.businessType,
-      name: offer.details.businessName,
       description: offer.details.businessDescription,
-      initialCost: offer.details.totalCost, // Use totalCost as initialCost for the purchase logic
-      monthlyIncome: offer.details.monthlyIncome || 0,
-      monthlyExpenses: offer.details.monthlyExpenses || 0,
-      maxEmployees: offer.details.maxEmployees || 25,
-      minEmployees: offer.details.minEmployees,
       employeeRoles: offer.details.employeeRoles,
+      id: businessId,
+      initialCost: offer.details.totalCost, // Use totalCost as initialCost for the purchase logic
       inventory: offer.details.inventory,
+      maxEmployees: offer.details.maxEmployees ?? DEFAULT_MAX_EMPLOYEES,
+      minEmployees: offer.details.minEmployees,
+      monthlyExpenses: offer.details.monthlyExpenses ?? 0,
+      monthlyIncome: offer.details.monthlyIncome ?? 0,
+      name: offer.details.businessName,
+      type: offer.details.businessType,
     },
     offer.details.totalCost,
     currentTurn,
     {
+      initialState: 'active', // Partner businesses in this flow are usually active immediately
+      partnerBusinessId,
       partnerId: offer.fromPlayerId,
       partnerName: offer.fromPlayerName,
-      playerShare: offer.details.yourShare,
       playerId,
       playerName: 'Вы', // We can still use 'Вы' for the current player's display name
-      partnerBusinessId,
-      initialState: 'active', // Partner businesses in this flow are usually active immediately
+      playerShare: offer.details.yourShare,
     },
   )
 

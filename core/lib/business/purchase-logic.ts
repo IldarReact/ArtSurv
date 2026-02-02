@@ -2,38 +2,42 @@
  * Shared business purchase logic to ensure DRY compliance across solo and partner flows.
  */
 
-import { createBusinessObject } from './create-business'
-
 import type { Business, BusinessType, BusinessInventory, BusinessRoleTemplate } from '@/core/types'
 
+import { createBusinessObject } from './create-business'
+
 export interface BusinessTemplate {
-  id: string
-  name: string
-  type?: BusinessType
   description: string
+  employeeRoles: BusinessRoleTemplate[]
+  id: string
   initialCost: number
-  monthlyIncome: number
-  monthlyExpenses: number
+  inventory?: BusinessInventory
   maxEmployees: number
   minEmployees?: number
-  employeeRoles: BusinessRoleTemplate[]
-  inventory?: BusinessInventory
+  monthlyExpenses: number
+  monthlyIncome: number
+  name: string
+  price?: number
+  quantity?: number
+  type?: BusinessType
   upfrontPaymentPercentage?: number
 }
 
 export interface PartnerConfig {
+  initialState?: 'active' | 'opening' // Force state
   partnerId: string
   partnerName: string
-  playerShare: number // 0-100
   playerId?: string // Optional custom player ID
   playerName?: string // Optional custom player name
-  initialState?: 'active' | 'opening' // Force state
+  playerShare: number // 0-100
 }
 
 export interface PurchaseResult {
   business: Business & { partnerBusinessId?: string }
   cost: number // The amount the player actually pays upfront
 }
+
+const INSURANCE_COST_PERCENT = 0.01
 
 /**
  * Unifies the creation of a business object and calculates the upfront cost.
@@ -44,7 +48,6 @@ export function createBusinessPurchase(
   currentTurn: number,
   partnerConfig?: PartnerConfig & { partnerBusinessId?: string },
 ): PurchaseResult {
-  const upfrontPercentage = 100 // Всегда 100% при покупке, никаких "кредитов"
   const totalCost = inflatedCost
 
   // Calculate how much the player pays
@@ -52,7 +55,7 @@ export function createBusinessPurchase(
   let business: Business & { partnerBusinessId?: string }
 
   const businessType =
-    template.type ||
+    template.type ??
     (template.id.startsWith('bus_')
       ? (template.id.replace('bus_', '') as BusinessType)
       : (template.id as BusinessType))
@@ -63,45 +66,47 @@ export function createBusinessPurchase(
 
     // Create business with partner info
     business = createBusinessObject({
-      id: template.id,
-      name: template.name,
-      type: businessType,
-      description: template.description,
-      totalCost: totalCost,
-      upfrontCost: totalCost, // 100% оплачено
       creationCost: { energy: -20 }, // Standard energy cost for starting with partner
-      openingQuarters: 0, // При покупке с партнером обычно уже готовый бизнес или открывается сразу
-      monthlyIncome: template.monthlyIncome,
-      monthlyExpenses: template.monthlyExpenses,
+      currentTurn,
+      description: template.description,
+      employeeRoles: template.employeeRoles,
+      id: template.id,
+      inventory: template.inventory,
       maxEmployees: template.maxEmployees,
       minEmployees: template.minEmployees ?? 1,
-      employeeRoles: template.employeeRoles,
-      inventory: template.inventory,
-      currentTurn,
+      monthlyExpenses: template.monthlyExpenses,
+      monthlyIncome: template.monthlyIncome,
+      name: template.name,
+      openingQuarters: 0, // При покупке с партнером обычно уже готовый бизнес или открывается сразу
+      price: template.price,
+      quantity: template.quantity,
+      totalCost: totalCost,
+      type: businessType,
+      upfrontCost: totalCost, // 100% оплачено
     })
 
     // Special initialization for partner businesses (from existing logic)
     business.playerRoles.managerialRoles = ['manager']
     business.hasInsurance = true
-    business.insuranceCost = Math.round(totalCost * 0.01) // 1% of total cost
+    business.insuranceCost = Math.round(totalCost * INSURANCE_COST_PERCENT) // 1% of total cost
 
     // Add partner specific data
     business.partners = [
       {
-        id: partnerConfig.playerId || 'player',
-        name: partnerConfig.playerName || 'Вы',
-        type: 'player',
-        share: partnerConfig.playerShare,
+        id: partnerConfig.playerId ?? 'player',
         investedAmount: playerInvestment,
+        name: partnerConfig.playerName ?? 'Вы',
         relation: 100,
+        share: partnerConfig.playerShare,
+        type: 'player',
       },
       {
         id: partnerConfig.partnerId,
-        name: partnerConfig.partnerName,
-        type: 'player',
-        share: 100 - partnerConfig.playerShare,
         investedAmount: totalCost - playerInvestment,
+        name: partnerConfig.partnerName,
         relation: 50,
+        share: 100 - partnerConfig.playerShare,
+        type: 'player',
       },
     ]
     business.playerShare = partnerConfig.playerShare
@@ -110,24 +115,28 @@ export function createBusinessPurchase(
     business.partnerName = partnerConfig.partnerName
     business.partnerBusinessId = partnerConfig.partnerBusinessId
   } else {
-    // Solo purchase: player pays 100%
-    playerInvestment = totalCost
+    // Solo purchase: always 100% for now as per current game design (upfrontPaymentPercentage ignored for solo)
+    const upfrontPercent = 100
+    playerInvestment = Math.round((totalCost * upfrontPercent) / 100)
 
     business = createBusinessObject({
-      name: template.name,
-      type: businessType,
-      description: template.description,
-      totalCost: totalCost,
-      upfrontCost: playerInvestment,
       creationCost: { energy: -15 }, // Standard energy cost for solo start
-      openingQuarters: 0, // Бизнес становится активным сразу после покупки
-      monthlyIncome: template.monthlyIncome,
-      monthlyExpenses: template.monthlyExpenses,
+      currentTurn,
+      description: template.description,
+      employeeRoles: template.employeeRoles,
+      id: template.id,
+      inventory: template.inventory,
       maxEmployees: template.maxEmployees,
       minEmployees: template.minEmployees ?? 1,
-      employeeRoles: template.employeeRoles,
-      inventory: template.inventory,
-      currentTurn,
+      monthlyExpenses: template.monthlyExpenses,
+      monthlyIncome: template.monthlyIncome,
+      name: template.name,
+      openingQuarters: 0, // Бизнес становится активным сразу после покупки
+      price: template.price,
+      quantity: template.quantity,
+      totalCost: totalCost,
+      type: businessType,
+      upfrontCost: playerInvestment,
     })
   }
 

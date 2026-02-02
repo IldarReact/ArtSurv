@@ -2,14 +2,14 @@
 
 import { Link as LinkIcon } from 'lucide-react'
 
-import { Button } from '@/shared/ui/button'
+import { Button } from '@/shared/components/button'
 
 interface LobbyHeaderProps {
-  roomId: string
   onCopyLink: () => void
+  roomId: string
 }
 
-export function LobbyHeader({ roomId, onCopyLink }: LobbyHeaderProps) {
+export function LobbyHeader({ onCopyLink, roomId }: LobbyHeaderProps) {
   return (
     <div className="flex justify-between items-center mb-12 border-b border-slate-800 pb-6">
       <div>
@@ -19,9 +19,9 @@ export function LobbyHeader({ roomId, onCopyLink }: LobbyHeaderProps) {
         </p>
       </div>
       <Button
+        className="bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
         onClick={onCopyLink}
         variant="outline"
-        className="bg-slate-900 border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
       >
         <LinkIcon className="w-4 h-4 mr-2" />
         Пригласить

@@ -1,30 +1,42 @@
+import type { BusinessInventory, Employee } from '@/core/types/business.types'
+import type { GameEvent, GameEventType } from '@/core/types/events.types'
+import type { Asset, Debt } from '@/core/types/finance.types'
 import type { GameOffer } from '@/core/types/game-offers.types'
-import type { BaseGameEvent } from '@/core/types/events.types'
-import type { Stats } from '@/core/types/stats.types'
+import type { ActiveCourse, ActiveUniversity } from '@/core/types/skill.types'
 
 // Add these interfaces at the top of the file
 export interface LocalPlayer {
+  assets?: Asset[]
+  businesses: LocalBusiness[]
+  debts?: Debt[]
   id: string
   name: string
+  personal?: {
+    stats: {
+      energy: number
+      money: number
+    }
+    activeCourses?: ActiveCourse[]
+    activeUniversity?: ActiveUniversity[]
+  }
   stats: {
     money: number
+    energy?: number
   }
-  businesses: LocalBusiness[]
 }
 
 export interface LocalBusiness {
+  employees?: Employee[]
   id: string
+  inventory?: BusinessInventory
+  name?: string
   partnerBusinessId?: string
-  // Add other business properties as needed
+  price?: number
+  walletBalance?: number
 }
 
 export interface LocalGameOffer {
-  id: string
-  type: string
-  fromPlayerId: string
-  fromPlayerName: string
-  toPlayerId: string
-  toPlayerName: string
+  createdTurn: number
   details: {
     businessName: string
     businessType: string
@@ -36,15 +48,20 @@ export interface LocalGameOffer {
     yourInvestment: number
     businessId: string
   }
+  expiresInTurns: number
+  fromPlayerId: string
+  fromPlayerName: string
+  id: string
   message: string
   status: 'pending' | 'accepted' | 'rejected'
-  createdTurn: number
-  expiresInTurns: number
+  toPlayerId: string
+  toPlayerName: string
+  type: string
 }
 
 export interface LocalGameState {
-  player: LocalPlayer
   offers: GameOffer[]
+  player: LocalPlayer
   turn: number
 }
 
@@ -52,20 +69,6 @@ export interface LocalGameState {
  * Represents a business entity that can have multiple partners
  */
 export interface BusinessWithPartners {
-  id: string
-  name: string
-  type: string
-  description: string
-  totalInvestment: number
-  valuation: number
-  establishedDate: Date
-  partners: Array<{
-    id: string
-    name?: string
-    ownershipPercentage?: number
-    joinedDate?: Date
-  }>
-  status: 'active' | 'inactive' | 'suspended' | 'closed'
   address?: {
     street: string
     city: string
@@ -77,19 +80,35 @@ export interface BusinessWithPartners {
     phone?: string
     website?: string
   }
+  description: string
+  establishedDate: Date
   financials?: {
     revenue: number
     expenses: number
     profit: number
     lastUpdated: Date
   }
+  id: string
+  name: string
+  partners: {
+    id: string
+    name?: string
+    ownershipPercentage?: number
+    joinedDate?: Date
+  }[]
+  status: 'active' | 'inactive' | 'suspended' | 'closed'
+  totalInvestment: number
+  type: string
+  valuation: number
 }
 
 export interface MockState {
+  applyStatChanges?: (changes: Partial<{ money: number; energy: number }>) => void
+  performTransaction: (cost: { money?: number }, options?: { requireFunds?: boolean }) => boolean
+  pushNotification: (n: { title: string; message?: string; type?: string }) => void
   get: () => LocalGameState
-  set: (patch: Partial<LocalGameState>) => void
-  on: (eventType: string, handler: (event: BaseGameEvent) => void) => void
-  state: () => LocalGameState
   getState: () => LocalGameState
-  applyStatChanges?: (changes: Partial<Stats>) => void
+  on: (eventType: GameEventType, handler: (event: GameEvent) => void) => void
+  set: (patch: Partial<LocalGameState>) => void
+  state: () => LocalGameState
 }

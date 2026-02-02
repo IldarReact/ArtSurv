@@ -1,14 +1,16 @@
-import type { GameStore } from '../../../../types'
-
 import { broadcastEvent } from '@/core/lib/multiplayer'
 import type { JobOffer } from '@/core/types'
 import type { Business, BusinessPartner, EmployeeRole } from '@/core/types/business.types'
 
+import type { GameStore } from '../../../../types'
+
+const DEFAULT_EMPLOYEE_STARS = 3
+
 export interface JobOfferAcceptedPayload {
-  offerId: string
+  businessId: string
   employeeId: string
   employeeName: string
-  businessId: string
+  offerId: string
   role: EmployeeRole
   salary: number
 }
@@ -25,18 +27,18 @@ export function handleAcceptJobOffer(
 
   // 2. Уведомляем работодателя (отправителя)
   const payload: JobOfferAcceptedPayload = {
-    offerId: offer.id,
+    businessId: offer.details.businessId,
     employeeId: state.player.id,
     employeeName: state.player.name,
-    businessId: offer.details.businessId,
-    role: offer.details.role as EmployeeRole,
+    offerId: offer.id,
+    role: offer.details.role,
     salary: offer.details.salary,
   }
 
   broadcastEvent({
-    type: 'JOB_OFFER_ACCEPTED',
     payload,
     toPlayerId: offer.fromPlayerId,
+    type: 'JOB_OFFER_ACCEPTED',
   })
 
   // 3. Обновляем статус предложения
@@ -45,10 +47,10 @@ export function handleAcceptJobOffer(
   }))
 
   // 4. Уведомляем игрока
-  state.pushNotification?.({
-    type: 'success',
-    title: 'Работа принята',
+  state.pushNotification({
     message: `Вы устроились в "${offer.details.businessName}" на должность ${offer.details.role}`,
+    title: 'Работа принята',
+    type: 'success',
   })
 }
 
@@ -61,28 +63,30 @@ export function handleOnJobOfferAccepted(
 
   const business = state.player.businesses.find((b) => b.id === payload.businessId)
 
-  if (business && business.partners && business.partners.length > 0) {
+  if (business?.partners && business.partners.length > 0) {
+    const APPROVAL_THRESHOLD = 50
+    const TOTAL_SHARE = 100
     const requiresApproval = (business: Business, playerId: string) => {
-      const partner = business.partners?.find((p: BusinessPartner) => p.id === playerId)
-      const share =
-        partner?.share ||
-        100 -
-          (business.partners?.reduce(
-            (acc: number, p: BusinessPartner) => acc + (p.share || 0),
-            0,
-          ) || 0)
-      return share <= 50
+      const partner = business.partners.find((p: BusinessPartner) => p.id === playerId)
+
+      let partnersShareSum = 0
+      for (const p of business.partners) {
+        partnersShareSum += p.share
+      }
+
+      const share = partner?.share ?? TOTAL_SHARE - partnersShareSum
+      return share <= APPROVAL_THRESHOLD
     }
 
     if (requiresApproval(business, state.player.id)) {
       state.proposeBusinessChange(payload.businessId, 'hire_employee', {
+        employeeId: payload.employeeId,
         employeeName: payload.employeeName,
         employeeRole: payload.role,
         employeeSalary: payload.salary,
-        employeeStars: 3,
-        employeeId: payload.employeeId,
-        isPlayer: true,
+        employeeStars: DEFAULT_EMPLOYEE_STARS,
         isMe: false,
+        isPlayer: true,
       })
 
       set((state) => ({
@@ -91,10 +95,10 @@ export function handleOnJobOfferAccepted(
         ),
       }))
 
-      state.pushNotification?.({
-        type: 'info',
-        title: 'Оффер принят, создано предложение',
+      state.pushNotification({
         message: `${payload.employeeName} принял оффер. Создано предложение о найме для партнера.`,
+        title: 'Оффер принят, создано предложение',
+        type: 'info',
       })
       return
     }
@@ -112,9 +116,9 @@ export function handleOnJobOfferAccepted(
     offers: state.offers.map((o) => (o.id === payload.offerId ? { ...o, status: 'accepted' } : o)),
   }))
 
-  state.pushNotification?.({
-    type: 'success',
-    title: 'Сотрудник нанят',
+  state.pushNotification({
     message: `${payload.employeeName} принял ваше предложение и устроился на должность ${payload.role}`,
+    title: 'Сотрудник нанят',
+    type: 'success',
   })
 }

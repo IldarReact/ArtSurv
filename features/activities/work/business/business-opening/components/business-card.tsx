@@ -1,30 +1,38 @@
-import { DollarSign, Users, Zap, CheckCircle, Store, AlertCircle } from "lucide-react"
+import { DollarSign, Users, Zap, CheckCircle, Store, AlertCircle } from 'lucide-react'
 
-import type { BusinessOption, BusinessRequirement } from "../types"
+import { Badge } from '@/shared/components/badge'
+import { Button } from '@/shared/components/button'
 
-import { Badge } from "@/shared/ui/badge"
-import { Button } from "@/shared/ui/button"
+import type { BusinessOption, BusinessRequirement } from '../types'
 
 interface BusinessCardProps {
   business: BusinessOption
-  isSelected: boolean
   canAfford: boolean
-  onSelect: () => void
+  isSelected: boolean
   onOpen: () => void
+  onSelect: () => void
 }
 
-export function BusinessCard({ business, isSelected, canAfford, onSelect, onOpen }: BusinessCardProps) {
+export function BusinessCard({
+  business,
+  canAfford,
+  isSelected,
+  onOpen,
+  onSelect,
+}: BusinessCardProps) {
   return (
-    <div
+    <button
       className={`
-        bg-white/5 border rounded-2xl overflow-hidden transition-all cursor-pointer
+        w-full text-left bg-white/5 border rounded-2xl overflow-hidden transition-all cursor-pointer
         ${isSelected ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-white/10 hover:border-white/20'}
-        ${!canAfford && 'opacity-60'}
+        ${!canAfford ? 'opacity-60' : ''}
       `}
       onClick={onSelect}
+      type="button"
     >
       <div className="relative h-48">
-        <img src={business.image} alt={business.title} className="w-full h-full object-cover" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img alt={business.title} className="w-full h-full object-cover" src={business.image} />
         <div className="absolute top-3 left-3">
           <Badge className="bg-black/70 backdrop-blur-md text-white border-white/20">
             {business.type}
@@ -40,7 +48,9 @@ export function BusinessCard({ business, isSelected, canAfford, onSelect, onOpen
       <div className="p-6">
         <div className="flex justify-between items-start mb-3">
           <h3 className="text-2xl font-bold text-white">{business.title}</h3>
-          <div className={`text-xl font-bold flex items-center gap-1 ${canAfford ? 'text-green-400' : 'text-red-400'}`}>
+          <div
+            className={`text-xl font-bold flex items-center gap-1 ${canAfford ? 'text-green-400' : 'text-red-400'}`}
+          >
             <DollarSign className="w-5 h-5" />
             {business.cost.toLocaleString()}
           </div>
@@ -77,8 +87,8 @@ export function BusinessCard({ business, isSelected, canAfford, onSelect, onOpen
             Рекомендуемые сотрудники
           </h4>
           <div className="space-y-2">
-            {business.requirements.map((req: BusinessRequirement, idx: number) => (
-              <div key={idx} className="flex items-start gap-2">
+            {business.requirements.map((req: BusinessRequirement) => (
+              <div className="flex items-start gap-2" key={req.role}>
                 <div className="mt-0.5">{req.icon}</div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -97,17 +107,19 @@ export function BusinessCard({ business, isSelected, canAfford, onSelect, onOpen
         </div>
 
         <Button
+          className={`
+            w-full h-12 font-bold text-base
+            ${
+              canAfford
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                : 'bg-white/5 text-white/40 cursor-not-allowed'
+            }
+          `}
+          disabled={!canAfford}
           onClick={(e) => {
             e.stopPropagation()
             onOpen()
           }}
-          disabled={!canAfford}
-          className={`
-            w-full h-12 font-bold text-base
-            ${canAfford
-              ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-              : 'bg-white/5 text-white/40 cursor-not-allowed'}
-          `}
         >
           {canAfford ? (
             <>
@@ -122,6 +134,6 @@ export function BusinessCard({ business, isSelected, canAfford, onSelect, onOpen
           )}
         </Button>
       </div>
-    </div>
+    </button>
   )
 }

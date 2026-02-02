@@ -1,12 +1,12 @@
-import type { GameStore } from '../../slices/types'
+import { calculateQuarterlyReport } from '@/core/lib/calculations'
 import type { FamilyMember, QuarterlyReport } from '@/core/types'
+
+import type { GameStore } from '../../slices/types'
 import type { LifestyleExpensesBreakdown } from './lifestyle-processor'
-import { calculateQuarterlyReport } from '@/core/lib/calculations/calculate-quarterly-report'
-import { getCountry } from '@/core/lib/data-loaders/economy-loader'
 
 interface BusinessResult {
-  totalIncome: number
   totalExpenses: number
+  totalIncome: number
   totalTax: number
 }
 
@@ -20,139 +20,118 @@ export function processFinancials(
   buffIncomeMod: number,
 ) {
   if (!state.player) {
-    const country = state.countries[countryId] ||
-      getCountry(countryId) || {
-        id: countryId,
-        name: 'Unknown',
-        archetype: 'poor' as const,
-        gdpGrowth: 0,
-        inflation: 2,
-        keyRate: 5,
-        interestRate: 5,
-        unemployment: 5,
-        taxRate: 13,
-        corporateTaxRate: 20,
-        salaryModifier: 1,
-        costOfLivingModifier: 1.0,
-        activeEvents: [],
-      }
+    const country = state.countries[countryId]
 
     return {
-      country,
-      familyIncome: 0,
-      familyExpenses: 0,
       assetIncome: 0,
       assetMaintenance: 0,
+      country,
       debtInterest: 0,
+      familyExpenses: 0,
+      familyIncome: 0,
+      netProfit: 0,
       quarterlyReport: {
-        income: {
-          salary: 0,
-          businessRevenue: 0,
-          familyIncome: 0,
-          assetIncome: 0,
-          capitalGains: 0,
-          total: 0,
-        },
         expenses: {
-          living: 0,
+          assetMaintenance: 0,
+          business: 0,
+          credits: 0,
+          debtInterest: 0,
+          family: 0,
           food: 0,
           housing: 0,
-          transport: 0,
-          credits: 0,
+          living: 0,
           mortgage: 0,
           other: 0,
-          family: 0,
-          business: 0,
-          debtInterest: 0,
-          assetMaintenance: 0,
           total: 0,
+          transport: 0,
         },
-        taxes: {
-          income: 0,
-          business: 0,
-          capital: 0,
-          property: 0,
+        income: {
+          assetIncome: 0,
+          businessRevenue: 0,
+          capitalGains: 0,
+          familyIncome: 0,
+          salary: 0,
           total: 0,
         },
         netProfit: 0,
+        taxes: {
+          business: 0,
+          capital: 0,
+          income: 0,
+          property: 0,
+          total: 0,
+        },
         warning: null,
       } as QuarterlyReport,
-      netProfit: 0,
     }
   }
 
-  const country = state.countries[countryId] ||
-    getCountry(countryId) || {
-      id: countryId,
-      name: 'Unknown',
-      archetype: 'poor',
-      gdpGrowth: 0,
-      inflation: 2,
-      keyRate: 5,
-      interestRate: 5,
-      unemployment: 5,
-      taxRate: 13,
-      corporateTaxRate: 20,
-      salaryModifier: 1,
-      costOfLivingModifier: 1.0,
-      activeEvents: [],
-    }
+  const country = state.countries[countryId]
 
-  const familyIncome = updatedFamilyMembers.reduce(
-    (acc: number, m: FamilyMember) => acc + (m.income || 0),
-    0,
-  )
-  const familyExpenses = updatedFamilyMembers.reduce(
-    (acc: number, m: FamilyMember) => acc + (m.expenses || 0),
-    0,
-  )
+  let familyIncome = 0
+  let familyExpenses = 0
+  for (const m of updatedFamilyMembers) {
+    familyIncome += m.income
+    familyExpenses += m.expenses
+  }
+
+  const DEPOSIT_RATE_MULTIPLIER = 0.7
+  const QUARTERS_PER_YEAR = 4
+  const MONTHS_PER_QUARTER = 3
+  const PERCENT_BASE = 100
+
+  const depositAnnualRate = (country.keyRate * DEPOSIT_RATE_MULTIPLIER) / PERCENT_BASE
+  const depositQuarterlyRate = depositAnnualRate / QUARTERS_PER_YEAR
 
   let totalAssetIncome = 0
-  totalAssetIncome += state.player.assets
-    .filter((a) => a.type !== 'deposit')
-    .reduce((acc, a) => acc + a.income * 3, 0)
-
-  const depositAnnualRate = (country.keyRate * 0.7) / 100
-  const depositQuarterlyRate = depositAnnualRate / 4
-
-  const depositsIncome = state.player.assets
-    .filter((a) => a.type === 'deposit')
-    .reduce((acc, a) => acc + a.currentValue * depositQuarterlyRate, 0)
-
-  totalAssetIncome += depositsIncome
+  let assetMaintenance = 0
+  for (const a of state.player.assets) {
+    if (a.type === 'deposit') {
+      totalAssetIncome += a.currentValue * depositQuarterlyRate
+    } else {
+      totalAssetIncome += a.income * MONTHS_PER_QUARTER
+    }
+    assetMaintenance += a.expenses * MONTHS_PER_QUARTER
+  }
 
   const assetIncome = totalAssetIncome
-  const assetMaintenance = state.player.assets.reduce((acc, a) => acc + a.expenses * 3, 0)
-  const debtInterest = state.player.debts.reduce((acc, d) => acc + d.quarterlyInterest, 0)
+
+  let debtInterest = 0
+
+  for (const d of state.player.debts) {
+    // Реалистичный расчет процентов: Остаток долга * (Ставка / 100) / 4 квартала
+    const quarterlyRate = d.interestRate / PERCENT_BASE / QUARTERS_PER_YEAR
+    debtInterest += Math.round(d.remainingAmount * quarterlyRate)
+  }
 
   const quarterlyReport = calculateQuarterlyReport({
-    player: state.player,
-    country,
-    familyIncome,
-    familyExpenses,
     assetIncome,
     assetMaintenance,
-    debtInterest,
     buffIncomeMod,
     businessFinancialsOverride: {
-      income: businessResult.totalIncome,
       expenses: businessResult.totalExpenses,
+      income: businessResult.totalIncome,
       taxes: businessResult.totalTax,
     },
-    lifestyleExpenses,
+    country,
+    debtInterest,
     expensesBreakdown: lifestyleExpensesBreakdown as unknown as Record<string, number>,
+    familyExpenses,
+    familyIncome,
+    lifestyleExpenses,
+    player: state.player,
   })
 
   const netProfit = quarterlyReport.netProfit
 
   return {
-    country,
-    familyIncome,
-    familyExpenses,
     assetIncome,
     assetMaintenance,
+    country,
     debtInterest,
-    quarterlyReport,
+    familyExpenses,
+    familyIncome,
     netProfit,
+    quarterlyReport,
   }
 }

@@ -1,18 +1,7 @@
-import { useGameStore } from './store'
-
 import { initMultiplayer, subscribeToEvents } from '@/core/lib/multiplayer'
-import {
-  GameEvent,
-  PartnershipAcceptedEvent,
-  PartnershipUpdatedEvent,
-  BusinessChangeProposedEvent,
-  BusinessChangeApprovedEvent,
-  BusinessChangeRejectedEvent,
-  BusinessUpdatedEvent,
-  JobOfferAcceptedEvent,
-  OfferSentEvent,
-  OfferRejectedEvent,
-} from '@/core/types/events.types'
+import type { GameEvent } from '@/core/types/events.types'
+
+import { useGameStore } from './store'
 
 let multiplayerSynced = false
 
@@ -30,7 +19,7 @@ export function enableMultiplayerSync() {
 
   // Liveblocks → Zustand (events)
   subscribeToEvents((event: GameEvent) => {
-    console.log('Событие получено:', event.type, 'для игрока:', state.player?.id)
+    // console.log('Событие получено:', event.type, 'для игрока:', state.player?.id)
 
     // Filter events meant for other players if toPlayerId is specified
     if (event.toPlayerId && state.player && event.toPlayerId !== state.player.id) {
@@ -40,39 +29,45 @@ export function enableMultiplayerSync() {
     switch (event.type) {
       // Partnership events
       case 'PARTNERSHIP_ACCEPTED':
-        state.onPartnershipAccepted?.(event as PartnershipAcceptedEvent)
+        state.onPartnershipAccepted(event)
         break
       case 'PARTNERSHIP_UPDATED':
-        state.onPartnershipUpdated?.(event as PartnershipUpdatedEvent)
+        state.onPartnershipUpdated(event)
         break
 
       // Business change events
       case 'BUSINESS_CHANGE_PROPOSED':
-        state.onBusinessChangeProposed?.(event as BusinessChangeProposedEvent)
+        state.onBusinessChangeProposed(event)
         break
       case 'BUSINESS_CHANGE_APPROVED':
-        state.onBusinessChangeApproved?.(event as BusinessChangeApprovedEvent)
+        state.onBusinessChangeApproved(event)
         break
       case 'BUSINESS_CHANGE_REJECTED':
-        state.onBusinessChangeRejected?.(event as BusinessChangeRejectedEvent)
+        state.onBusinessChangeRejected(event)
         break
       case 'BUSINESS_UPDATED':
-        state.onBusinessUpdated?.(event as BusinessUpdatedEvent)
+        state.onBusinessUpdated(event)
         break
 
       // Offer events
       case 'JOB_OFFER_ACCEPTED':
-        state.onJobOfferAccepted?.(event as JobOfferAcceptedEvent)
+        state.onJobOfferAccepted(event)
         break
       case 'OFFER_SENT':
-        state.onOfferSent?.(event as OfferSentEvent)
+        state.onOfferSent(event)
         break
       case 'OFFER_REJECTED':
-        state.onOfferRejected?.(event as OfferRejectedEvent)
+        state.onOfferRejected(event)
+        break
+
+      case 'OFFER_ACCEPTED':
+      case 'BUSINESS_SYNC':
+        // Handle or ignore these events
         break
 
       default:
-        console.warn('Unknown event type:', event.type)
+        // console.warn('Unknown event type:', event.type)
+        break
     }
   })
 }

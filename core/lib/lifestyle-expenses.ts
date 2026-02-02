@@ -2,12 +2,12 @@ import { getShopItem } from '@/core/lib/shop-helpers'
 import type { Player, FamilyMember } from '@/core/types'
 import { getItemCost, isRecurringItem } from '@/core/types/shop.types'
 
-export function calculateFoodExpenses(player: Player, costModifier: number = 1.0): number {
+export function calculateFoodExpenses(player: Player, costModifier = 1.0): number {
   let total = 0
   const countryId = player.countryId
 
   // Еда игрока (обязательно)
-  const playerFoodId = player.activeLifestyle?.food
+  const playerFoodId = player.activeLifestyle.food
   if (playerFoodId) {
     const item = getShopItem(playerFoodId, countryId)
     if (item) total += getItemCost(item) * costModifier
@@ -16,22 +16,20 @@ export function calculateFoodExpenses(player: Player, costModifier: number = 1.0
   // Еда членов семьи
   player.personal.familyMembers.forEach((member) => {
     if (member.type === 'pet') return
-    const foodId = member.foodPreference
-    if (foodId) {
-      const item = getShopItem(foodId, countryId)
-      if (item) total += getItemCost(item) * costModifier
-    }
+    const foodId = member.foodPreference ?? 'food_homemade'
+    const item = getShopItem(foodId, countryId)
+    if (item) total += getItemCost(item) * costModifier
   })
 
   return Math.round(total)
 }
 
-export function calculateTransportExpenses(player: Player, costModifier: number = 1.0): number {
+export function calculateTransportExpenses(player: Player, costModifier = 1.0): number {
   let total = 0
   const countryId = player.countryId
 
   // Транспорт игрока (обязательно)
-  const playerTransportId = player.activeLifestyle?.transport
+  const playerTransportId = player.activeLifestyle.transport
   if (playerTransportId) {
     const item = getShopItem(playerTransportId, countryId)
     if (item) total += getItemCost(item) * costModifier
@@ -39,18 +37,17 @@ export function calculateTransportExpenses(player: Player, costModifier: number 
 
   // Транспорт членов семьи
   player.personal.familyMembers.forEach((member) => {
-    if (member.type === 'pet' || member.age < 10) return
-    const transportId = member.transportPreference
-    if (transportId) {
-      const item = getShopItem(transportId, countryId)
-      if (item) total += getItemCost(item) * costModifier
-    }
+    const MIN_TRANSPORT_AGE = 10
+    if (member.type === 'pet' || member.age < MIN_TRANSPORT_AGE) return
+    const transportId = member.transportPreference ?? 'transport_public'
+    const item = getShopItem(transportId, countryId)
+    if (item) total += getItemCost(item) * costModifier
   })
 
   return Math.round(total)
 }
 
-export function calculateHousingExpenses(player: Player, costModifier: number = 1.0): number {
+export function calculateHousingExpenses(player: Player, costModifier = 1.0): number {
   const housingId = player.housingId
   if (!housingId) return 0
 
@@ -62,64 +59,75 @@ export function calculateHousingExpenses(player: Player, costModifier: number = 
   if (isRecurringItem(item)) {
     return item.costPerTurn * costModifier
   } else {
-    return (item.maintenanceCost || 0) * costModifier
+    return (item.maintenanceCost ?? 0) * costModifier
   }
 }
 
-export function calculateLifestyleExpenses(player: Player, costModifier: number = 1.0) {
+export function calculateLifestyleExpenses(player: Player, costModifier = 1.0) {
   const food = calculateFoodExpenses(player, costModifier)
   const transport = calculateTransportExpenses(player, costModifier)
   const housing = calculateHousingExpenses(player, costModifier)
 
-  const credits = player.debts
-    .filter((d) => d.type !== 'mortgage')
-    .reduce((sum, debt) => sum + debt.quarterlyInterest, 0)
+  let credits = 0
+  for (const debt of player.debts) {
+    if (debt.type !== 'mortgage') {
+      credits += debt.quarterlyPayment || 0
+    }
+  }
 
-  const mortgage = player.debts
-    .filter((d) => d.type === 'mortgage')
-    .reduce((sum, debt) => sum + debt.quarterlyInterest, 0)
+  let mortgage = 0
+  for (const debt of player.debts) {
+    if (debt.type === 'mortgage') {
+      mortgage += debt.quarterlyPayment || 0
+    }
+  }
 
   const other = 0
 
   return {
-    food,
-    transport,
-    housing,
     credits,
+    food,
+    housing,
     mortgage,
     other,
     total: food + transport + housing + credits + mortgage + other,
+    transport,
   }
 }
 
 export function calculateMemberExpenses(
   member: FamilyMember,
   countryId?: string,
-  costModifier: number = 1.0,
+  costModifier = 1.0,
 ): number {
   let total = 0
 
   // Питание
   if (member.type !== 'pet') {
-    const foodId = member.foodPreference || 'food_homemade'
+    const foodId = member.foodPreference ?? 'food_homemade'
     const item = getShopItem(foodId, countryId)
     if (item) total += getItemCost(item) * costModifier
   }
 
   // Транспорт
-  if (member.type !== 'pet' && member.age >= 10) {
-    const transportId = member.transportPreference || 'transport_public'
+  const MIN_TRANSPORT_AGE = 10
+  if (member.type !== 'pet' && member.age >= MIN_TRANSPORT_AGE) {
+    const transportId = member.transportPreference ?? 'transport_public'
     const item = getShopItem(transportId, countryId)
     if (item) total += getItemCost(item) * costModifier
   }
 
   // Другое (страховки, мелочи)
+  const BASE_PARTNER_EXPENSES = 300
+  const BASE_CHILD_EXPENSES = 500
+  const BASE_PET_EXPENSES = 200
+
   if (member.type === 'wife' || member.type === 'husband') {
-    total += 300 * costModifier // Базовые расходы партнера
+    total += BASE_PARTNER_EXPENSES * costModifier // Базовые расходы партнера
   } else if (member.type === 'child') {
-    total += 500 * costModifier // Расходы на ребенка
+    total += BASE_CHILD_EXPENSES * costModifier // Расходы на ребенка
   } else if (member.type === 'pet') {
-    total += 200 * costModifier // Расходы на питомца
+    total += BASE_PET_EXPENSES * costModifier // Расходы на питомца
   }
 
   return Math.round(total)

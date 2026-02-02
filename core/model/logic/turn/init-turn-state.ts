@@ -1,7 +1,7 @@
+import { getCountry } from '@/core/lib/data-loaders/economy-loader'
+
 import type { TurnContext } from './turn-context'
 import type { TurnState } from './turn-state'
-
-import { getCountry } from '@/core/lib/data-loaders/economy-loader'
 
 export function initTurnState(ctx: TurnContext): TurnState {
   const prev = ctx.prev
@@ -13,77 +13,73 @@ export function initTurnState(ctx: TurnContext): TurnState {
   const player = structuredClone(prev.player)
   const country = prev.countries[player.countryId] ?? getCountry(player.countryId)
 
-  if (!country) {
-    throw new Error(`initTurnState: country ${player.countryId} not found`)
-  }
-
   return {
-    // meta
-    turn: ctx.turn,
-    year: ctx.year,
-    gameStatus: prev.gameStatus || 'playing',
-    isAborted: false,
-    gameOverReason: null,
-
-    // snapshot
-    player,
+    // buffs
+    buffs: player.personal.buffs,
+    // business
+    business: {
+      totalExpenses: 0,
+      totalIncome: 0,
+      totalTax: 0,
+    },
     countries: prev.countries,
     country,
-    globalEvents: prev.globalEvents ?? [],
+    // finance
+    financial: {
+      adjustedNetProfit: 0,
+      netProfit: 0,
+      quarterlyReport: prev.player.quarterlyReport,
+    },
 
-    // market
-    marketEvents: prev.marketEvents ?? [],
+    gameOverReason: null,
+    gameStatus: prev.gameStatus,
+    globalEvents: prev.globalEvents,
     globalMarketValue: 1,
 
-    // buffs
-    buffs: player.personal.buffs ?? [],
-    statModifiers: {},
-    moneyDelta: 0,
+    // history
+    historyEntry: null,
+    // economy
+    inflationNotification: null,
 
+    isAborted: false,
     // lifestyle
     lifestyle: {
-      expenses: 0,
       breakdown: {
+        credits: 0,
         food: 0,
         housing: 0,
-        transport: 0,
-        credits: 0,
         mortgage: 0,
         other: 0,
         total: 0,
+        transport: 0,
       },
+      expenses: 0,
       modifiers: {},
     },
+    // market
+    marketEvents: prev.marketEvents,
 
-    // business
-    business: {
-      totalIncome: 0,
-      totalExpenses: 0,
-      totalTax: 0,
-    },
+    moneyDelta: 0,
+
+    // system
+    notifications: [],
+
+    // jobs / education / freelance
+    pendingApplications: prev.pendingApplications,
+
+    pendingFreelanceApplications: prev.pendingFreelanceApplications,
+
+    // snapshot
+    player,
+    protectedSkills: new Set(),
+    statModifiers: {},
 
     // working stats
     stats: structuredClone(player.personal.stats),
 
-    // finance
-    financial: {
-      quarterlyReport: prev.player.quarterlyReport,
-      netProfit: 0,
-      adjustedNetProfit: 0,
-    },
+    // meta
+    turn: ctx.turn,
 
-    // jobs / education / freelance
-    pendingApplications: prev.pendingApplications ?? [],
-    pendingFreelanceApplications: prev.pendingFreelanceApplications ?? [],
-    protectedSkills: new Set(),
-
-    // economy
-    inflationNotification: null,
-
-    // history
-    historyEntry: null,
-
-    // system
-    notifications: [],
+    year: ctx.year,
   }
 }

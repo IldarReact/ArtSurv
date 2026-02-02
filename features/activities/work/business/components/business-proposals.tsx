@@ -4,8 +4,8 @@ import { Bell, Check, X, Clock } from 'lucide-react'
 
 import type { BusinessChangeProposal } from '@/core/model/slices/activities/work/business/partnership-business-slice.types'
 import { useGameStore } from '@/core/model/store'
-import { Badge } from '@/shared/ui/badge'
-import { Button } from '@/shared/ui/button'
+import { Badge } from '@/shared/components/badge'
+import { Button } from '@/shared/components/button'
 
 /**
  * Компонент для отображения и обработки предложений изменений от партнёров
@@ -29,23 +29,42 @@ export function BusinessProposals() {
   const getProposalDescription = (proposal: BusinessChangeProposal): string => {
     switch (proposal.changeType) {
       case 'price':
-        return `Изменить цену на $${proposal.data.newPrice}`
+        return `Изменить цену на $${String(proposal.data.newPrice)}`
       case 'quantity':
-        return `Изменить количество на ${proposal.data.newQuantity}`
+        return `Изменить количество на ${String(proposal.data.newQuantity)}`
       case 'hire_employee':
-        return `Нанять ${proposal.data.employeeName} на должность ${proposal.data.employeeRole} (зарплата: $${proposal.data.employeeSalary})`
+        return `Нанять ${String(proposal.data.employeeName)} на должность ${String(proposal.data.employeeRole)} (зарплата: $${String(proposal.data.employeeSalary)})`
       case 'fire_employee':
-        return `Уволить ${proposal.data.fireEmployeeName}`
+        return `Уволить ${String(proposal.data.fireEmployeeName)}`
       case 'freeze':
         return `Заморозить бизнес`
       case 'unfreeze':
         return `Разморозить бизнес`
       case 'open_branch':
-        return `Открыть филиал "${proposal.data.branchName}" (стоимость: $${proposal.data.branchCost})`
+      case 'branch':
+        return `Открыть филиал "${String(proposal.data.branchName)}" (стоимость: $${String(proposal.data.branchCost)})`
       case 'auto_purchase':
-        return `Изменить автозакупку на ${proposal.data.autoPurchaseAmount} единиц`
+        return `Изменить автозакупку на ${String(proposal.data.autoPurchaseAmount)} единиц`
       case 'change_role':
-        return `Изменить роль с "${proposal.data.oldRole}" на "${proposal.data.newRole}"`
+        return `Изменить роль с "${String(proposal.data.oldRole)}" на "${String(proposal.data.newRole)}"`
+      case 'dividend':
+        return `Выплатить дивиденды: $${String(proposal.data.amount)}`
+      case 'fund_collection':
+        return `Сбор средств: $${String(proposal.data.collectionAmount)}`
+      case 'promote_employee':
+        return `Повысить ${String(proposal.data.promoteEmployeeName)} (новая зарплата: $${String(proposal.data.newSalary)})`
+      case 'demote_employee':
+        return `Понизить ${String(proposal.data.demoteEmployeeName)} (новая зарплата: $${String(proposal.data.newSalary)})`
+      case 'set_salary':
+        return `Изменить зарплату ${String(proposal.data.salaryEmployeeName)} на $${String(proposal.data.newSalary)}`
+      case 'expand_storage':
+        return `Расширить склад на ${String(proposal.data.storageExpansion)} ед.`
+      case 'marketing_campaign':
+        return `Запустить маркетинговую кампанию (${String(proposal.data.campaignType)})`
+      case 'change_name':
+        return `Изменить название бизнеса на "${String(proposal.data.newName)}"`
+      case 'sell_business':
+        return `Продать бизнес за $${String(proposal.data.sellPrice)}`
       default:
         return 'Неизвестное изменение'
     }
@@ -74,14 +93,14 @@ export function BusinessProposals() {
           <div className="space-y-3">
             {incomingProposals.map((proposal) => (
               <div
-                key={proposal.id}
                 className="bg-white/5 rounded-xl p-4 border border-white/10 hover:border-amber-500/30 transition-colors"
+                key={proposal.id}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <p className="font-bold text-white">{proposal.initiatorName}</p>
-                      <Badge variant="outline" className="text-xs">
+                      <Badge className="text-xs" variant="outline">
                         {proposal.changeType}
                       </Badge>
                     </div>
@@ -91,16 +110,20 @@ export function BusinessProposals() {
 
                 <div className="flex gap-2">
                   <Button
-                    onClick={() => approveBusinessChange(proposal.id)}
                     className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                    onClick={() => {
+                      approveBusinessChange(proposal.id)
+                    }}
                     size="sm"
                   >
                     <Check className="w-4 h-4 mr-1" />
                     Одобрить
                   </Button>
                   <Button
-                    onClick={() => rejectBusinessChange(proposal.id)}
                     className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                    onClick={() => {
+                      rejectBusinessChange(proposal.id)
+                    }}
                     size="sm"
                   >
                     <X className="w-4 h-4 mr-1" />
@@ -123,7 +146,7 @@ export function BusinessProposals() {
 
           <div className="space-y-3">
             {outgoingProposals.map((proposal) => (
-              <div key={proposal.id} className="bg-white/5 rounded-xl p-4 border border-white/10">
+              <div className="bg-white/5 rounded-xl p-4 border border-white/10" key={proposal.id}>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <p className="text-sm text-white/70 mb-2">{getProposalDescription(proposal)}</p>

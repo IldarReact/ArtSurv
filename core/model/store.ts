@@ -1,10 +1,16 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage, devtools } from 'zustand/middleware'
 
+import { WORLD_COUNTRIES } from '@/core/lib/data-loaders/economy-loader'
+import { saveManager } from '@/core/lib/persistence/save-manager'
+import type { GameState } from '@/core/schemas/game.schema'
+
 import { createShopSlice } from './slices'
 import { createBankSlice } from './slices/activities/bank/bank-slice'
 import { createEducationSlice } from './slices/activities/education/education-slice'
 import { createFamilySlice } from './slices/activities/family/family-slice'
+import { createInvestmentSlice } from './slices/activities/investments/investment-slice'
+import { createRelocationSlice } from './slices/activities/relocation/relocation-slice'
 import { createBusinessSlice } from './slices/activities/work/business/business-slice'
 import { createCoreBusinessSlice } from './slices/activities/work/business/core-business-slice'
 import { createEmployeesSlice } from './slices/activities/work/business/employees-slice'
@@ -23,29 +29,27 @@ import { createNotificationSlice } from './slices/notification-slice'
 import { createPlayerSlice } from './slices/player-slice'
 import type { GameStore } from './slices/types'
 
-import { WORLD_COUNTRIES } from '@/core/lib/data-loaders/economy-loader'
-import { saveManager } from '@/core/lib/persistence/save-manager'
-import type { GameState } from '@/core/schemas/game.schema'
-
 // Custom storage using saveManager for unified validation and checksum
 const validatedStorage = createJSONStorage(() => ({
-  getItem: async (name: string) => {
+  getItem: async (_name: string) => {
+    void _name
     const state = await saveManager.load()
     if (!state) return null
 
     // Zustand expects a JSON string
     return JSON.stringify(state)
   },
+  removeItem: (_name: string) => {
+    void _name
+    saveManager.clear()
+  },
   setItem: (name: string, value: string) => {
     try {
       const state = JSON.parse(value) as GameState
       saveManager.save(state)
-    } catch (error) {
-      console.error('❌ Failed to save via Zustand:', error)
+    } catch {
+      // Failed to save via Zustand
     }
-  },
-  removeItem: (name: string) => {
-    saveManager.clear()
   },
 }))
 
@@ -77,13 +81,13 @@ export const useGameStore = create<GameStore>()(
         ...createIdeaSlice(...a),
         ...createShopSlice(...a),
         ...createBankSlice(...a),
+        ...createInvestmentSlice(...a),
+        ...createRelocationSlice(...a),
         ...createGameOffersSlice(...a),
         ...createPartnershipBusinessSlice(...a),
       }),
       {
         name: 'artsurv-save-v1',
-        version: 1,
-        storage: validatedStorage,
         // Only persist when game is actually running
         partialize: (state) => {
           // Don't persist during menu, setup, or character selection
@@ -97,6 +101,8 @@ export const useGameStore = create<GameStore>()(
           }
           return state // Persist everything else
         },
+        storage: validatedStorage,
+        version: 1,
       },
     ),
     { name: 'ArtSurv Game Store' },

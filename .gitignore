@@ -12,6 +12,10 @@
 
 # testing
 /coverage
+/playwright-report
+/test-results
+/test-playwright.mjs
+.eslintcache
 
 # next.js
 /.next/

@@ -1,4 +1,5 @@
 export interface FamilySlice {
+  acceptPartner: () => void
   // Actions
   addFamilyMember: (
     name: string,
@@ -7,16 +8,15 @@ export interface FamilySlice {
     income: number,
     expenses: number,
   ) => void
-  removeFamilyMember: (id: string) => void
-  updateLifeGoal: (goalId: string, progress: number) => void
+  adoptPet: (petType: 'dog' | 'cat' | 'hamster', name: string, cost: number) => void
   completeLifeGoal: (goalId: string) => void
 
-  // Relationship Actions
-  startDating: () => void
-  acceptPartner: () => void
   rejectPartner: () => void
-  tryForBaby: () => void
-  adoptPet: (petType: 'dog' | 'cat' | 'hamster', name: string, cost: number) => void
+  removeFamilyMember: (id: string) => void
   setMemberFoodPreference: (memberId: string, foodId: string) => void
   setMemberTransportPreference: (memberId: string, transportId: string) => void
+  // Relationship Actions
+  startDating: () => void
+  tryForBaby: () => void
+  updateLifeGoal: (goalId: string, progress: number) => void
 }

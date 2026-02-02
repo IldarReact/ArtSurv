@@ -1,8 +1,8 @@
-import { processEconomicCycle } from '../economy/cycle-processor'
-import type { TurnStep } from '../turn/turn-step'
-
-import { generateGlobalEvents } from '@/core/lib/calculations/generate-global-events'
+import { generateGlobalEvents } from '@/core/lib/calculations'
 import { formatGameDate } from '@/core/lib/quarter'
+
+import { processEconomicCycle } from '../economy/cycle-processor'
+import type { TurnStep } from './step.types'
 
 export const economyStep: TurnStep = (ctx, state) => {
   const country = state.country
@@ -21,12 +21,12 @@ export const economyStep: TurnStep = (ctx, state) => {
     state.country.activeEvents.push(res.newEvent)
 
     state.notifications.push({
-      id: res.newEvent.id,
-      type: res.newEvent.type === 'crisis' ? 'warning' : 'success',
-      title: res.newEvent.title,
-      message: res.newEvent.description,
       date: formatGameDate(ctx.year, ctx.turn),
+      id: res.newEvent.id,
       isRead: false,
+      message: res.newEvent.description,
+      title: res.newEvent.title,
+      type: res.newEvent.type === 'crisis' ? 'warning' : 'success',
     })
   }
 
@@ -38,12 +38,12 @@ export const economyStep: TurnStep = (ctx, state) => {
   if (state.globalEvents.length > oldEventsCount) {
     const newEvent = state.globalEvents[state.globalEvents.length - 1]
     state.notifications.push({
-      id: `global_${newEvent.id}_${ctx.turn}`,
-      type: 'info',
-      title: `🌍 Глобальное событие: ${newEvent.title}`,
-      message: newEvent.description,
       date: formatGameDate(ctx.year, ctx.turn),
+      id: `global_${newEvent.id}_${String(ctx.turn)}`,
       isRead: false,
+      message: newEvent.description,
+      title: `🌍 Глобальное событие: ${newEvent.title}`,
+      type: 'info',
     })
   }
 }

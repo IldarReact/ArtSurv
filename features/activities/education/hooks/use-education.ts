@@ -5,41 +5,42 @@ import { getAllCoursesForCountry } from '@/core/lib/data-loaders/courses-loader'
 import { useGameStore } from '@/core/model/store'
 
 export function useEducation() {
-  const { player, countries, studyCourse, applyToUniversity } = useGameStore()
+  const { applyToUniversity, countries, player, studyCourse } = useGameStore()
   const [feedback, setFeedback] = React.useState<{
     show: boolean
     success: boolean
     message: string
   }>({
+    message: '',
     show: false,
     success: false,
-    message: '',
   })
 
-  if (!player) {
-    return {
-      player: null,
-      feedback,
-      setFeedback,
-    }
-  }
+  const currentCountry = React.useMemo(
+    () => (player ? countries[player.countryId] : null),
+    [player, countries],
+  )
+  const countryId = player?.countryId ?? 'us'
+  const availableCourses = React.useMemo(() => getAllCoursesForCountry(countryId), [countryId])
 
-  const currentCountry = countries[player.countryId]
-  const countryId = player.countryId || 'us'
-  const availableCourses = getAllCoursesForCountry(countryId)
+  const getInflatedCoursePrice = React.useCallback(
+    (basePrice: number): number => {
+      if (!currentCountry) return basePrice
+      return getInflatedEducationPrice(basePrice, currentCountry)
+    },
+    [currentCountry],
+  )
 
-  const getInflatedCoursePrice = (basePrice: number): number => {
-    if (!currentCountry) return basePrice
-    return getInflatedEducationPrice(basePrice, currentCountry)
-  }
-
-  const skills = (player.personal.skills || []).filter((s) => s.level > 0)
-  const activeCourses = player.personal.activeCourses || []
-  const activeUniversity = player.personal.activeUniversity || []
+  const skills = React.useMemo(
+    () => (player?.personal.skills ?? []).filter((s) => s.level > 0),
+    [player?.personal.skills],
+  )
+  const activeCourses = React.useMemo(() => player?.personal.activeCourses ?? [], [player])
+  const activeUniversity = React.useMemo(() => player?.personal.activeUniversity ?? [], [player])
   const hasSkills = skills.length > 0
   const hasActiveEducation = activeCourses.length > 0 || activeUniversity.length > 0
 
-  const parseDuration = (duration: string): number => {
+  const parseDuration = React.useCallback((duration: string): number => {
     if (duration.includes('год')) {
       const years = parseInt(duration)
       return years * 4
@@ -52,43 +53,62 @@ export function useEducation() {
       return 1
     }
     return 1
-  }
+  }, [])
 
-  const calculateCurrentEnergyCost = () => {
-    return (
-      activeCourses.reduce((acc, c) => acc + (c.costPerTurn?.energy || 0), 0) +
-      activeUniversity.reduce((acc, c) => acc + (c.costPerTurn?.energy || 0), 0) +
-      player.jobs.reduce((acc, j) => acc + (j.cost?.energy || 0), 0)
-    )
-  }
-
-  const handleCourseEnroll = (
-    courseName: string,
-    baseCost: number,
-    energyCost: number,
-    skillBonus: string,
-    durationStr: string,
-  ) => {
-    const duration = parseDuration(durationStr)
-    const inflatedCost = getInflatedCoursePrice(baseCost)
-    const currentEnergyCost = calculateCurrentEnergyCost()
-
-    if (100 - currentEnergyCost < energyCost) {
-      setFeedback({
-        show: true,
-        success: false,
-        message: 'Недостаточно свободной энергии. Завершите другие дела.',
-      })
-      return
+  const calculateCurrentEnergyCost = React.useCallback(() => {
+    if (!player) return 0
+    let total = 0
+    for (const c of activeCourses) {
+      total += c.costPerTurn?.energy ?? 0
     }
-
-    if ((player.stats?.money ?? 0) < inflatedCost) {
-      setFeedback({ show: true, success: false, message: 'Недостаточно денег для оплаты курса' })
-      return
+    for (const c of activeUniversity) {
+      total += c.costPerTurn?.energy ?? 0
     }
+    for (const j of player.jobs) {
+      total += j.cost.energy ?? 0
+    }
+    return total
+  }, [activeCourses, activeUniversity, player])
 
-    studyCourse(courseName, inflatedCost, { energy: energyCost }, skillBonus, duration)
-    setFeedback({ show: true, success: true, message: `Вы записались на курс "${courseName}"` })
+  const handleCourseEnroll = React.useCallback(
+    (
+      courseName: string,
+      baseCost: number,
+      energyCost: number,
+      skillBonus: string,
+      durationStr: string,
+    ) => {
+      if (!player) return
+      const duration = parseDuration(durationStr)
+      const inflatedCost = getInflatedCoursePrice(baseCost)
+      const currentEnergyCost = calculateCurrentEnergyCost()
+
+      if (100 - currentEnergyCost < energyCost) {
+        setFeedback({
+          message: 'Недостаточно свободной энергии. Завершите другие дела.',
+          show: true,
+          success: false,
+        })
+        return
+      }
+
+      if (player.stats.money < inflatedCost) {
+        setFeedback({ message: 'Недостаточно денег для оплаты курса', show: true, success: false })
+        return
+      }
+
+      studyCourse(courseName, inflatedCost, { energy: energyCost }, skillBonus, duration)
+      setFeedback({ message: `Вы записались на курс "${courseName}"`, show: true, success: true })
+    },
+    [player, parseDuration, getInflatedCoursePrice, calculateCurrentEnergyCost, studyCourse],
+  )
+
+  if (!player) {
+    return {
+      feedback,
+      player: null,
+      setFeedback,
+    }
   }
 
   const handleUniversityApply = (
@@ -104,35 +124,35 @@ export function useEducation() {
 
     if (100 - currentEnergyCost < energyCost) {
       setFeedback({
+        message: 'Недостаточно свободной энергии. Завершите другие дела.',
         show: true,
         success: false,
-        message: 'Недостаточно свободной энергии. Завершите другие дела.',
       })
       return
     }
 
-    if ((player.stats?.money ?? 0) < inflatedCost) {
-      setFeedback({ show: true, success: false, message: 'Недостаточно денег для оплаты обучения' })
+    if (player.stats.money < inflatedCost) {
+      setFeedback({ message: 'Недостаточно денег для оплаты обучения', show: true, success: false })
       return
     }
 
     applyToUniversity(programName, inflatedCost, { energy: energyCost }, skillBonus, duration)
-    setFeedback({ show: true, success: true, message: `Документы на "${programName}" поданы` })
+    setFeedback({ message: `Документы на "${programName}" поданы`, show: true, success: true })
   }
 
   return {
-    player,
-    currentCountry,
-    skills,
     activeCourses,
     activeUniversity,
-    hasSkills,
-    hasActiveEducation,
     availableCourses,
+    currentCountry,
+    feedback,
     getInflatedCoursePrice,
     handleCourseEnroll,
     handleUniversityApply,
-    feedback,
+    hasActiveEducation,
+    hasSkills,
+    player,
     setFeedback,
+    skills,
   }
 }
