@@ -92,6 +92,7 @@ export function calculateNPCVote(
     case 'expand_storage':
     case 'marketing_campaign':
     case 'change_name':
+    case 'close_business':
     case 'sell_business':
       // Для этих типов пока по умолчанию голосуем ЗА, если отношения нормальные
       return true
