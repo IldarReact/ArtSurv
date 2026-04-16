@@ -20,16 +20,19 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/src/*": ["./src/*"],
+      "@/*": ["./src/*"]
     }
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    "art-surf/.next/types/**/*.ts",
+    "art-surf/.next/dev/types/**/*.ts",
+    "art-surf/.next/dev/types/**/*.ts",
+    "art-surf/.next/dev/types/**/*.ts",
     ".next/types/**/*.ts",
-    ".next\\dev/types/**/*.ts",
-    ".next\\dev/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": ["node_modules"]

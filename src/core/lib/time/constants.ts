@@ -1,0 +1,2 @@
+export const MONTHS_PER_QUARTER = 3
+export const PREGNANCY_DURATION_MONTHS = 9
