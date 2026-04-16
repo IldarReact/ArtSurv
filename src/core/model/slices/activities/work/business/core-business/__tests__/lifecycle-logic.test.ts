@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
+import { normalizeDurationFromTurns } from '@/core/lib/stats/stat-change-format'
 import type { GameStore } from '@/core/model/slices/types'
 import type { Business, Player } from '@/core/types'
 import type { StatEffect } from '@/core/types/stats.types'
@@ -11,6 +12,8 @@ import {
 } from '../lifecycle-logic'
 
 describe('lifecycle-logic', () => {
+  const createSetMock = () => vi.fn<(patch: Partial<GameStore>) => void>()
+
   const createMockPlayer = (money: number, businesses: Business[] = []): Player =>
     ({
       businesses,
@@ -32,6 +35,7 @@ describe('lifecycle-logic', () => {
       inventory: { currentStock: 100 },
       name: 'Test Biz',
       openingProgress: { totalCost: 5000, totalDuration: 1, upfrontCost: 1000 },
+      partners: [],
       reputation: 50,
       state,
     }) as unknown as Business
@@ -40,6 +44,7 @@ describe('lifecycle-logic', () => {
     it('should remove business and give back 50% of valuation', () => {
       const biz = createMockBusiness('b1')
       const player = createMockPlayer(1000, [biz])
+      const set = createSetMock()
       const get = () =>
         ({
           performTransaction: (cost: StatEffect) => {
@@ -56,16 +61,13 @@ describe('lifecycle-logic', () => {
             set({ player: { ...player } })
           },
         }) as unknown as GameStore
-      const set = vi.fn()
 
       handleCloseBusiness(get, set, 'b1')
 
-      const calls = set.mock.calls
-      expect(calls).toHaveLength(1)
-      const patch = calls[0][0] as { player: Player }
-      expect(patch.player.businesses).toHaveLength(0)
+      expect(set).toHaveBeenCalledTimes(1)
+      expect(player.businesses).toHaveLength(0)
       // 1000 + (10000 * 0.5) = 6000
-      expect(patch.player.stats.money).toBe(6000)
+      expect(player.stats.money).toBe(6000)
     })
 
     it('should block direct close when player has only 50% share', () => {
@@ -78,7 +80,8 @@ describe('lifecycle-logic', () => {
       } as unknown as Business
 
       const player = createMockPlayer(1000, [biz])
-      const pushNotification = vi.fn()
+      const set = createSetMock()
+      const pushNotification = vi.fn<GameStore['pushNotification']>()
       const get = () =>
         ({
           performTransaction: (cost: StatEffect) => {
@@ -96,7 +99,6 @@ describe('lifecycle-logic', () => {
             set({ player: { ...player } })
           },
         }) as unknown as GameStore
-      const set = vi.fn()
 
       handleCloseBusiness(get, set, 'b1')
 
@@ -109,6 +111,7 @@ describe('lifecycle-logic', () => {
     it('should freeze business, fire employees and pay compensation', () => {
       const biz = createMockBusiness('b1')
       const player = createMockPlayer(2000, [biz])
+      const set = createSetMock()
       const get = () =>
         ({
           performTransaction: (cost: StatEffect) => {
@@ -125,16 +128,14 @@ describe('lifecycle-logic', () => {
             set({ player: { ...player } })
           },
         }) as unknown as GameStore
-      const set = vi.fn()
 
       handleFreezeBusiness(get, set, 'b1')
 
-      const patch = set.mock.calls[0][0] as { player: Player }
-      const updatedBiz = patch.player.businesses[0]
+      const updatedBiz = player.businesses[0]
       expect(updatedBiz.state).toBe('frozen')
       expect(updatedBiz.employees).toHaveLength(0)
       // 2000 - 1000 (compensation) = 1000
-      expect(patch.player.stats.money).toBe(1000)
+      expect(player.stats.money).toBe(1000)
       expect(updatedBiz.reputation).toBeLessThan(50)
     })
   })
@@ -143,6 +144,7 @@ describe('lifecycle-logic', () => {
     it('should start opening process if player has enough money', () => {
       const biz = createMockBusiness('b1', 'frozen')
       const player = createMockPlayer(10000, [biz])
+      const set = createSetMock()
       const get = () =>
         ({
           performTransaction: (cost: StatEffect) => {
@@ -159,20 +161,19 @@ describe('lifecycle-logic', () => {
             set({ player: { ...player } })
           },
         }) as unknown as GameStore
-      const set = vi.fn()
 
       handleUnfreezeBusiness(get, set, 'b1')
 
-      const patch = set.mock.calls[0][0] as { player: Player }
-      const updatedBiz = patch.player.businesses[0]
+      const updatedBiz = player.businesses[0]
       expect(updatedBiz.state).toBe('opening')
-      expect(updatedBiz.openingProgress?.remainingDuration).toBe(1)
+      expect(updatedBiz.openingProgress?.remainingDuration).toBe(normalizeDurationFromTurns(1))
     })
 
     it('should fail if player has not enough money', () => {
       const biz = createMockBusiness('b1', 'frozen')
       const player = createMockPlayer(100, [biz])
-      const pushNotification = vi.fn()
+      const set = createSetMock()
+      const pushNotification = vi.fn<GameStore['pushNotification']>()
       const get = () =>
         ({
           performTransaction: (cost: StatEffect) => {
@@ -190,7 +191,6 @@ describe('lifecycle-logic', () => {
             set({ player: { ...player } })
           },
         }) as unknown as GameStore
-      const set = vi.fn()
 
       handleUnfreezeBusiness(get, set, 'b1')
 

@@ -1,6 +1,7 @@
 export {
   calculatePlayerRoleEffects,
   getPlayerRoleBusinessImpact,
+  getSingleRoleImpact,
   getPlayerRoleSkillGrowth,
 } from './roles/role-effects'
 export {
