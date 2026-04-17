@@ -49,7 +49,8 @@ export function useOperationalActions(business: Business | undefined) {
       directAction: () => {
         onFreezeBusiness(business.id)
       },
-      errorMessage: 'У вас недостаточно доли в бизнесе для заморозки бизнеса (требуется минимум 50%)',
+      errorMessage:
+        'У вас недостаточно доли в бизнесе для заморозки бизнеса (требуется минимум 50%)',
       notificationMessage: 'Предложение о заморозке бизнеса отправлено партнёру',
       notificationTitle: 'Предложение отправлено',
       proposalData: {},
@@ -96,7 +97,8 @@ export function useOperationalActions(business: Business | undefined) {
       directAction: () => {
         onCloseBusiness(business.id)
       },
-      errorMessage: 'У вас недостаточно доли в бизнесе для закрытия бизнеса (требуется минимум 50%)',
+      errorMessage:
+        'У вас недостаточно доли в бизнесе для закрытия бизнеса (требуется минимум 50%)',
       notificationMessage: 'Предложение о закрытии бизнеса отправлено партнёру',
       notificationTitle: 'Предложение отправлено',
       proposalData: {},

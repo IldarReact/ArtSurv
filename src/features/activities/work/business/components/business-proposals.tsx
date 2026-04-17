@@ -65,6 +65,8 @@ export function BusinessProposals() {
         return `Изменить название бизнеса на "${String(proposal.data.newName)}"`
       case 'sell_business':
         return `Продать бизнес за $${String(proposal.data.sellPrice)}`
+      case 'close_business':
+        return `Закрыть бизнес`
       default:
         return 'Неизвестное изменение'
     }

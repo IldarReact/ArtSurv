@@ -2,13 +2,13 @@
 
 import { useGameStore } from '@/core/model/store'
 import type { GameStatus } from '@/core/types'
+import { TopStatusBar } from '@/shared/components/top-bar/top-status-bar'
 import { GameEnd } from '@/src/features/end/components'
 import { EventModal } from '@/src/features/events/event-modal'
 import { ActivityNavigation, ActivityContent } from '@/src/features/gameplay/components'
 import { MainMenu } from '@/src/features/menu/main-menu'
 import { YearReportModal } from '@/src/features/reports/year-report-modal'
 import { WorldSelect, CharacterSelect } from '@/src/features/setup/components'
-import { TopStatusBar } from '@/shared/components/top-bar/top-status-bar'
 
 const GameplayScreen = () => (
   <div className="min-h-screen bg-background flex flex-col">

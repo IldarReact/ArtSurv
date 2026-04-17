@@ -31,6 +31,7 @@ export default ts.config(
       'test-results/**',
       'playwright-report/**',
       'blob-report/**',
+      'next-env.d.ts',
       '*.config.mjs',
       '*.config.js',
       '*.mjs',

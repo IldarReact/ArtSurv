@@ -5,10 +5,10 @@ import React from 'react'
 
 import { useGameStore } from '@/core/model/store'
 import type { BusinessIdea } from '@/core/types/idea.types'
-import { OpportunityCard } from '@/src/features/activities/components/opportunity-card'
 import { Badge } from '@/shared/components/badge'
 import { Button } from '@/shared/components/button'
 import { Progress } from '@/shared/components/progress'
+import { OpportunityCard } from '@/src/features/activities/components/opportunity-card'
 
 import { IdeaManagementDialog } from './idea-management-dialog'
 

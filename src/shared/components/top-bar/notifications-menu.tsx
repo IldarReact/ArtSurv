@@ -5,9 +5,9 @@ import { useState, useRef, useEffect } from 'react'
 import { useGameStore } from '@/core/model/store'
 import type { Notification as Notification } from '@/core/types'
 import type { GameOffer } from '@/core/types/game-offers.types'
-import { OfferDetailsDialog } from '@/src/features/notifications/offer-details-dialog'
 import { Button } from '@/shared/components/button'
 import { cn } from '@/shared/utils/utils'
+import { OfferDetailsDialog } from '@/src/features/notifications/offer-details-dialog'
 
 interface OfferReceivedNotificationData {
   offerId: string

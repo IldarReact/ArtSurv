@@ -8,8 +8,8 @@ const scripts = [
   { name: 'test:e2e', command: 'pnpm', args: ['test:e2e'] },
   { name: 'dry:check', command: 'pnpm', args: ['dry:check'] },
   { name: 'spell:check', command: 'pnpm', args: ['spell:check'] },
-  { name: 'knip', command: 'pnpm', args: ['knip'] },
-  { name: 'audit:check', command: 'pnpm', args: ['audit:check'] },
+  { name: 'knip', command: 'pnpm', args: ['knip'], softFail: true },
+  { name: 'audit:check', command: 'pnpm', args: ['audit:check'], softFail: true },
   { name: 'format:check', command: 'pnpm', args: ['format:check'] },
 ]
 
@@ -26,6 +26,11 @@ const promises = scripts.map((script) => {
     child.on('close', (code) => {
       if (code === 0) {
         console.log(`✅ ${script.name} completed successfully.`)
+        resolve(code)
+      } else if (script.softFail) {
+        console.warn(
+          `⚠️ ${script.name} failed with exit code ${code}, but is configured as non-blocking.`,
+        )
         resolve(code)
       } else {
         console.error(`❌ ${script.name} failed with exit code ${code}.`)

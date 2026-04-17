@@ -10,12 +10,12 @@ import {
   subscribeToTurnReadyStatus,
 } from '@/core/lib/multiplayer'
 import { useGameStore } from '@/core/model/store'
+import { Button } from '@/shared/components/button'
 import { TurnLockedModal } from '@/src/features/multiplayer/turn-locked-modal'
 import { TurnSyncModal } from '@/src/features/multiplayer/turn-sync-modal'
 import { useOffersSync } from '@/src/features/multiplayer/use-offers-sync'
 import { InflationNotification } from '@/src/features/notifications/inflation-notification'
 import { OffersList } from '@/src/features/notifications/offers-list'
-import { Button } from '@/shared/components/button'
 
 import { ActivitiesPanel } from './activities-panel'
 import { FinancialCrisisModal } from './financial-crisis-modal'

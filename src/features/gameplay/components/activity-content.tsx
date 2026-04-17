@@ -10,6 +10,7 @@ import {
 } from '@/core/lib/multiplayer'
 import { useGameStore } from '@/core/model/store'
 import type { ActivityType } from '@/core/types'
+import { Button } from '@/shared/components/button'
 import { BanksActivity } from '@/src/features/activities/bank/banks-activity'
 import { EducationActivity } from '@/src/features/activities/education/education-activity'
 import { EventsActivity } from '@/src/features/activities/events/events-activity'
@@ -19,7 +20,6 @@ import { RelocationActivity } from '@/src/features/activities/relocation/relocat
 import { RestActivity } from '@/src/features/activities/rest/rest-activity'
 import { ShopActivity } from '@/src/features/activities/shop'
 import { WorkActivity } from '@/src/features/activities/work/work-activity'
-import { Button } from '@/shared/components/button'
 
 const backgroundImages: Record<ActivityType, string> = {
   banking:

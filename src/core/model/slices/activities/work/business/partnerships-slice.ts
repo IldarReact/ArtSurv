@@ -125,6 +125,7 @@ export const createPartnershipsSlice: GameStateCreator<Partial<BusinessSlice>> =
         case 'marketing_campaign':
         case 'change_name':
         case 'sell_business':
+        case 'close_business':
           break
         default:
           // Other actions require proposal

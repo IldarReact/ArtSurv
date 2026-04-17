@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion'
 import { User, DollarSign, Home, CreditCard, PieChart, ArrowLeft, X } from 'lucide-react'
 
-import { CATEGORY_IMAGES, DETAIL_IMAGES } from '@/src/features/setup/shared-constants'
 import { Badge } from '@/shared/components/badge'
 import { Button } from '@/shared/components/button'
 import { cn } from '@/shared/utils/utils'
+import { CATEGORY_IMAGES, DETAIL_IMAGES } from '@/src/features/setup/shared-constants'
 
 import type { ModalView, CategoryCardProps, DetailCardProps } from '../types'
 import { MOCK_DETAILED_INFO } from '../utils'

@@ -6,7 +6,6 @@ import React from 'react'
 
 import { getQuarter } from '@/core/lib/quarter'
 import { useGameStore } from '@/core/model/store'
-import { MultiplayerHud } from '@/src/features/multiplayer/multiplayer-hub'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +17,7 @@ import {
   AlertDialogTrigger,
 } from '@/shared/components/alert-dialog'
 import { Button } from '@/shared/components/button'
+import { MultiplayerHud } from '@/src/features/multiplayer/multiplayer-hub'
 
 import { EnergyIndicator } from './energy-indicator'
 import { HappinessIndicator } from './happiness-indicator'

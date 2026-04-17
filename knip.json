@@ -1,5 +1,5 @@
 {
-  "entry": ["app/page.tsx", "app/layout.tsx", "app/**/*.tsx"],
+  "entry": ["src/app/page.tsx", "src/app/layout.tsx", "src/app/**/*.tsx"],
   "project": ["**/*.{ts,tsx}"],
   "ignore": ["**/*.spec.ts", "**/*.test.ts", "**/__tests__/**"],
   "ignoreExportsUsedInFile": true,

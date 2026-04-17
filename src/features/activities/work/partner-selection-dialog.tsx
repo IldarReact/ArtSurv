@@ -4,9 +4,9 @@ import { Users, DollarSign, CheckCircle, XCircle, Globe, User } from 'lucide-rea
 import React from 'react'
 
 import { getOnlinePlayers } from '@/core/lib/multiplayer'
-import type { Player } from '@/src/features/multiplayer/multiplayer-hub'
 import { Button } from '@/shared/components/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/dialog'
+import type { Player } from '@/src/features/multiplayer/multiplayer-hub'
 
 interface PartnerSelectionDialogProps {
   businessCost: number

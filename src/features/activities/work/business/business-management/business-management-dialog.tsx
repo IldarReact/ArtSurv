@@ -15,7 +15,6 @@ import {
 } from '@/core/lib/business'
 import { useGameStore } from '@/core/model/store'
 import type { EmployeeCandidate, EmployeeRole, BusinessPosition } from '@/core/types'
-import { EmployeeHireDialog } from '@/src/features/activities/work/employee-hire/employee-hire-dialog'
 import {
   Dialog,
   DialogContent,
@@ -23,6 +22,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/shared/components/dialog'
+import { EmployeeHireDialog } from '@/src/features/activities/work/employee-hire/employee-hire-dialog'
 
 import { BusinessGoals } from './components/business-goals'
 import { LifecycleManagement } from './components/business-lifecycle/lifecycle-management'
@@ -78,8 +78,8 @@ export function BusinessManagementDialog({
     handlePriceChange,
     handlePromoteEmployee,
     handleQuantityChange,
-    handleUnfreezeBusiness,
     handleUnassignRole,
+    handleUnfreezeBusiness,
   } = useBusinessActions(business)
 
   if (!business || !player) return null
