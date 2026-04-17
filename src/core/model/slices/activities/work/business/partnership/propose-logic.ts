@@ -13,6 +13,49 @@ import type { GameStore } from '../../../../types'
 import type { BusinessChangeProposal } from '../partnership-business-slice.types'
 import { applyProposal } from './proposal-applier'
 
+function applyPriceChange(state: GameStore, businessId: string, newPrice: number) {
+  if (typeof state.changePrice === 'function') {
+    state.changePrice(businessId, newPrice)
+    return
+  }
+  state.updatePlayer((prev) => ({
+    businesses: prev.businesses.map((b) => (b.id === businessId ? { ...b, price: newPrice } : b)),
+  }))
+}
+
+function applyQuantityChange(state: GameStore, businessId: string, newQuantity: number) {
+  if (typeof state.setQuantity === 'function') {
+    state.setQuantity(businessId, newQuantity)
+    return
+  }
+  state.updatePlayer((prev) => ({
+    businesses: prev.businesses.map((b) =>
+      b.id === businessId ? { ...b, quantity: newQuantity } : b,
+    ),
+  }))
+}
+
+function applyAutoPurchase(state: GameStore, businessId: string, autoPurchaseAmount: number) {
+  if (typeof state.setAutoPurchase === 'function') {
+    state.setAutoPurchase(businessId, autoPurchaseAmount)
+    return
+  }
+  state.updatePlayer((prev) => ({
+    businesses: prev.businesses.map((b) =>
+      b.id === businessId
+        ? {
+            ...b,
+            autoPurchaseAmount,
+            inventory: {
+              ...b.inventory,
+              autoPurchaseAmount,
+            },
+          }
+        : b,
+    ),
+  }))
+}
+
 function handleFundCollection(
   state: GameStore,
   set: (fn: (state: GameStore) => Partial<GameStore>) => void,
@@ -150,17 +193,17 @@ export function handleProposeBusinessChange(
         break
       case 'price':
         if (typeof data.newPrice === 'number') {
-          state.changePrice(businessId, data.newPrice)
+          applyPriceChange(state, businessId, data.newPrice)
         }
         break
       case 'quantity':
         if (typeof data.newQuantity === 'number') {
-          state.setQuantity(businessId, data.newQuantity)
+          applyQuantityChange(state, businessId, data.newQuantity)
         }
         break
       case 'auto_purchase':
         if (typeof data.autoPurchaseAmount === 'number') {
-          state.setAutoPurchase(businessId, data.autoPurchaseAmount)
+          applyAutoPurchase(state, businessId, data.autoPurchaseAmount)
         }
         break
       case 'hire_employee':

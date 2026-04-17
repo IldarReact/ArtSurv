@@ -154,7 +154,9 @@ function calculateServiceRevenue(
 }
 
 function calculateProductPrice(inventory: BusinessInventory, priceLevel: number): number {
-  const basePrice = inventory.pricePerUnit > 0 ? inventory.pricePerUnit : inventory.purchaseCost
+  // Canonical contract: selling price is derived from unit purchase cost and price level.
+  // inventory.pricePerUnit is a UI/support field and must not change financial calculations.
+  const basePrice = inventory.purchaseCost
   const markup = priceLevel * MARKUP_FACTOR
   const finalPrice = Math.round(basePrice * markup)
   return priceLevel <= 0 ? 0 : finalPrice

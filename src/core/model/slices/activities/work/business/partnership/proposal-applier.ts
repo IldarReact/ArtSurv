@@ -4,6 +4,49 @@ import type { Business, EmployeeRole, EmployeeStars } from '@/core/types/busines
 import type { GameStore } from '../../../../types'
 import type { BusinessChangeProposal } from '../partnership-business-slice.types'
 
+function applyPriceChange(state: GameStore, businessId: string, newPrice: number) {
+  if (typeof state.changePrice === 'function') {
+    state.changePrice(businessId, newPrice)
+    return
+  }
+  state.updatePlayer((prev) => ({
+    businesses: prev.businesses.map((b) => (b.id === businessId ? { ...b, price: newPrice } : b)),
+  }))
+}
+
+function applyQuantityChange(state: GameStore, businessId: string, newQuantity: number) {
+  if (typeof state.setQuantity === 'function') {
+    state.setQuantity(businessId, newQuantity)
+    return
+  }
+  state.updatePlayer((prev) => ({
+    businesses: prev.businesses.map((b) =>
+      b.id === businessId ? { ...b, quantity: newQuantity } : b,
+    ),
+  }))
+}
+
+function applyAutoPurchase(state: GameStore, businessId: string, autoPurchaseAmount: number) {
+  if (typeof state.setAutoPurchase === 'function') {
+    state.setAutoPurchase(businessId, autoPurchaseAmount)
+    return
+  }
+  state.updatePlayer((prev) => ({
+    businesses: prev.businesses.map((b) =>
+      b.id === businessId
+        ? {
+            ...b,
+            autoPurchaseAmount,
+            inventory: {
+              ...b.inventory,
+              autoPurchaseAmount,
+            },
+          }
+        : b,
+    ),
+  }))
+}
+
 export function applyProposal(
   state: GameStore,
   proposal: BusinessChangeProposal,
@@ -27,14 +70,14 @@ export function applyProposal(
   switch (changeType) {
     case 'price':
       if (typeof data.newPrice === 'number') {
-        state.changePrice(businessId, data.newPrice)
+        applyPriceChange(state, businessId, data.newPrice)
       }
       approveAndSet(() => ({}))
       return { price: data.newPrice }
 
     case 'quantity':
       if (typeof data.newQuantity === 'number') {
-        state.setQuantity(businessId, data.newQuantity)
+        applyQuantityChange(state, businessId, data.newQuantity)
       }
       approveAndSet(() => ({}))
       return { quantity: data.newQuantity }
@@ -67,7 +110,7 @@ export function applyProposal(
 
     case 'auto_purchase':
       if (data.autoPurchaseAmount !== undefined) {
-        state.setAutoPurchase(businessId, data.autoPurchaseAmount ?? 0)
+        applyAutoPurchase(state, businessId, data.autoPurchaseAmount ?? 0)
         approveAndSet(() => ({}))
         return { autoPurchaseAmount: data.autoPurchaseAmount }
       }

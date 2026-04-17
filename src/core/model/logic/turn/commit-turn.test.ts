@@ -59,6 +59,7 @@ describe('commitTurn', () => {
     notifications: [],
     pendingApplications: [],
     pendingFreelanceApplications: [],
+    pendingStatEffects: [],
     player: mockPlayer,
     protectedSkills: new Set(),
     statModifiers: {},

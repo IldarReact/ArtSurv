@@ -159,6 +159,35 @@ describe('Partnership Business Slice - Comprehensive Actions', () => {
       expect(store.businessProposals).toHaveLength(0)
       expect(store.player!.businesses[0].price).toBe(150)
     })
+
+    it('should use fallback path when canonical setter is missing', () => {
+      mockBusiness.playerShare = 60
+      mockBusiness.partners[0].share = 60
+      mockBusiness.partners[1].share = 40
+
+      store.proposeBusinessChange('biz_123', 'price', { newPrice: 170 })
+
+      expect(store.player!.businesses[0].price).toBe(170)
+    })
+
+    it('should prefer canonical setter when it is available', () => {
+      mockBusiness.playerShare = 60
+      mockBusiness.partners[0].share = 60
+      mockBusiness.partners[1].share = 40
+      const changePrice = vi.fn((businessId: string, newPrice: number) => {
+        store.updatePlayer((prev) => ({
+          businesses: prev.businesses.map((b) =>
+            b.id === businessId ? { ...b, price: newPrice } : b,
+          ),
+        }))
+      })
+      ;(store as unknown as { changePrice: typeof changePrice }).changePrice = changePrice
+
+      store.proposeBusinessChange('biz_123', 'price', { newPrice: 180 })
+
+      expect(changePrice).toHaveBeenCalledWith('biz_123', 180)
+      expect(store.player!.businesses[0].price).toBe(180)
+    })
   })
 
   describe('Quantity Change Proposals', () => {

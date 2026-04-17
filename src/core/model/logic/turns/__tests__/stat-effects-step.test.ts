@@ -34,7 +34,7 @@ function createState(): TurnState {
     pendingStatEffects: [],
     player: {
       activeStatEffects: [],
-    } as TurnState['player'],
+    } as unknown as TurnState['player'],
     protectedSkills: new Set(),
     statModifiers: {},
     stats: {

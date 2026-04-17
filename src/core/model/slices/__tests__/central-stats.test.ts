@@ -127,7 +127,7 @@ describe('Centralized Stats Logic', () => {
 
     // temporary effects are queued for turn pipeline processing
     expect(state.player.stats.energy).toBe(90)
-    expect(state.player.activeStatEffects).toEqual([
+    expect((state.player as { activeStatEffects?: unknown[] }).activeStatEffects).toEqual([
       {
         durationMonths: 6,
         effects: { energy: -10 },
