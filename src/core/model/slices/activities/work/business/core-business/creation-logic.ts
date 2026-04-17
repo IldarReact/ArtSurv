@@ -21,7 +21,7 @@ export const handleOpenBusiness = (
   const validation = validateBusinessOpening(
     state.player.stats.money,
     upfrontCost,
-    state.player.personal.stats.energy,
+    state.player.stats.energy,
     business.creationCost,
   )
 

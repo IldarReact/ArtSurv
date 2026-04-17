@@ -6,7 +6,7 @@ import type { BusinessIdea } from './idea.types'
 import type { Job, JobApplication } from './job.types'
 import type { Notification } from './notification.types'
 import type { PersonalLife } from './personal.types'
-import type { StatEffect } from './stats.types'
+import type { StatChangeEffect, StatEffect } from './stats.types'
 
 export type GameStatus =
   | 'menu'
@@ -54,6 +54,7 @@ export interface Player {
   multipliers?: StatEffect
   name: string
   personal: PersonalLife
+  activeStatEffects?: StatChangeEffect[]
   quarterlyReport: QuarterlyReport
 
   quarterlySalary: number

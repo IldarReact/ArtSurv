@@ -12,6 +12,7 @@ import {
   lifestyleStep,
   marketStep,
   personalStep,
+  statEffectsStep,
   thresholdsStep,
 } from '../steps/index'
 import type { TurnStep } from '../steps/step.types'
@@ -26,6 +27,7 @@ export const STEPS: TurnStep[] = [
   buffsStep,
   lifestyleStep,
   personalStep,
+  statEffectsStep,
   thresholdsStep,
   financialStep,
   inflationStep,

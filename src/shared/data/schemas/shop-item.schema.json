@@ -55,7 +55,7 @@
     },
     "assetType": {
       "type": "string",
-      "enum": ["stock", "housing", "crypto", "bond"]
+      "enum": ["stock", "housing", "crypto", "bond", "real_estate"]
     }
   }
 }

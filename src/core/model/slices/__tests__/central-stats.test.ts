@@ -125,8 +125,15 @@ describe('Centralized Stats Logic', () => {
       kind: 'temporary',
     })
 
-    // temporary effects should be processed via turn pipeline, not immediate player mutation
+    // temporary effects are queued for turn pipeline processing
     expect(state.player.stats.energy).toBe(90)
+    expect(state.player.activeStatEffects).toEqual([
+      {
+        durationMonths: 6,
+        effects: { energy: -10 },
+        kind: 'temporary',
+      },
+    ])
   })
 
   it('performTransaction prevents spending if insufficient funds', () => {
@@ -185,5 +192,19 @@ describe('Centralized Stats Logic', () => {
     expect(state.notifications[0]).toEqual(
       expect.objectContaining({ title: 'Недостаточно энергии' }),
     )
+  })
+
+  it('updatePlayer ignores direct stats patches to prevent bypass', () => {
+    store.updatePlayer({
+      personal: {
+        stats: { energy: 5, money: 999999 } as any,
+      } as any,
+      stats: { energy: 1, money: 1 } as any,
+    })
+
+    expect(state.player.stats.energy).toBe(100)
+    expect(state.player.stats.money).toBe(1000)
+    expect(state.player.personal?.stats.energy).toBe(100)
+    expect(state.player.personal?.stats.money).toBe(1000)
   })
 })

@@ -69,6 +69,7 @@ export function createInitialPlayer(archetype: string, countryId: string): Playe
       food: 'food_home', // Дефолт: готовит сам
       transport: 'tr_public', // Дефолт: общественный транспорт
     },
+    activeStatEffects: [],
     age: DEFAULT_AGE,
     assets: [],
 

@@ -4,8 +4,6 @@ import type { Business, EmployeeRole, EmployeeStars } from '@/core/types/busines
 import type { GameStore } from '../../../../types'
 import type { BusinessChangeProposal } from '../partnership-business-slice.types'
 
-type BusinessUpdateFn = (b: Business) => Business
-
 export function applyProposal(
   state: GameStore,
   proposal: BusinessChangeProposal,
@@ -26,22 +24,19 @@ export function applyProposal(
     }))
   }
 
-  const updateBusinessField = (updateFn: BusinessUpdateFn) => {
-    approveAndSet(() => {
-      state.updatePlayer((prev) => ({
-        businesses: prev.businesses.map((b) => (b.id === businessId ? updateFn(b) : b)),
-      }))
-      return {}
-    })
-  }
-
   switch (changeType) {
     case 'price':
-      updateBusinessField((b) => ({ ...b, price: data.newPrice ?? b.price }))
+      if (typeof data.newPrice === 'number') {
+        state.changePrice(businessId, data.newPrice)
+      }
+      approveAndSet(() => ({}))
       return { price: data.newPrice }
 
     case 'quantity':
-      updateBusinessField((b) => ({ ...b, quantity: data.newQuantity ?? b.quantity }))
+      if (typeof data.newQuantity === 'number') {
+        state.setQuantity(businessId, data.newQuantity)
+      }
+      approveAndSet(() => ({}))
       return { quantity: data.newQuantity }
 
     case 'fund_collection':
@@ -72,7 +67,8 @@ export function applyProposal(
 
     case 'auto_purchase':
       if (data.autoPurchaseAmount !== undefined) {
-        updateBusinessField((b) => ({ ...b, autoPurchaseAmount: data.autoPurchaseAmount ?? 0 }))
+        state.setAutoPurchase(businessId, data.autoPurchaseAmount ?? 0)
+        approveAndSet(() => ({}))
         return { autoPurchaseAmount: data.autoPurchaseAmount }
       }
       return {}

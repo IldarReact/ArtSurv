@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import {
   StatEffectSchema,
+  StatChangeEffectSchema,
   StatsSchema,
   SkillLevelSchema,
   SkillRequirementSchema,
@@ -350,6 +351,7 @@ export const PersonalLifeSchema = z
 export const PlayerSchema = z
   .object({
     activeLifestyle: z.record(z.string(), z.string().optional()),
+    activeStatEffects: z.array(StatChangeEffectSchema).default([]),
     age: z.number().int().min(0),
     // Missing fields from Player interface
     assets: z.array(AssetSchema),

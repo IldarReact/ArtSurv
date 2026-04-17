@@ -7,7 +7,7 @@ import type { Player, Country, FamilyMember } from '@/core/types'
 import { createPartner, createPet } from './member-factory'
 
 export const processStartDating = (player: Player, countries: Record<string, Country>) => {
-  const energy = player.personal.stats.energy
+  const energy = player.stats.energy
   const money = player.stats.money
 
   const economy = countries[player.countryId]

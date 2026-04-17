@@ -28,7 +28,7 @@ export function SanityIndicator() {
         <div className="flex items-center gap-1">
           <Brain className="w-5 h-5 text-purple-400" />
           <span className="text-lg font-bold text-white tabular-nums">
-            {Math.round(player.personal.stats.sanity)}
+            {Math.round(player.stats.sanity)}
           </span>
         </div>
         <span className="text-xs font-medium text-white/50 uppercase tracking-wider">Рассудок</span>

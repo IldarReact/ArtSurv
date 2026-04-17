@@ -3,7 +3,8 @@
   "type": "array",
   "items": {
     "type": "object",
-    "required": ["id", "name", "type", "price", "costPerQuarter"],
+    "required": ["id", "name", "description"],
+    "additionalProperties": false,
     "properties": {
       "id": {
         "type": "string",
@@ -16,9 +17,12 @@
       "description": {
         "type": "string"
       },
-      "type": {
+      "category": {
         "type": "string",
-        "enum": ["rent_room", "rent_apartment", "mortgage", "own_house", "premium"]
+        "enum": ["housing"]
+      },
+      "type": {
+        "type": "string"
       },
       "price": {
         "type": "number",
@@ -30,12 +34,23 @@
         "minimum": 0,
         "description": "Quarterly cost (rent/mortgage)"
       },
+      "costPerTurn": {
+        "type": "number",
+        "minimum": 0
+      },
+      "isRecurring": {
+        "type": "boolean"
+      },
       "effects": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
+          "energy": { "type": "number" },
           "happiness": { "type": "number" },
           "sanity": { "type": "number" },
-          "health": { "type": "number" }
+          "health": { "type": "number" },
+          "intelligence": { "type": "number" },
+          "money": { "type": "number" }
         }
       },
       "minMoney": {
@@ -54,6 +69,9 @@
       "maintenanceCost": {
         "type": "number",
         "minimum": 0
+      },
+      "assetType": {
+        "type": "string"
       }
     }
   }

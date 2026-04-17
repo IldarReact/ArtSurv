@@ -16,9 +16,9 @@ export function EnergyIndicator() {
   const lifestyleResult = processLifestyle(player, countries)
   const lifestyleEnergyMod = lifestyleResult.modifiers.energy
 
-  // Расчёт итоговой энергии: 100 (восстановление) + все модификаторы
+  // Показываем текущую энергию игрока, а в деталях — поквартальные факторы изменения.
   const totalEnergyMods = getTotalModifier(statMods.energy, 'energy')
-  const calculatedEnergy = 100 + totalEnergyMods + lifestyleEnergyMod
+  const projectedEnergy = 100 + totalEnergyMods + lifestyleEnergyMod
 
   return (
     <div className="relative flex flex-col items-center">
@@ -31,7 +31,7 @@ export function EnergyIndicator() {
         <div className="flex items-center gap-1">
           <span className="text-lg">⚡</span>
           <span className="text-lg font-bold text-white tabular-nums">
-            {Math.max(0, Math.min(100, calculatedEnergy))}
+            {Math.round(player.stats.energy)}
           </span>
         </div>
         <span className="text-xs font-medium text-white/50 uppercase tracking-wider">Энергия</span>
@@ -119,7 +119,7 @@ export function EnergyIndicator() {
                       Итого
                     </span>
                     <span className="text-white text-sm">
-                      {Math.max(0, Math.min(100, calculatedEnergy))}
+                      {Math.max(0, Math.min(100, projectedEnergy))}
                     </span>
                   </div>
                 </div>

@@ -62,6 +62,7 @@ export function commitTurn(ctx: TurnContext, state: TurnState): Partial<GameStor
         ...state.player.personal,
         stats: state.stats,
       },
+      quarterlyReport: state.financial.quarterlyReport,
 
       stats: {
         ...state.player.stats,

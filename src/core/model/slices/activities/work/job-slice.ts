@@ -141,7 +141,7 @@ export const createJobSlice: StateCreator<GameStore, [], [], JobSlice> = (set, g
     }
 
     // Chance calculation
-    const intelligence = player.personal.stats.intelligence
+    const intelligence = player.stats.intelligence
     const playerSkills = player.personal.skills
     const jobRequirements = job.requirements?.skills ?? []
 

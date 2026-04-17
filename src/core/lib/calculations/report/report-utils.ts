@@ -52,7 +52,6 @@ export function assembleQuarterlyReport(
       sanitizeNumber(breakdown.other) +
       sanitizeNumber(breakdown.credits) +
       sanitizeNumber(breakdown.mortgage) +
-      familyExpenses +
       businessExpenses +
       assetMaintenance,
   )

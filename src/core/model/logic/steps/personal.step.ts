@@ -14,32 +14,21 @@ export const personalStep: TurnStep = (ctx, state) => {
 
   // Apply pregnancy modifiers
   if (state.player.personal.pregnancy) {
-    state.statModifiers.happiness = (state.statModifiers.happiness ?? 0) + PREGNANCY_HAPPINESS_BONUS
-    state.statModifiers.energy = (state.statModifiers.energy ?? 0) - PREGNANCY_ENERGY_PENALTY
+    state.pendingStatEffects.push({
+      effects: {
+        energy: -PREGNANCY_ENERGY_PENALTY,
+        happiness: PREGNANCY_HAPPINESS_BONUS,
+      },
+      kind: 'one_time',
+    })
   }
 
   // Apply family passive effects
   state.player.personal.familyMembers.forEach((member) => {
-    const h = member.passiveEffects.happiness
-    if (typeof h === 'number' && Number.isFinite(h)) {
-      state.statModifiers.happiness = (state.statModifiers.happiness ?? 0) + h
-    }
-    const he = member.passiveEffects.health
-    if (typeof he === 'number' && Number.isFinite(he)) {
-      state.statModifiers.health = (state.statModifiers.health ?? 0) + he
-    }
-    const e = member.passiveEffects.energy
-    if (typeof e === 'number' && Number.isFinite(e)) {
-      state.statModifiers.energy = (state.statModifiers.energy ?? 0) + e
-    }
-    const s = member.passiveEffects.sanity
-    if (typeof s === 'number' && Number.isFinite(s)) {
-      state.statModifiers.sanity = (state.statModifiers.sanity ?? 0) + s
-    }
-    const i = member.passiveEffects.intelligence
-    if (typeof i === 'number' && Number.isFinite(i)) {
-      state.statModifiers.intelligence = (state.statModifiers.intelligence ?? 0) + i
-    }
+    state.pendingStatEffects.push({
+      effects: member.passiveEffects,
+      kind: 'one_time',
+    })
   })
 
   state.notifications.push(...res.notifications)

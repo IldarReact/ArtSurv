@@ -13,6 +13,7 @@ import type {
   HistoryEntry,
 } from '@/core/types'
 import type { CountryEconomy, GlobalEvent } from '@/core/types/economy.types'
+import type { StatChangeEffect } from '@/core/types/stats.types'
 
 export interface TurnState {
   // buffs
@@ -71,6 +72,7 @@ export interface TurnState {
   pendingFreelanceApplications: FreelanceApplication[]
 
   // snapshot
+  pendingStatEffects: StatChangeEffect[]
   player: Player
   protectedSkills: Set<string>
   statModifiers: Partial<Stats> & { income?: number }

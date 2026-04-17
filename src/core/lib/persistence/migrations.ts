@@ -10,6 +10,7 @@ type MigrationFn = (oldState: unknown) => unknown
 
 const migrations: Record<number, MigrationFn | undefined> = {
   2: (state) => migrateV2(state),
+  3: (state) => migrateV3(state),
 }
 
 function toObject(value: unknown): Record<string, unknown> {
@@ -110,6 +111,23 @@ function migrateV2(rawState: unknown): unknown {
           },
         }
       : null,
+  }
+}
+
+function migrateV3(rawState: unknown): unknown {
+  const state = toObject(rawState)
+  const player = toObject(state.player)
+
+  if (!state.player) {
+    return state
+  }
+
+  return {
+    ...state,
+    player: {
+      ...player,
+      activeStatEffects: Array.isArray(player.activeStatEffects) ? player.activeStatEffects : [],
+    },
   }
 }
 

@@ -28,7 +28,7 @@ export function HappinessIndicator() {
         <div className="flex items-center gap-1">
           <span className="text-lg">😊</span>
           <span className="text-lg font-bold text-white tabular-nums">
-            {Math.round(player.personal.stats.happiness)}
+            {Math.round(player.stats.happiness)}
           </span>
         </div>
         <span className="text-xs font-medium text-white/50 uppercase tracking-wider">Счастье</span>

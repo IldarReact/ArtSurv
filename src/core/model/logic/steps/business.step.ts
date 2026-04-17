@@ -8,6 +8,7 @@ export const businessStep: TurnStep = (ctx, state) => {
     ctx.turn,
     ctx.year,
     state.globalMarketValue,
+    state.country,
   )
 
   state.player.businesses = res.updatedBusinesses
@@ -19,12 +20,18 @@ export const businessStep: TurnStep = (ctx, state) => {
 
   // Применяем затраты статов от ролей игрока
   const energyCost = res.playerRoleEnergyCost
-  if (typeof energyCost === 'number' && Number.isFinite(energyCost)) {
-    state.statModifiers.energy = (state.statModifiers.energy ?? 0) - energyCost
-  }
   const sanityCost = res.playerRoleSanityCost
-  if (typeof sanityCost === 'number' && Number.isFinite(sanityCost)) {
-    state.statModifiers.sanity = (state.statModifiers.sanity ?? 0) - sanityCost
+  if (
+    (typeof energyCost === 'number' && Number.isFinite(energyCost) && energyCost !== 0) ||
+    (typeof sanityCost === 'number' && Number.isFinite(sanityCost) && sanityCost !== 0)
+  ) {
+    state.pendingStatEffects.push({
+      effects: {
+        energy: typeof energyCost === 'number' && Number.isFinite(energyCost) ? -energyCost : 0,
+        sanity: typeof sanityCost === 'number' && Number.isFinite(sanityCost) ? -sanityCost : 0,
+      },
+      kind: 'one_time',
+    })
   }
 
   res.protectedSkills.forEach((s) => state.protectedSkills.add(s))

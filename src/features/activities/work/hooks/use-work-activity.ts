@@ -30,7 +30,7 @@ export function useWorkActivity() {
   ) => {
     if (!player) return
     const energyCost = Math.abs(cost.energy ?? 0)
-    if (player.personal.stats.energy < energyCost) {
+    if (player.stats.energy < energyCost) {
       setFeedback({
         message: 'Недостаточно энергии для собеседования',
         show: true,
@@ -57,7 +57,7 @@ export function useWorkActivity() {
     duration: number,
   ) => {
     if (!player) return
-    if (player.personal.stats.energy < energyCost) {
+    if (player.stats.energy < energyCost) {
       setFeedback({
         message: 'Недостаточно энергии для выполнения заказа',
         show: true,

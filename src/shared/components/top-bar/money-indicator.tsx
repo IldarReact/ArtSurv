@@ -1,71 +1,15 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Wallet, TrendingUp, TrendingDown, DollarSign } from 'lucide-react'
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 
-import { calculateQuarterlyReport } from '@/core/lib/calculations'
 import { createEmptyQuarterlyReport } from '@/core/lib/calculations/financial-helpers'
-import {
-  calculateBusinessFinancials,
-  calculateFamilyIncome,
-  calculateFoodExpenses,
-  calculateHousingExpenses,
-  calculateTransportExpenses,
-} from '@/core/lib/calculations/report/report.utils'
 import { useGameStore } from '@/core/model/store'
-import type { QuarterlyReport } from '@/core/types'
 import { cn } from '@/shared/utils/utils'
 
 export function MoneyIndicator() {
-  const { countries, player } = useGameStore()
+  const { player } = useGameStore()
   const [isOpen, setIsOpen] = useState(false)
-
-  const country = player ? countries[player.countryId] : undefined
-
-  const report = useMemo<QuarterlyReport>(() => {
-    if (!player) {
-      return createEmptyQuarterlyReport()
-    }
-
-    const countryEconomy = countries[player.countryId]
-
-    const familyIncome = calculateFamilyIncome(player, country)
-    const { businessExpenses, businessRevenue, businessTaxes } = calculateBusinessFinancials(player)
-    const foodExpenses = calculateFoodExpenses(player, country)
-    const housingExpenses = calculateHousingExpenses(player, country)
-    const transportExpenses = calculateTransportExpenses(player, country)
-
-    const creditExpenses = player.debts
-      .filter((d) => d.type !== 'mortgage')
-      .reduce((sum, d) => sum + d.quarterlyInterest, 0)
-    const mortgageExpenses = player.debts
-      .filter((d) => d.type === 'mortgage')
-      .reduce((sum, d) => sum + d.quarterlyInterest, 0)
-    const otherExpenses = player.personal.familyMembers.reduce((sum, m) => sum + m.expenses, 0)
-
-    return calculateQuarterlyReport({
-      assetIncome: 0,
-      assetMaintenance: 0,
-      buffIncomeMod: 0,
-      businessFinancialsOverride: {
-        expenses: businessExpenses,
-        income: businessRevenue,
-        taxes: businessTaxes,
-      },
-      country: countryEconomy,
-      debtInterest: creditExpenses + mortgageExpenses,
-      expensesBreakdown: {
-        credits: creditExpenses,
-        food: foodExpenses,
-        housing: housingExpenses,
-        mortgage: mortgageExpenses,
-        other: otherExpenses,
-        transport: transportExpenses,
-      },
-      familyExpenses: 0,
-      familyIncome,
-      player,
-    })
-  }, [player, countries, country])
+  const report = player?.quarterlyReport ?? createEmptyQuarterlyReport()
 
   if (!player) return null
 

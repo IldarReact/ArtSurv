@@ -28,7 +28,7 @@ export function IntelligenceIndicator() {
         <div className="flex items-center gap-1">
           <Lightbulb className="w-5 h-5 text-yellow-400" />
           <span className="text-lg font-bold text-white tabular-nums">
-            {Math.round(player.personal.stats.intelligence)}
+            {Math.round(player.stats.intelligence)}
           </span>
         </div>
         <span className="text-xs font-medium text-white/50 uppercase tracking-wider">
@@ -56,9 +56,7 @@ export function IntelligenceIndicator() {
                     <Brain className="w-3.5 h-3.5" />
                     Базовый уровень
                   </span>
-                  <span className="text-white/70 font-medium">
-                    {player.personal.stats.intelligence}
-                  </span>
+                  <span className="text-white/70 font-medium">{player.stats.intelligence}</span>
                 </div>
 
                 {statMods.intelligence.map((mod) => {

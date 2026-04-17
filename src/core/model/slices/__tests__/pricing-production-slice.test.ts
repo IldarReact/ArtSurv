@@ -117,4 +117,71 @@ describe('pricing-production-slice', () => {
     const expectedPricePerUnit = Math.round(20 * (1 + (15 / 100) * (8 - 5)))
     expect(b.inventory.pricePerUnit).toBe(expectedPricePerUnit)
   })
+
+  it('changePrice clamps values to allowed range', () => {
+    const { get, set, state } = createMockState({
+      player: {
+        businesses: [
+          {
+            id: 'biz_1',
+            inventory: {
+              autoPurchaseAmount: 0,
+              currentStock: 0,
+              maxStock: 100,
+              pricePerUnit: 10,
+              purchaseCost: 10,
+            },
+            isServiceBased: false,
+            price: 5,
+            state: 'active',
+          },
+        ],
+        id: 'p1',
+        name: 'Player',
+        stats: { money: 0 },
+      },
+    } as unknown as LocalGameState)
+
+    const slice = createPricingProductionSlice(
+      set as unknown as Parameters<typeof createPricingProductionSlice>[0],
+      get as unknown as Parameters<typeof createPricingProductionSlice>[1],
+      {} as unknown as Parameters<typeof createPricingProductionSlice>[2],
+    )
+    slice.changePrice('biz_1', 99)
+    expect((state().player!.businesses[0] as any).price).toBe(10)
+    slice.changePrice('biz_1', -10)
+    expect((state().player!.businesses[0] as any).price).toBe(1)
+  })
+
+  it('setAutoPurchase updates inventory autoPurchaseAmount', () => {
+    const { get, set, state } = createMockState({
+      player: {
+        businesses: [
+          {
+            id: 'biz_1',
+            inventory: {
+              autoPurchaseAmount: 0,
+              currentStock: 0,
+              maxStock: 100,
+              pricePerUnit: 10,
+              purchaseCost: 10,
+            },
+            isServiceBased: false,
+            price: 5,
+            state: 'active',
+          },
+        ],
+        id: 'p1',
+        name: 'Player',
+        stats: { money: 0 },
+      },
+    } as unknown as LocalGameState)
+    const slice = createPricingProductionSlice(
+      set as unknown as Parameters<typeof createPricingProductionSlice>[0],
+      get as unknown as Parameters<typeof createPricingProductionSlice>[1],
+      {} as unknown as Parameters<typeof createPricingProductionSlice>[2],
+    )
+    slice.setAutoPurchase('biz_1', 250)
+    expect((state().player!.businesses[0] as any).inventory.autoPurchaseAmount).toBe(250)
+  })
 })

@@ -1,5 +1,3 @@
-import { applyStatEffects } from '@/core/lib/stats/apply-effects'
-
 import { processEducation } from '../turns/education-processor'
 import type { TurnStep } from './step.types'
 
@@ -19,18 +17,47 @@ export const educationStep: TurnStep = (ctx, state) => {
   // Apply education costs
   state.player.personal.activeCourses.forEach((course) => {
     if (course.costPerTurn) {
-      applyStatEffects(state.statModifiers, course.costPerTurn, 'subtract')
+      state.pendingStatEffects.push({
+        effects: {
+          energy: -(course.costPerTurn.energy ?? 0),
+          happiness: -(course.costPerTurn.happiness ?? 0),
+          health: -(course.costPerTurn.health ?? 0),
+          intelligence: -(course.costPerTurn.intelligence ?? 0),
+          money: -(course.costPerTurn.money ?? 0),
+          sanity: -(course.costPerTurn.sanity ?? 0),
+        },
+        kind: 'one_time',
+      })
     }
-    state.statModifiers.intelligence = (state.statModifiers.intelligence ?? 0) + 1
+    state.pendingStatEffects.push({
+      effects: { intelligence: 1 },
+      kind: 'one_time',
+    })
   })
 
   state.player.personal.activeUniversity.forEach((uni) => {
     if (uni.costPerTurn) {
-      applyStatEffects(state.statModifiers, uni.costPerTurn, 'subtract')
+      state.pendingStatEffects.push({
+        effects: {
+          energy: -(uni.costPerTurn.energy ?? 0),
+          happiness: -(uni.costPerTurn.happiness ?? 0),
+          health: -(uni.costPerTurn.health ?? 0),
+          intelligence: -(uni.costPerTurn.intelligence ?? 0),
+          money: -(uni.costPerTurn.money ?? 0),
+          sanity: -(uni.costPerTurn.sanity ?? 0),
+        },
+        kind: 'one_time',
+      })
     }
-    state.statModifiers.intelligence = (state.statModifiers.intelligence ?? 0) + 2
+    state.pendingStatEffects.push({
+      effects: { intelligence: 2 },
+      kind: 'one_time',
+    })
     if (!uni.costPerTurn?.sanity) {
-      state.statModifiers.sanity = (state.statModifiers.sanity ?? 0) - 1
+      state.pendingStatEffects.push({
+        effects: { sanity: -1 },
+        kind: 'one_time',
+      })
     }
   })
 

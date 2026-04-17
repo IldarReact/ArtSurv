@@ -13,44 +13,9 @@ import {
 } from 'lucide-react'
 import React from 'react'
 
-import { calculateQuarterlyReport } from '@/core/lib/calculations'
-import {
-  calculateBusinessFinancials,
-  calculateFamilyIncome,
-  calculateFoodExpenses,
-  calculateHousingExpenses,
-  calculateTransportExpenses,
-} from '@/core/lib/calculations/report/report.utils'
 import { useGameStore } from '@/core/model/store'
-import type { Country, ExpensesBreakdown, Player } from '@/core/types'
+import type { ExpensesBreakdown, Player } from '@/core/types'
 import { Progress } from '@/shared/components/progress'
-
-function getIncomeSummary(player: Player, country: Country | undefined) {
-  const { businessExpenses, businessRevenue, businessTaxes } = calculateBusinessFinancials(player)
-  const familyIncome = calculateFamilyIncome(player, country)
-
-  return {
-    businessExpensesTotal: businessExpenses,
-    businessRevenue,
-    businessTaxesTotal: businessTaxes,
-    familyIncome,
-  }
-}
-
-function getDebtExpenses(player: Player) {
-  let creditExpenses = 0
-  let mortgageExpenses = 0
-
-  for (const debt of player.debts) {
-    if (debt.type === 'mortgage') {
-      mortgageExpenses += debt.quarterlyInterest
-    } else {
-      creditExpenses += debt.quarterlyInterest
-    }
-  }
-
-  return { creditExpenses, mortgageExpenses }
-}
 
 interface SummarySectionProps {
   netProfit: number
@@ -194,48 +159,12 @@ function ExpensesSection({
   )
 }
 
-function getOtherExpenses(player: Player) {
-  let otherExpenses = 0
-  player.personal.familyMembers.forEach((m) => {
-    otherExpenses += m.expenses
-  })
-  return otherExpenses
-}
-
 export function FamilyFinancesCard() {
-  const { countries, player } = useGameStore()
+  const { player } = useGameStore()
 
   if (!player) return null
 
-  const country = countries[player.countryId]
-  const { businessExpensesTotal, businessRevenue, businessTaxesTotal, familyIncome } =
-    getIncomeSummary(player, country)
-
-  const { creditExpenses, mortgageExpenses } = getDebtExpenses(player)
-
-  const report = calculateQuarterlyReport({
-    assetIncome: 0,
-    assetMaintenance: 0,
-    buffIncomeMod: 0,
-    businessFinancialsOverride: {
-      expenses: businessExpensesTotal,
-      income: businessRevenue,
-      taxes: businessTaxesTotal,
-    },
-    country,
-    debtInterest: creditExpenses + mortgageExpenses,
-    expensesBreakdown: {
-      credits: creditExpenses,
-      food: calculateFoodExpenses(player, country),
-      housing: calculateHousingExpenses(player, country),
-      mortgage: mortgageExpenses,
-      other: getOtherExpenses(player),
-      transport: calculateTransportExpenses(player, country),
-    },
-    familyExpenses: 0,
-    familyIncome,
-    player,
-  })
+  const report = player.quarterlyReport
 
   const { expenses, income, netProfit, taxes } = report
 

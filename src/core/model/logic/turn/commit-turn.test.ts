@@ -10,6 +10,7 @@ describe('commitTurn', () => {
   const mockPlayer = {
     id: 'player-1',
     personal: { stats: { energy: 100, health: 100 } },
+    quarterlyReport: { netProfit: 0 },
     stats: { energy: 100, health: 100, money: 1000 },
   } as unknown as Player
 
@@ -28,7 +29,11 @@ describe('commitTurn', () => {
     },
     countries: {} as unknown as Record<string, Country>,
     country: { cycle: { phase: 'growth' } } as unknown as Country,
-    financial: { adjustedNetProfit: 200 } as unknown as TurnState['financial'],
+    financial: {
+      adjustedNetProfit: 200,
+      netProfit: 200,
+      quarterlyReport: { netProfit: 200 } as any,
+    } as unknown as TurnState['financial'],
     gameOverReason: null,
     gameStatus: 'playing',
     globalEvents: [],
@@ -93,6 +98,11 @@ describe('commitTurn', () => {
     const result = commitTurn(mockCtx, mockState)
     // 1000 (base) + 200 (profit) + 50 (delta) = 1250
     expect(result.player?.stats.money).toBe(1250)
+  })
+
+  it('should commit quarterly report to player state', () => {
+    const result = commitTurn(mockCtx, mockState)
+    expect(result.player?.quarterlyReport).toEqual(mockState.financial.quarterlyReport)
   })
 
   it('should update history if historyEntry is present', () => {

@@ -20,8 +20,12 @@
       },
       "cost": {
         "type": "object",
+        "additionalProperties": false,
         "properties": {
           "energy": { "type": "number" },
+          "happiness": { "type": "number" },
+          "intelligence": { "type": "number" },
+          "money": { "type": "number" },
           "sanity": { "type": "number" },
           "health": { "type": "number" }
         }

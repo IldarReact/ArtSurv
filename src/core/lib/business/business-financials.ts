@@ -115,6 +115,7 @@ export function calculateBusinessFinancials(
     currentReputation,
     globalMarketValue,
     impacts.salesBonusPct,
+    impacts.staffProductivityBonus,
     isPreview,
   )
   const {
@@ -135,7 +136,12 @@ export function calculateBusinessFinancials(
   const grossProfit = salesIncome - cogs
   const ebitda = grossProfit - totalOpEx
 
-  const taxResult = calculateTaxes(ebitda, economy?.corporateTaxRate, safeBusiness.taxRate)
+  const taxResult = calculateTaxes(
+    ebitda,
+    economy?.corporateTaxRate,
+    safeBusiness.taxRate,
+    impacts.taxReductionPct,
+  )
   const { netProfit, taxAmount } = taxResult
 
   // Cash Flow includes production costs (purchaseCost) and taxes

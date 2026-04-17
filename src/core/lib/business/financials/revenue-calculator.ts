@@ -38,6 +38,7 @@ export function calculateRevenue(
   currentReputation: number,
   globalMarketValue: number,
   salesBonusPct: number,
+  staffProductivityBonus: number,
   isPreview: boolean,
 ): RevenueResult {
   const inventory = business.inventory
@@ -49,6 +50,7 @@ export function calculateRevenue(
       currentReputation,
       globalMarketValue,
       salesBonusPct,
+      staffProductivityBonus,
     )
   }
 
@@ -59,6 +61,7 @@ export function calculateRevenue(
     currentReputation,
     globalMarketValue,
     salesBonusPct,
+    staffProductivityBonus,
     isPreview,
   )
 }
@@ -69,13 +72,15 @@ function calculateServiceDemand(
   currentReputation: number,
   globalMarketValue: number,
   salesBonusPct: number,
+  staffProductivityBonus: number,
 ): number {
   const { elasticity, production } = BUSINESS_BALANCE
 
   const priceLevel = business.price
   const baseServiceDemand = business.maxEmployees * production.baseServiceDemandPerMaxEmp
 
-  const efficiencyMod = currentEfficiency / PERCENT_DIVISOR
+  const productivityFactor = 1 + Math.max(0, staffProductivityBonus) / PERCENT_DIVISOR
+  const efficiencyMod = (currentEfficiency / PERCENT_DIVISOR) * productivityFactor
   const reputationMod = currentReputation / PERCENT_DIVISOR
 
   const normalizedPrice = Math.max(MIN_VALUE, priceLevel / PRICE_NORMALIZATION_FACTOR)
@@ -117,6 +122,7 @@ function calculateServiceRevenue(
   currentReputation: number,
   globalMarketValue: number,
   salesBonusPct: number,
+  staffProductivityBonus: number,
 ): RevenueResult {
   const { production } = BUSINESS_BALANCE
 
@@ -127,6 +133,7 @@ function calculateServiceRevenue(
     currentReputation,
     globalMarketValue,
     salesBonusPct,
+    staffProductivityBonus,
   )
 
   const sellingPrice = production.baseServiceRevenuePerLevel * priceLevel
@@ -147,9 +154,9 @@ function calculateServiceRevenue(
 }
 
 function calculateProductPrice(inventory: BusinessInventory, priceLevel: number): number {
-  const unitCost = inventory.purchaseCost
+  const basePrice = inventory.pricePerUnit > 0 ? inventory.pricePerUnit : inventory.purchaseCost
   const markup = priceLevel * MARKUP_FACTOR
-  const finalPrice = Math.round(unitCost * markup)
+  const finalPrice = Math.round(basePrice * markup)
   return priceLevel <= 0 ? 0 : finalPrice
 }
 
@@ -201,6 +208,7 @@ function calculateProductDemand(
 function calculateProduction(
   business: Business,
   currentEfficiency: number,
+  staffProductivityBonus: number,
 ): { actualProduction: number; productionCapacity: number } {
   const { production } = BUSINESS_BALANCE
 
@@ -209,7 +217,8 @@ function calculateProduction(
     workersCount += 1
   }
 
-  const efficiencyMod = currentEfficiency / 100
+  const productivityFactor = 1 + Math.max(0, staffProductivityBonus) / PERCENT_DIVISOR
+  const efficiencyMod = (currentEfficiency / PERCENT_DIVISOR) * productivityFactor
 
   const productionCapacity = Math.floor(
     (workersCount + STAFFING_PENALTY) * production.baseProductionPerWorker * efficiencyMod,
@@ -227,6 +236,7 @@ function calculateProductRevenue(
   currentReputation: number,
   globalMarketValue: number,
   salesBonusPct: number,
+  staffProductivityBonus: number,
   isPreview: boolean,
 ): RevenueResult {
   const unitCost = inventory.purchaseCost
@@ -234,10 +244,14 @@ function calculateProductRevenue(
   const sellingPrice = calculateProductPrice(inventory, priceLevel)
 
   // 1. Production
-  const { actualProduction, productionCapacity } = calculateProduction(business, currentEfficiency)
+  const { actualProduction, productionCapacity } = calculateProduction(
+    business,
+    currentEfficiency,
+    staffProductivityBonus,
+  )
 
-  const purchaseAmount = actualProduction
-  const purchaseCost = Math.round(actualProduction * unitCost)
+  const purchaseAmount = Math.max(actualProduction, Math.max(0, business.autoPurchaseAmount))
+  const purchaseCost = Math.round(purchaseAmount * unitCost)
 
   // 2. Demand & Sales
   const reputationMod = currentReputation / 100

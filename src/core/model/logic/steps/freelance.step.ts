@@ -1,5 +1,3 @@
-import { applyStatEffects } from '@/core/lib/stats/apply-effects'
-
 import { processFreelance } from '../turns/freelance-processor'
 import type { TurnStep } from './step.types'
 
@@ -18,11 +16,17 @@ export const freelanceStep: TurnStep = (ctx, state) => {
 
   // 1. Apply costs for active gigs
   state.player.activeFreelanceGigs.forEach((gig) => {
-    applyStatEffects(state.statModifiers, gig.cost, 'add')
+    state.pendingStatEffects.push({
+      effects: gig.cost,
+      kind: 'one_time',
+    })
   })
 
   // 2. Apply payments for finished gigs
   res.finishedGigs.forEach((gig) => {
-    state.statModifiers.money = (state.statModifiers.money ?? 0) + gig.payment
+    state.pendingStatEffects.push({
+      effects: { money: gig.payment },
+      kind: 'one_time',
+    })
   })
 }

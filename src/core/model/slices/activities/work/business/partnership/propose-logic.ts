@@ -149,11 +149,23 @@ export function handleProposeBusinessChange(
         handleFundCollection(state, set, business, data.collectionAmount ?? 0)
         break
       case 'price':
+        if (typeof data.newPrice === 'number') {
+          state.changePrice(businessId, data.newPrice)
+        }
+        break
       case 'quantity':
+        if (typeof data.newQuantity === 'number') {
+          state.setQuantity(businessId, data.newQuantity)
+        }
+        break
+      case 'auto_purchase':
+        if (typeof data.autoPurchaseAmount === 'number') {
+          state.setAutoPurchase(businessId, data.autoPurchaseAmount)
+        }
+        break
       case 'hire_employee':
       case 'fire_employee':
       case 'dividend':
-      case 'auto_purchase':
       case 'change_role':
       case 'promote_employee':
       case 'demote_employee':
@@ -162,10 +174,6 @@ export function handleProposeBusinessChange(
       case 'marketing_campaign':
       case 'change_name':
       case 'sell_business':
-        state.updateBusinessDirectly(businessId, {
-          price: data.newPrice,
-          quantity: data.newQuantity,
-        })
         break
       case 'freeze':
         state.freezeBusiness(businessId)

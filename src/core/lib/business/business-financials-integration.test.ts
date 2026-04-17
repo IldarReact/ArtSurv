@@ -220,6 +220,38 @@ describe('calculateBusinessFinancials Integration Tests', () => {
     expect(Number.isNaN(result.debug?.taxAmount)).toBe(false)
   })
 
+  it('should increase inventory purchase costs when autoPurchaseAmount is set', () => {
+    const lowAutoPurchase = calculateBusinessFinancials(
+      {
+        ...baseBusiness,
+        autoPurchaseAmount: 0,
+        quantity: 10,
+      },
+      false,
+      playerSkills,
+      1.0,
+      mockEconomy,
+    )
+    const highAutoPurchase = calculateBusinessFinancials(
+      {
+        ...baseBusiness,
+        autoPurchaseAmount: 200,
+        quantity: 10,
+      },
+      false,
+      playerSkills,
+      1.0,
+      mockEconomy,
+    )
+
+    expect(highAutoPurchase.debug?.purchaseAmount).toBeGreaterThanOrEqual(
+      lowAutoPurchase.debug?.purchaseAmount ?? 0,
+    )
+    expect(highAutoPurchase.debug?.purchaseCost).toBeGreaterThanOrEqual(
+      lowAutoPurchase.debug?.purchaseCost ?? 0,
+    )
+  })
+
   it('should handle undefined economy gracefully', () => {
     // economy deliberately undefined to verify default branches
     const result = calculateBusinessFinancials(baseBusiness, false, playerSkills, 1.0, undefined)

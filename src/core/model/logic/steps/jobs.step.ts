@@ -1,5 +1,3 @@
-import { applyStatEffects } from '@/core/lib/stats/apply-effects'
-
 import { processJobs } from '../turns/jobs-processor'
 import type { TurnStep } from './step.types'
 
@@ -19,9 +17,10 @@ export const jobsStep: TurnStep = (ctx, state) => {
 
   // Apply job costs
   state.player.jobs.forEach((job) => {
-    // Jobs use 'subtract' for costs, but positive modifiers for gains
-    // The applyStatEffects will handle the sign based on the third argument
-    applyStatEffects(state.statModifiers, job.cost, 'add')
+    state.pendingStatEffects.push({
+      effects: job.cost,
+      kind: 'one_time',
+    })
   })
 
   res.protectedSkills.forEach((s) => state.protectedSkills.add(s))

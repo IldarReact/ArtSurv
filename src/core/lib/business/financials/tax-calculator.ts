@@ -12,9 +12,18 @@ export function calculateTaxes(
   ebitda: number,
   corporateTaxRatePercent: number | undefined,
   businessDefaultTaxRate = DEFAULT_TAX_RATE,
+  taxReductionPct = 0,
 ): TaxResult {
   const baseRate = corporateTaxRatePercent ?? businessDefaultTaxRate
-  const taxRatePercent = Number.isFinite(baseRate) ? baseRate : DEFAULT_TAX_RATE
+  const normalizedRate =
+    Number.isFinite(baseRate) && baseRate <= DECIMAL_RATE_THRESHOLD
+      ? baseRate * PERCENT_DIVISOR
+      : baseRate
+  const rawTaxRatePercent = Number.isFinite(normalizedRate) ? normalizedRate : DEFAULT_TAX_RATE
+  const taxRatePercent = Math.max(
+    0,
+    rawTaxRatePercent * (1 - Math.max(0, taxReductionPct) / PERCENT_DIVISOR),
+  )
 
   const taxAmount = ebitda > 0 ? ebitda * (taxRatePercent / PERCENT_DIVISOR) : 0
   const netProfit = ebitda - taxAmount

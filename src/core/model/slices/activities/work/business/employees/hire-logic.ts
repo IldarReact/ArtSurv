@@ -45,7 +45,7 @@ export function handleHireEmployee(
   if (!player) return
 
   // 1. Проверка энергии (нужно 5 на попытку найма)
-  const currentEnergy = player.personal.stats.energy
+  const currentEnergy = player.stats.energy
   if (currentEnergy < HIRE_ENERGY_COST) {
     state.pushNotification({
       message: `Вам нужно хотя бы ${String(HIRE_ENERGY_COST)} единиц энергии, чтобы провести собеседование.`,

@@ -11,6 +11,9 @@ export function initTurnState(ctx: TurnContext): TurnState {
   }
 
   const player = structuredClone(prev.player)
+  if (!Array.isArray(player.activeStatEffects)) {
+    player.activeStatEffects = []
+  }
   const country = prev.countries[player.countryId] ?? getCountry(player.countryId)
 
   return {
@@ -68,6 +71,7 @@ export function initTurnState(ctx: TurnContext): TurnState {
     pendingApplications: prev.pendingApplications,
 
     pendingFreelanceApplications: prev.pendingFreelanceApplications,
+    pendingStatEffects: [],
 
     // snapshot
     player,
