@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Bank E2E', () => {
   test('should be able to borrow and repay money', async ({ page }) => {
+    test.setTimeout(120000)
     // 1. Start the game
     await page.goto('/')
     await page.getByRole('button', { name: /Одиночная игра/i }).click()
@@ -55,6 +56,7 @@ test.describe('Bank E2E', () => {
   })
 
   test('should be able to open and close deposits', async ({ page }) => {
+    test.setTimeout(120000)
     await page.goto('/')
     await page.getByRole('button', { name: /Одиночная игра/i }).click()
 

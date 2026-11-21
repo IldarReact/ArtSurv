@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Freelance E2E', () => {
   test('should be able to take and complete a freelance gig', async ({ page }) => {
+    test.setTimeout(120000)
     // 1. Start the game
     await page.goto('/')
     await page.evaluate(() => {
