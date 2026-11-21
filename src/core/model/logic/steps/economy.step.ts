@@ -1,49 +1,26 @@
-import { generateGlobalEvents } from '@/core/lib/calculations'
 import { formatGameDate } from '@/core/lib/quarter'
+import { processCountryEconomy } from '@/core/model/logic/economy/country-economy-processor'
 
-import { processEconomicCycle } from '../economy/cycle-processor'
 import type { TurnStep } from './step.types'
 
 export const economyStep: TurnStep = (ctx, state) => {
-  const country = state.country
+  const result = processCountryEconomy(state.country, ctx.turn)
 
-  // 1. Цикл экономики страны
-  const res = processEconomicCycle(country.cycle, ctx.turn)
-
-  state.country = {
-    ...country,
-    cycle: res.cycle,
+  state.country = result.country
+  state.countries = {
+    ...state.countries,
+    [result.country.id]: result.country,
   }
+  state.globalMarketValue = result.country.cycle?.marketModifier ?? state.globalMarketValue
 
-  state.globalMarketValue = res.cycle.marketModifier
-
-  if (res.newEvent) {
-    state.country.activeEvents.push(res.newEvent)
-
+  if (result.event) {
     state.notifications.push({
       date: formatGameDate(ctx.year, ctx.turn),
-      id: res.newEvent.id,
+      id: result.event.id,
       isRead: false,
-      message: res.newEvent.description,
-      title: res.newEvent.title,
-      type: res.newEvent.type === 'crisis' ? 'warning' : 'success',
-    })
-  }
-
-  // 2. Глобальные события
-  const oldEventsCount = state.globalEvents.length
-  state.globalEvents = generateGlobalEvents(ctx.turn, state.globalEvents)
-
-  // Если добавилось новое событие, отправляем уведомление
-  if (state.globalEvents.length > oldEventsCount) {
-    const newEvent = state.globalEvents[state.globalEvents.length - 1]
-    state.notifications.push({
-      date: formatGameDate(ctx.year, ctx.turn),
-      id: `global_${newEvent.id}_${String(ctx.turn)}`,
-      isRead: false,
-      message: newEvent.description,
-      title: `🌍 Глобальное событие: ${newEvent.title}`,
-      type: 'info',
+      message: result.event.description,
+      title: result.event.title,
+      type: result.event.type === 'crisis' ? 'warning' : 'success',
     })
   }
 }

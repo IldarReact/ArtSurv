@@ -11,6 +11,7 @@ type MigrationFn = (oldState: unknown) => unknown
 const migrations: Record<number, MigrationFn | undefined> = {
   2: (state) => migrateV2(state),
   3: (state) => migrateV3(state),
+  4: (state) => migrateV4(state),
 }
 
 function toObject(value: unknown): Record<string, unknown> {
@@ -127,6 +128,32 @@ function migrateV3(rawState: unknown): unknown {
     player: {
       ...player,
       activeStatEffects: Array.isArray(player.activeStatEffects) ? player.activeStatEffects : [],
+    },
+  }
+}
+
+function migrateV4(rawState: unknown): unknown {
+  const state = toObject(rawState)
+  const player = toObject(state.player)
+
+  if (!state.player) return state
+
+  const personal = toObject(player.personal)
+  const personalStats = toObject(personal.stats)
+  const playerStats = toObject(player.stats)
+  Reflect.deleteProperty(personalStats, 'psychologicalStability')
+  Reflect.deleteProperty(playerStats, 'psychologicalStability')
+  Reflect.deleteProperty(player, 'psychologicalStability')
+
+  return {
+    ...state,
+    player: {
+      ...player,
+      personal: {
+        ...personal,
+        stats: personalStats,
+      },
+      stats: playerStats,
     },
   }
 }

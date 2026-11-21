@@ -7,7 +7,7 @@ export const ECONOMIC_EVENT_DEFINITIONS: Record<
   boom: {
     description:
       'Экономика переживает период быстрого роста. ВВП растет, безработица снижается, зарплаты увеличиваются.',
-    duration: 6,
+    duration: 1,
     effects: {
       gdpGrowthChange: 3,
       inflationChange: 1,
@@ -21,7 +21,7 @@ export const ECONOMIC_EVENT_DEFINITIONS: Record<
   crisis: {
     description:
       'Мировой финансовый кризис затронул экономику. Инфляция растет, ключевая ставка повышается, безработица увеличивается.',
-    duration: 8,
+    duration: 1,
     effects: {
       gdpGrowthChange: -4,
       inflationChange: 5,
@@ -34,7 +34,7 @@ export const ECONOMIC_EVENT_DEFINITIONS: Record<
   },
   inflation_spike: {
     description: 'Резкий рост цен на товары и услуги. Центральный банк вынужден повышать ставку.',
-    duration: 4,
+    duration: 1,
     effects: {
       gdpGrowthChange: -1,
       inflationChange: 4,
@@ -48,7 +48,7 @@ export const ECONOMIC_EVENT_DEFINITIONS: Record<
   rate_cut: {
     description:
       'Центральный банк снижает ключевую ставку для стимулирования экономики. Кредиты становятся дешевле.',
-    duration: 4,
+    duration: 1,
     effects: {
       gdpGrowthChange: 1.5,
       inflationChange: 1,
@@ -62,7 +62,7 @@ export const ECONOMIC_EVENT_DEFINITIONS: Record<
   rate_hike: {
     description:
       'Центральный банк повышает ключевую ставку для борьбы с инфляцией. Кредиты становятся дороже.',
-    duration: 4,
+    duration: 1,
     effects: {
       gdpGrowthChange: -0.5,
       inflationChange: -2,
@@ -76,7 +76,7 @@ export const ECONOMIC_EVENT_DEFINITIONS: Record<
   recession: {
     description:
       'Экономика замедляется. Рост ВВП снижается, безработица растет, но инфляция под контролем.',
-    duration: 6,
+    duration: 1,
     effects: {
       gdpGrowthChange: -2,
       inflationChange: -1,

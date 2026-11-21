@@ -10,7 +10,6 @@ const BASE_SALARY_INDEXATION = 0.8
 const SALARY_MODIFIER_BASE = 1.0
 const SALARY_MODIFIER_SENSITIVITY = 0.1
 const MONTHS_IN_QUARTER = 3
-const SALARY_INDEXATION_YEARS_SKIP = 1
 
 /**
  * Универсальная функция для получения цены с учетом инфляции
@@ -122,21 +121,18 @@ export function getInflatedSalary(
   if (typeof baseSalary !== 'number' || Number.isNaN(baseSalary)) {
     return 0
   }
-  if (quartersPassed <= 0) {
+  if (quartersPassed < QUARTERS_IN_YEAR) {
     return baseSalary
   }
 
   const inflationHistory = economy.inflationHistory ?? [economy.inflation]
 
-  // Индексация происходит раз в год (каждые 4 квартала)
-  const yearsPassed = Math.floor(quartersPassed / QUARTERS_IN_YEAR)
-
-  if (yearsPassed <= 0) {
+  if (quartersPassed <= 0) {
     return baseSalary
   }
 
-  // Берем историю инфляции за прошедшие годы
-  const relevantHistory = inflationHistory.slice(-yearsPassed - 1)
+  // После первых трех кварталов индексация применяется поквартально
+  const relevantHistory = inflationHistory.slice(0, quartersPassed)
 
   // Коэффициент индексации: 70-90% от инфляции (детерминированно)
   const salaryMod = economy.salaryModifier
@@ -150,10 +146,9 @@ export function getInflatedSalary(
 
   // Рассчитываем накопленную индексацию
   let indexedSalary = baseSalary
-  for (const yearlyInflation of relevantHistory.slice(SALARY_INDEXATION_YEARS_SKIP)) {
-    // Пропускаем первый год (базовый)
-    const yearlyIndexation = (yearlyInflation * indexationRate) / PERCENT_DIVISOR
-    indexedSalary = indexedSalary * (1 + yearlyIndexation)
+  for (const quarterlyInflation of relevantHistory) {
+    const quarterlyIndexation = (quarterlyInflation * indexationRate) / PERCENT_DIVISOR
+    indexedSalary = indexedSalary * (1 + quarterlyIndexation)
   }
 
   return Math.round(indexedSalary)

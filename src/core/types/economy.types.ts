@@ -19,10 +19,13 @@ export interface EconomicEvent {
   description: string
   duration: number // Длительность в кварталах
   effects: {
-    inflationChange?: number // Изменение инфляции (%)
-    keyRateChange?: number // Изменение ключевой ставки (%)
-    gdpGrowthChange?: number // Изменение роста ВВП (%)
-    unemploymentChange?: number // Изменение безработицы (%)
+    readonly corporateTaxRateChange?: number // Изменение налога на прибыль бизнеса (%)
+    readonly inflationChange?: number // Изменение инфляции (%)
+    readonly keyRateChange?: number // Изменение ключевой ставки (%)
+    readonly gdpGrowthChange?: number // Изменение роста ВВП (%)
+    readonly personalTaxRateChange?: number // Изменение личного налога (%)
+    readonly psychologicalStabilityChange?: number // Изменение психологической стабильности страны
+    readonly unemploymentChange?: number // Изменение безработицы (%)
     salaryModifierChange?: number // Изменение зарплат (множитель)
   }
   id: string
@@ -45,20 +48,21 @@ export interface CountryEconomy {
   archetype: CountryArchetype
   baseSalaries?: Record<string, number> // Базовые зарплаты по ролям
   baseYear?: number // Базовый год для расчета инфляции (обычно год начала игры)
-  corporateTaxRate: number // Налог на прибыль бизнеса (%)
+  readonly corporateTaxRate: number // Налог на прибыль бизнеса (%)
   costOfLivingModifier: number // Модификатор стоимости жизни
   cycle?: EconomicCycle // Текущий экономический цикл
   gdpGrowth: number // Рост ВВП (%)
   id: string
   imageUrl?: string // URL изображения страны
-  inflation: number // Инфляция (% годовых)
+  readonly inflation: number // Инфляция (% годовых)
   inflationHistory?: number[] // История годовой инфляции для накопленного расчета
   interestRate: number // Базовая процентная ставка (deprecated, используем keyRate)
-  keyRate: number // Ключевая ставка ЦБ (% годовых)
+  readonly keyRate: number // Ключевая ставка ЦБ (% годовых)
   name: string
+  readonly psychologicalStability?: number // Психологическая стабильность страны (0-100)
   salaryModifier: number // Модификатор зарплат
   stockMarketInflation: number // Инфляция фондового рынка (% годовых)
-  taxRate: number // Личный налог на доход (зарплата, дивиденды) (%)
+  readonly taxRate: number // Личный налог на доход (зарплата, дивиденды) (%)
   unemployment: number // Безработица (%)
 }
 

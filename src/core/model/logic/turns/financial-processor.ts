@@ -1,5 +1,5 @@
 import { calculateQuarterlyReport } from '@/core/lib/calculations'
-import type { FamilyMember, QuarterlyReport } from '@/core/types'
+import type { CountryEconomy, FamilyMember, QuarterlyReport } from '@/core/types'
 
 import type { GameStore } from '../../slices/types'
 import type { LifestyleExpensesBreakdown } from './lifestyle-processor'
@@ -18,9 +18,10 @@ export function processFinancials(
   lifestyleExpensesBreakdown: LifestyleExpensesBreakdown,
   businessResult: BusinessResult,
   buffIncomeMod: number,
+  countryOverride?: CountryEconomy,
 ) {
   if (!state.player) {
-    const country = state.countries[countryId]
+    const country = countryOverride ?? state.countries[countryId]
 
     return {
       assetIncome: 0,
@@ -66,7 +67,7 @@ export function processFinancials(
     }
   }
 
-  const country = state.countries[countryId]
+  const country = countryOverride ?? state.countries[countryId]
 
   let familyIncome = 0
   let familyExpenses = 0

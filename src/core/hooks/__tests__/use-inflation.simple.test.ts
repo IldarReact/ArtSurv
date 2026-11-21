@@ -44,13 +44,13 @@ describe('Inflation UI Tests - Simplified', () => {
   const economyWithInflation: CountryEconomy = {
     ...economyNoInflation,
     inflation: 2.5,
-    inflationHistory: [2.5, 2.3, 2.7], // 3 года
+    inflationHistory: [2.5, 2.3, 2.7, 2.4], // 4 квартала
   }
 
   const economyHighInflation: CountryEconomy = {
     ...economyNoInflation,
     inflation: 8.9,
-    inflationHistory: [8.9, 8.5, 9.2, 8.7, 9.0], // 5 лет (Бразилия)
+    inflationHistory: [8.9, 8.5, 9.2, 8.7, 9.0], // 5 кварталов (Бразилия)
   }
 
   describe('Shop Items', () => {
@@ -58,16 +58,16 @@ describe('Inflation UI Tests - Simplified', () => {
       const result = getInflatedShopPrice(100, economyWithInflation, 'food')
 
       expect(result).toBeGreaterThan(100)
-      expect(result).toBeLessThan(105) // Медленный рост
+      expect(result).toBeLessThanOrEqual(106) // Медленный поквартальный рост
     })
 
     it('жильё растёт быстро (multiplier 1.5x)', () => {
       const result = getInflatedHousingPrice(250000, economyWithInflation)
 
       expect(result).toBeGreaterThan(250000)
-      // With 3 years of 2.5% inflation and 1.5x multiplier, expected value is ~279,191
+      // Four quarterly inflation entries are applied cumulatively.
       expect(result).toBeGreaterThan(275000)
-      expect(Math.round(result)).toBe(279191) // Exact expected value
+      expect(Math.round(result)).toBe(289241)
     })
 
     it('recurring items (аренда)', () => {
@@ -80,13 +80,13 @@ describe('Inflation UI Tests - Simplified', () => {
 
   describe('Salaries', () => {
     it('зарплаты растут почти как инфляция (multiplier 0.7-0.9x)', () => {
-      // Test with 4 quarters (1 year) passed
+      // Test with 4 quarters passed
       const result = getInflatedSalary(5000, economyWithInflation, 4)
 
-      // With 2.5% inflation and 0.7-0.9x multiplier, expected range is 5087-5211
+      // Inflation history is applied once per quarter.
       expect(result).toBeGreaterThan(5000)
-      expect(result).toBeGreaterThanOrEqual(5087)
-      expect(result).toBeLessThanOrEqual(5211)
+      expect(result).toBeGreaterThanOrEqual(5200)
+      expect(result).toBeLessThanOrEqual(5500)
     })
 
     it('массив зарплат', () => {

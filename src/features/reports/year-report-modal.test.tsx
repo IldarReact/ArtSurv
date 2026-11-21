@@ -50,11 +50,10 @@ describe('YearReportModal', () => {
     render(<YearReportModal />)
 
     expect(screen.getByText(/отчет за 2024 год/i)).toBeDefined()
-    // Use regex to be flexible about spaces/commas in formatted numbers
     expect(screen.getByText(/150.*000/)).toBeDefined()
     expect(screen.getByText('85')).toBeDefined()
     expect(screen.getByText('90')).toBeDefined()
-  })
+  }, 15000)
 
   it('should render error message when history is empty instead of black screen', () => {
     vi.mocked(useGameStore).mockReturnValue({

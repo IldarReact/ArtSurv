@@ -162,23 +162,10 @@ export function generateCrisisEconomicEvent(countryId: string, turn: number): Ec
  */
 export function applyCrisisToCountry(
   country: CountryEconomy,
-  event: EconomicEvent,
+  _event: EconomicEvent,
 ): CountryEconomy {
-  return {
-    ...country,
-    activeEvents: [...country.activeEvents, event],
-    gdpGrowth: country.gdpGrowth + (event.effects.gdpGrowthChange ?? 0),
-    inflation: Math.max(0, country.inflation + (event.effects.inflationChange ?? 0)),
-    keyRate: Math.max(0, country.keyRate + (event.effects.keyRateChange ?? 0)),
-    salaryModifier: Math.max(
-      0.5,
-      country.salaryModifier + (event.effects.salaryModifierChange ?? 0),
-    ),
-    unemployment: Math.min(
-      100,
-      Math.max(0, country.unemployment + (event.effects.unemploymentChange ?? 0)),
-    ),
-  }
+  // Deprecated: country economy changes only in country-economy-processor.
+  return country
 }
 
 /**

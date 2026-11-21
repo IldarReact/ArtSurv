@@ -39,10 +39,9 @@ export function calculatePlayerAssetsAndDebts({
       valueChange = asset.value * (marketMove + quarterlyStockGrowth)
     } else if (asset.type === 'housing') {
       // Real estate follows inflation + small growth
-      // Quarterly growth based on annual inflation
+      // Вся инфляция страны уже хранится как квартальный показатель
       const quarterlyGrowth =
-        countryEconomy.inflation / QUARTERS_IN_YEAR / PERCENT_DIVISOR +
-        BASE_HOUSING_QUARTERLY_GROWTH
+        countryEconomy.inflation / PERCENT_DIVISOR + BASE_HOUSING_QUARTERLY_GROWTH
       valueChange = asset.value * quarterlyGrowth
     }
 

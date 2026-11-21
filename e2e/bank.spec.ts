@@ -8,9 +8,12 @@ test.describe('Bank E2E', () => {
 
     // 2. Select Country (USA)
     const usaHeading = page.getByRole('heading', { name: /США/i })
-    while (!(await usaHeading.isVisible())) {
-      await page.getByLabel(/Next country|Следующая страна/i).click()
+    const nextCountry = page.getByLabel(/Next country|Следующая страна/i)
+    for (let attempt = 0; attempt < 5; attempt++) {
+      if (await usaHeading.isVisible()) break
+      await nextCountry.click()
     }
+    await expect(usaHeading).toBeVisible({ timeout: 5000 })
     await page.getByRole('button', { name: /Выбрать и продолжить/i }).click()
 
     // 3. Select Archetype
@@ -57,9 +60,12 @@ test.describe('Bank E2E', () => {
 
     // Select USA to ensure enough starting money
     const usaHeading = page.getByRole('heading', { name: /США/i })
-    while (!(await usaHeading.isVisible())) {
-      await page.getByLabel(/Next country|Следующая страна/i).click()
+    const nextCountry = page.getByLabel(/Next country|Следующая страна/i)
+    for (let attempt = 0; attempt < 5; attempt++) {
+      if (await usaHeading.isVisible()) break
+      await nextCountry.click()
     }
+    await expect(usaHeading).toBeVisible({ timeout: 5000 })
     await page.getByRole('button', { name: /Выбрать и продолжить/i }).click()
 
     await page

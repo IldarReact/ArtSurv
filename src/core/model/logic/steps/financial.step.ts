@@ -10,6 +10,7 @@ export const financialStep: TurnStep = (ctx, state) => {
     state.lifestyle.breakdown,
     state.business,
     state.statModifiers.income ?? 0,
+    state.country,
   )
 
   state.financial.quarterlyReport = res.quarterlyReport

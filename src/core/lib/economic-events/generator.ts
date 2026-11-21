@@ -10,8 +10,6 @@ const HIGH_UNEMPLOYMENT_THRESHOLD = 10
 const CRISIS_CHANCE_DURING_UNEMPLOYMENT = 0.5
 const BOOM_GDP_THRESHOLD = 4
 const BOOM_INFLATION_THRESHOLD = 5
-const BASE_EVENT_CHANCE = 0.1
-
 function selectEventType(economy: CountryEconomy): keyof typeof ECONOMIC_EVENT_DEFINITIONS {
   const { gdpGrowth, inflation, unemployment } = economy
 
@@ -41,7 +39,6 @@ export function generateEconomicEvent(
   turn: number,
   currentEconomy: CountryEconomy,
 ): EconomicEvent | null {
-  if (Math.random() > BASE_EVENT_CHANCE) return null
   const type = selectEventType(currentEconomy)
   return createEconomicEvent(type, turn)
 }

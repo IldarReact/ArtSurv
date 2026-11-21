@@ -63,6 +63,35 @@ describe('Financial Logic Integration', () => {
       // Debt interest: 10000 * (20% / 4) = 10000 * 0.05 = 500
       expect(res.debtInterest).toBe(500)
     })
+
+    it('should use the updated country economy passed by the orchestrator', () => {
+      const updatedCountry = {
+        ...mockCountry,
+        keyRate: 20,
+      } as any
+
+      const res = processFinancials(
+        mockState as GameStore,
+        'us',
+        [],
+        0,
+        {
+          credits: 0,
+          food: 0,
+          housing: 0,
+          mortgage: 0,
+          other: 0,
+          total: 0,
+          transport: 0,
+        },
+        { totalExpenses: 0, totalIncome: 0, totalTax: 0 },
+        0,
+        updatedCountry,
+      )
+
+      expect(res.country.keyRate).toBe(20)
+      expect(res.assetIncome).toBeCloseTo(350)
+    })
   })
 
   describe('financialStep', () => {

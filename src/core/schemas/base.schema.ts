@@ -1,5 +1,8 @@
 import { z } from 'zod'
 
+const STAT_MIN = 0
+const STAT_MAX = 100
+
 export const StatEffectSchema = z
   .object({
     energy: z.number().finite().optional(),
@@ -49,9 +52,6 @@ export const StatChangeEffectSchema = z.discriminatedUnion('kind', [
   TemporaryStatChangeSchema,
   PersistentStatChangeSchema,
 ])
-
-const STAT_MIN = 0
-const STAT_MAX = 100
 
 export const StatsSchema = z
   .object({

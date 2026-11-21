@@ -7,7 +7,6 @@ import {
   educationStep,
   financialStep,
   freelanceStep,
-  inflationStep,
   jobsStep,
   lifestyleStep,
   marketStep,
@@ -30,5 +29,4 @@ export const STEPS: TurnStep[] = [
   statEffectsStep,
   thresholdsStep,
   financialStep,
-  inflationStep,
 ]
