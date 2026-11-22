@@ -69,7 +69,7 @@ export function CharacterCard({
                 {(() => {
                   if (character.startingJobId) {
                     const job = getJobById(character.startingJobId, countryId)
-                    if (job) return calculateQuarterlySalary(job.salary).toLocaleString()
+                    if (job) return job.salary.toLocaleString()
                   }
                   return calculateQuarterlySalary(character.startingSalary ?? 0).toLocaleString()
                 })()}

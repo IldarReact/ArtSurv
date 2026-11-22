@@ -119,4 +119,45 @@ describe('migrations', () => {
     expect('durationUnit' in migrated.player.personal.buffs[0]).toBe(false)
     expect('durationUnit' in migrated.pendingFreelanceApplications[0]).toBe(false)
   })
+
+  it('migrates saved job salaries and pending job offers to quarterly amounts', () => {
+    const legacyState = {
+      notifications: [
+        {
+          data: { jobApplicationId: 'app-1', salary: 5000 },
+          id: 'offer-1',
+          isRead: false,
+          message: 'Offer',
+          title: 'Job offer',
+          type: 'info',
+        },
+        {
+          data: { salary: 100 },
+          id: 'other-1',
+          isRead: false,
+          message: 'Other',
+          title: 'Other',
+          type: 'info',
+        },
+      ],
+      pendingApplications: [{ id: 'app-1', salary: 5000 }],
+      player: {
+        currentJob: { salary: 6000 },
+        jobs: [{ salary: 6000 }, { salary: 3000 }],
+        quarterlySalary: 27000,
+      },
+    }
+
+    const migrated = migrateState(legacyState, 4, 5) as unknown as typeof legacyState
+
+    expect(migrated.player.jobs.map((job) => job.salary)).toEqual([18000, 9000])
+    expect(migrated.player.currentJob.salary).toBe(18000)
+    expect(migrated.player.quarterlySalary).toBe(27000)
+    expect(migrated.pendingApplications[0].salary).toBe(15000)
+    expect(migrated.notifications[0].data.salary).toBe(15000)
+    expect(Reflect.get(migrated.notifications[0].data, 'applicationId')).toBe('app-1')
+    expect('jobApplicationId' in migrated.notifications[0].data).toBe(false)
+    expect(migrated.notifications[0].type).toBe('job_offer')
+    expect(migrated.notifications[1].data.salary).toBe(100)
+  })
 })

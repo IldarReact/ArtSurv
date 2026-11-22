@@ -1,5 +1,6 @@
 'use client'
 
+import { isCountryAvailable } from '@/core/lib/data-loaders/economy-loader'
 import { useGameStore } from '@/core/model/store'
 import { Button } from '@/shared/components/button'
 
@@ -9,7 +10,9 @@ export function RelocationActivity(): React.JSX.Element | null {
   if (!player) return null
 
   const currentCountry = countries[player.countryId]
-  const otherCountries = Object.values(countries).filter((c) => c.id !== player.countryId)
+  const otherCountries = Object.values(countries).filter(
+    (country) => isCountryAvailable(country.id) && country.id !== player.countryId,
+  )
 
   return (
     <div className="space-y-6">
@@ -32,40 +35,44 @@ export function RelocationActivity(): React.JSX.Element | null {
         <div className="space-y-4">
           <h3 className="text-xl font-semibold text-white/80">Доступные страны</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {otherCountries.map((country) => (
-              <div
-                className="bg-white/5 p-6 rounded-xl border border-white/5 hover:bg-white/10 transition-colors"
-                key={country.id}
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <h4 className="text-xl font-bold text-white">{country.name}</h4>
-                  <span className="text-xs bg-white/10 px-2 py-1 rounded text-white/60 uppercase">
-                    {country.archetype}
-                  </span>
-                </div>
-                <div className="space-y-2 text-sm text-white/60 mb-6">
-                  <div className="flex justify-between">
-                    <span>Рост ВВП</span>
-                    <span className="text-white">
-                      {country.gdpGrowth > 0 ? '+' : ''}
-                      {country.gdpGrowth}%
+            {otherCountries.length === 0 ? (
+              <p className="text-white/50">Другие страны пока не участвуют в тесте.</p>
+            ) : (
+              otherCountries.map((country) => (
+                <div
+                  className="bg-white/5 p-6 rounded-xl border border-white/5 hover:bg-white/10 transition-colors"
+                  key={country.id}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <h4 className="text-xl font-bold text-white">{country.name}</h4>
+                    <span className="text-xs bg-white/10 px-2 py-1 rounded text-white/60 uppercase">
+                      {country.archetype}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Стоимость жизни</span>
-                    <span className="text-white">x{country.costOfLivingModifier}</span>
+                  <div className="space-y-2 text-sm text-white/60 mb-6">
+                    <div className="flex justify-between">
+                      <span>Рост ВВП</span>
+                      <span className="text-white">
+                        {country.gdpGrowth > 0 ? '+' : ''}
+                        {country.gdpGrowth}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Стоимость жизни</span>
+                      <span className="text-white">x{country.costOfLivingModifier}</span>
+                    </div>
                   </div>
+                  <Button
+                    className="w-full bg-white text-black hover:bg-white/90"
+                    onClick={() => {
+                      relocateToCountry(country.id)
+                    }}
+                  >
+                    Переехать ($5,000)
+                  </Button>
                 </div>
-                <Button
-                  className="w-full bg-white text-black hover:bg-white/90"
-                  onClick={() => {
-                    relocateToCountry(country.id)
-                  }}
-                >
-                  Переехать ($5,000)
-                </Button>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

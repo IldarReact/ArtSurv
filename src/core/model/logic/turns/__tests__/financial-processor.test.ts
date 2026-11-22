@@ -188,12 +188,12 @@ describe('Financial Processor', () => {
         assets: [],
         businesses: [],
         debts: [],
-        jobs: [{ salary: 1000 }], // Employee
+        jobs: [{ salary: 3000 }], // Quarterly employee salary
         personal: { familyMembers: [] },
       },
     })
 
-    // Without buff: 1000 * 3 months = 3000
+    // Without buff: quarterly salary is 3000
     // With 10% buff: 3000 * 1.1 = 3300
     const result = processFinancials(
       state,

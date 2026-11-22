@@ -5,7 +5,7 @@ import type { GameState } from '@/core/schemas/game.schema'
 import { GameStateSchema } from '@/core/schemas/game.schema'
 
 const SAVE_KEY = 'lifesim_save_v1'
-const CURRENT_VERSION = 4
+const CURRENT_VERSION = 5
 
 // Secret key for HMAC (в продакшене должен быть в .env)
 const SECRET_KEY =

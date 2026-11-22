@@ -2,6 +2,7 @@ export const Q1 = 1
 export const Q2 = 2
 export const Q3 = 3
 export const Q4 = 4
+export const MONTHS_PER_QUARTER = 3
 export type Quarter = typeof Q1 | typeof Q2 | typeof Q3 | typeof Q4
 
 const QUARTERS_PER_YEAR = 4

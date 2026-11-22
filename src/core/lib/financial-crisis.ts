@@ -1,5 +1,4 @@
 import { getCrisisOptions } from '@/core/lib/data-loaders/static-data-loader'
-import type { CountryEconomy, EconomicEvent } from '@/core/types/economy.types'
 import type { Player } from '@/core/types/game.types'
 
 /**
@@ -134,38 +133,6 @@ function createFamilyHelpOption(player: Player, template: CrisisOptionTemplate):
     type: 'family_help',
     unavailableReason: canAskFamily ? undefined : template.unavailableReason,
   }
-}
-
-/**
- * Генерирует экономическое событие кризиса для страны
- */
-export function generateCrisisEconomicEvent(countryId: string, turn: number): EconomicEvent {
-  return {
-    description: 'Массовые банкротства граждан привели к экономическому кризису в стране',
-    duration: 4, // 1 год (4 квартала)
-    effects: {
-      gdpGrowthChange: -2, // -2% к росту ВВП
-      inflationChange: 5, // +5% к инфляции
-      keyRateChange: 3, // +3% к ключевой ставке
-      salaryModifierChange: -0.1, // -10% к зарплатам
-      unemploymentChange: 2, // +2% безработица
-    },
-    id: `crisis_${countryId}_${String(turn)}`,
-    title: '📉 Финансовый кризис',
-    turn,
-    type: 'crisis',
-  }
-}
-
-/**
- * Применяет эффекты кризиса к экономике страны
- */
-export function applyCrisisToCountry(
-  country: CountryEconomy,
-  _event: EconomicEvent,
-): CountryEconomy {
-  // Deprecated: country economy changes only in country-economy-processor.
-  return country
 }
 
 /**

@@ -2,6 +2,43 @@ import { z } from 'zod'
 
 export const EconomicEventSchema = z
   .object({
+    appliedChanges: z
+      .object({
+        corporateTaxRate: z
+          .object({ delta: z.number(), from: z.number(), to: z.number() })
+          .strict()
+          .optional(),
+        gdpGrowth: z
+          .object({ delta: z.number(), from: z.number(), to: z.number() })
+          .strict()
+          .optional(),
+        inflation: z
+          .object({ delta: z.number(), from: z.number(), to: z.number() })
+          .strict()
+          .optional(),
+        keyRate: z
+          .object({ delta: z.number(), from: z.number(), to: z.number() })
+          .strict()
+          .optional(),
+        personalTaxRate: z
+          .object({ delta: z.number(), from: z.number(), to: z.number() })
+          .strict()
+          .optional(),
+        psychologicalStability: z
+          .object({ delta: z.number(), from: z.number(), to: z.number() })
+          .strict()
+          .optional(),
+        salaryModifier: z
+          .object({ delta: z.number(), from: z.number(), to: z.number() })
+          .strict()
+          .optional(),
+        unemployment: z
+          .object({ delta: z.number(), from: z.number(), to: z.number() })
+          .strict()
+          .optional(),
+      })
+      .strict()
+      .optional(),
     description: z.string(),
     duration: z.number().int(),
     effects: z.object({
@@ -17,9 +54,23 @@ export const EconomicEventSchema = z
     id: z.string(),
     title: z.string(),
     turn: z.number().int(),
-    type: z.enum(['crisis', 'boom', 'recession', 'inflation_spike', 'rate_hike', 'rate_cut']),
+    type: z.enum([
+      'crisis',
+      'boom',
+      'recession',
+      'inflation_spike',
+      'rate_hike',
+      'rate_cut',
+      'tax_reform',
+    ]),
   })
   .strict()
+
+export const EconomicEventDefinitionSchema = EconomicEventSchema.omit({
+  appliedChanges: true,
+  id: true,
+  turn: true,
+})
 
 export const CountryEconomySchema = z
   .object({
@@ -29,6 +80,7 @@ export const CountryEconomySchema = z
     baseYear: z.number().optional(),
     corporateTaxRate: z.number(),
     costOfLivingModifier: z.number(),
+    eventHistory: z.array(EconomicEventSchema).optional(),
     gdpGrowth: z.number(),
     id: z.string(),
     imageUrl: z.string().optional(),

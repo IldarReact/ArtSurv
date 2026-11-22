@@ -35,6 +35,10 @@ export function WorldMapCard({ country }: WorldMapCardProps) {
             <p className="text-xs text-muted-foreground uppercase">Tax Rate</p>
             <p className="font-semibold">{country.taxRate}%</p>
           </div>
+          <div>
+            <p className="text-xs text-muted-foreground uppercase">Corporate Tax</p>
+            <p className="font-semibold">{country.corporateTaxRate}%</p>
+          </div>
         </div>
       </div>
     </div>

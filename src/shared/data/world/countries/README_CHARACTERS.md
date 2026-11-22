@@ -29,6 +29,8 @@ interface CharacterData {
 }
 ```
 
+Job templates in `jobs.json` store salary as a monthly amount; `jobs-loader.ts` converts it to the quarterly salary used by the game. `startingSalary` in character data remains monthly and is converted when creating the player.
+
 ## Использование
 
 ### Импорт

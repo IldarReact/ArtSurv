@@ -1,4 +1,4 @@
-import type { EconomicCycle, EconomicPhase, EconomicEvent } from '@/core/types/economy.types'
+import type { EconomicCycle, EconomicPhase } from '@/core/types/economy.types'
 
 /**
  * Configuration for Economic Cycles
@@ -61,28 +61,18 @@ function calculateMarketModifier(phase: EconomicPhase, intensity: number): numbe
  * Process Economic Cycle for a country
  * Should be called every turn
  */
-export function processEconomicCycle(
-  currentCycle: EconomicCycle | undefined,
-  turn: number,
-): {
-  cycle: EconomicCycle
-  newEvent: EconomicEvent | null
-} {
+export function processEconomicCycle(currentCycle: EconomicCycle | undefined): EconomicCycle {
   // Initialize if missing
   if (!currentCycle) {
     return {
-      cycle: {
-        durationLeft: getRandomDuration('growth'),
-        intensity: 0.5,
-        marketModifier: 1.0,
-        phase: 'growth',
-      },
-      newEvent: null,
+      durationLeft: getRandomDuration('growth'),
+      intensity: 0.5,
+      marketModifier: 1.0,
+      phase: 'growth',
     }
   }
 
   let { durationLeft, intensity, phase } = currentCycle
-  let newEvent: EconomicEvent | null = null
 
   // Decrease duration
   durationLeft -= 1
@@ -97,65 +87,14 @@ export function processEconomicCycle(
 
     // Randomize intensity for new phase
     intensity = MIN_INTENSITY + Math.random() * INTENSITY_RANGE // 0.3 - 1.0
-
-    // Trigger Crisis Event when entering Recession
-    if (phase === 'recession') {
-      const GDP_GROWTH_CHANGE = -5
-      const INFLATION_BASE = 5
-      const INFLATION_RANGE = 5
-      const SALARY_MODIFIER = 0.9
-      const UNEMPLOYMENT_BASE = 3
-      const UNEMPLOYMENT_RANGE = 3
-
-      newEvent = {
-        description: 'Экономика вошла в фазу рецессии. Спрос падает, безработица растет.',
-        duration: durationLeft,
-        effects: {
-          gdpGrowthChange: GDP_GROWTH_CHANGE,
-          inflationChange: INFLATION_BASE + Math.floor(Math.random() * INFLATION_RANGE), // +5-10% inflation
-          salaryModifierChange: SALARY_MODIFIER,
-          unemploymentChange: UNEMPLOYMENT_BASE + Math.floor(Math.random() * UNEMPLOYMENT_RANGE), // +3-6% unemployment
-        },
-        id: `crisis_${String(turn)}_${String(Date.now())}`,
-        title: 'Экономический Кризис',
-        turn: turn,
-        type: 'crisis',
-      }
-    }
-
-    // Trigger Boom Event when entering Peak
-    if (phase === 'peak') {
-      const GDP_GROWTH_CHANGE = 4
-      const INFLATION_CHANGE = 2
-      const SALARY_MODIFIER = 1.1
-      const UNEMPLOYMENT_CHANGE = -2
-
-      newEvent = {
-        description: 'Экономика на пике! Высокий спрос и рост зарплат.',
-        duration: durationLeft,
-        effects: {
-          gdpGrowthChange: GDP_GROWTH_CHANGE,
-          inflationChange: INFLATION_CHANGE,
-          salaryModifierChange: SALARY_MODIFIER,
-          unemploymentChange: UNEMPLOYMENT_CHANGE,
-        },
-        id: `boom_${String(turn)}_${String(Date.now())}`,
-        title: 'Экономический Бум',
-        turn: turn,
-        type: 'boom',
-      }
-    }
   }
 
   const marketModifier = calculateMarketModifier(phase, intensity)
 
   return {
-    cycle: {
-      durationLeft,
-      intensity,
-      marketModifier,
-      phase,
-    },
-    newEvent,
+    durationLeft,
+    intensity,
+    marketModifier,
+    phase,
   }
 }

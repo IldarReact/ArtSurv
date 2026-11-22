@@ -1,44 +1,54 @@
-import type { EconomicEvent, CountryEconomy } from '@/core/types'
+import { TEST_COUNTRY_ID } from '@/core/lib/data-loaders/economy-loader'
+import type { CountryEconomy, EconomicEvent, EconomicEventType } from '@/core/types'
 
 import { ECONOMIC_EVENT_DEFINITIONS, createEconomicEvent } from './definitions'
 
+const EVENT_PROBABILITY = 0.3
 const HIGH_INFLATION_THRESHOLD = 8
-const CRISIS_CHANCE_DURING_INFLATION = 0.3
 const LOW_GDP_THRESHOLD = 1
-const RECESSION_CHANCE_DURING_LOW_GDP = 0.5
 const HIGH_UNEMPLOYMENT_THRESHOLD = 10
-const CRISIS_CHANCE_DURING_UNEMPLOYMENT = 0.5
 const BOOM_GDP_THRESHOLD = 4
 const BOOM_INFLATION_THRESHOLD = 5
-function selectEventType(economy: CountryEconomy): keyof typeof ECONOMIC_EVENT_DEFINITIONS {
+
+function selectEventType(economy: CountryEconomy): EconomicEventType[] {
   const { gdpGrowth, inflation, unemployment } = economy
 
   if (inflation > HIGH_INFLATION_THRESHOLD) {
-    return Math.random() > CRISIS_CHANCE_DURING_INFLATION ? 'rate_hike' : 'crisis'
+    return ['rate_hike', 'crisis']
   }
 
   if (gdpGrowth < LOW_GDP_THRESHOLD) {
-    return Math.random() > RECESSION_CHANCE_DURING_LOW_GDP ? 'recession' : 'rate_cut'
+    return ['recession', 'rate_cut']
   }
 
   if (unemployment > HIGH_UNEMPLOYMENT_THRESHOLD) {
-    return Math.random() > CRISIS_CHANCE_DURING_UNEMPLOYMENT ? 'crisis' : 'recession'
+    return ['crisis', 'recession']
   }
 
   if (gdpGrowth > BOOM_GDP_THRESHOLD && inflation < BOOM_INFLATION_THRESHOLD) {
-    return 'boom'
+    return ['boom']
   }
 
-  const events = Object.keys(
-    ECONOMIC_EVENT_DEFINITIONS,
-  ) as (keyof typeof ECONOMIC_EVENT_DEFINITIONS)[]
-  return events[Math.floor(Math.random() * events.length)]
+  return ECONOMIC_EVENT_DEFINITIONS.map((event) => event.type)
 }
 
 export function generateEconomicEvent(
   turn: number,
   currentEconomy: CountryEconomy,
 ): EconomicEvent | null {
-  const type = selectEventType(currentEconomy)
-  return createEconomicEvent(type, turn)
+  if (currentEconomy.id !== TEST_COUNTRY_ID || Math.random() >= EVENT_PROBABILITY) {
+    return null
+  }
+
+  const candidateTypes = selectEventType(currentEconomy)
+  const matchingDefinitions = ECONOMIC_EVENT_DEFINITIONS.filter((event) =>
+    candidateTypes.includes(event.type),
+  )
+
+  if (matchingDefinitions.length === 0) {
+    throw new Error(`No economic event definitions match country ${currentEconomy.id}`)
+  }
+
+  const selected = matchingDefinitions[Math.floor(Math.random() * matchingDefinitions.length)]
+  return createEconomicEvent(selected.type, turn)
 }

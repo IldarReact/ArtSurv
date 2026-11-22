@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { getAllBusinessTypesForCountry } from '../businesses-loader'
 import { getFreelanceGigs } from '../freelance-loader'
 import { getHousingForCountry } from '../housing-loader'
-import { getAllJobsForCountry } from '../jobs-loader'
+import { getAllJobsForCountry, getJobById } from '../jobs-loader'
 
 describe('Data Integrity Verification', () => {
   const fullCountryNames = ['us', 'germany', 'brazil']
@@ -23,6 +23,10 @@ describe('Data Integrity Verification', () => {
       it(`should validate all jobs for ${country}`, () => {
         const data = getAllJobsForCountry(country)
         expect(data.length).toBeGreaterThan(0)
+      })
+
+      it('normalizes template monthly wages to quarterly job salaries', () => {
+        expect(getJobById('job_worker_start', 'us')?.salary).toBe(9000)
       })
     })
   })

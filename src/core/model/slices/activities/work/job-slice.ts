@@ -22,10 +22,6 @@ export const createJobSlice: StateCreator<GameStore, [], [], JobSlice> = (set, g
 
     void _businessId
 
-    // Зарплата в оффере указана за квартал, а в Job хранится за месяц
-    const MONTHS_IN_QUARTER = 3
-    const monthlySalary = Math.round(salary / MONTHS_IN_QUARTER)
-
     const newJob: Job = {
       company: company,
       cost: { energy: -20 },
@@ -33,7 +29,7 @@ export const createJobSlice: StateCreator<GameStore, [], [], JobSlice> = (set, g
       id: `job_ext_${String(Date.now())}`,
       imageUrl: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=600&fit=crop',
       requirements: {},
-      salary: monthlySalary,
+      salary,
       title: jobTitle,
     }
 
@@ -79,10 +75,9 @@ export const createJobSlice: StateCreator<GameStore, [], [], JobSlice> = (set, g
       title: appData.jobTitle,
     }
 
-    const MONTHS_IN_QUARTER = 3
     state.updatePlayer((prev) => ({
       jobs: [...prev.jobs, newJob],
-      quarterlySalary: prev.quarterlySalary + newJob.salary * MONTHS_IN_QUARTER,
+      quarterlySalary: prev.quarterlySalary + newJob.salary,
     }))
 
     state.dismissNotification(notification.id)
@@ -175,14 +170,13 @@ export const createJobSlice: StateCreator<GameStore, [], [], JobSlice> = (set, g
       const newSalary = Math.round(oldSalary * (1 + raisePercent / PERCENT_DIVISOR))
       const salaryDiff = newSalary - oldSalary
 
-      const MONTHS_IN_QUARTER = 3
       state.updatePlayer((prev) => ({
         jobs: prev.jobs.map((j) => (j.id === jobId ? { ...j, salary: newSalary } : j)),
-        quarterlySalary: prev.quarterlySalary + salaryDiff * MONTHS_IN_QUARTER,
+        quarterlySalary: prev.quarterlySalary + salaryDiff,
       }))
 
       state.pushNotification({
-        message: `Ваш разговор прошел успешно. Зарплата в ${job.company} выросла на ${String(Math.round(raisePercent))}% (+$${String(salaryDiff)}/мес).`,
+        message: `Ваш разговор прошел успешно. Зарплата в ${job.company} выросла на ${String(Math.round(raisePercent))}% (+$${String(salaryDiff)}/кв).`,
         title: 'Повышение получено!',
         type: 'success',
       })
@@ -205,10 +199,9 @@ export const createJobSlice: StateCreator<GameStore, [], [], JobSlice> = (set, g
     const job = state.player.jobs.find((j) => j.id === jobId)
     if (!job) return
 
-    const MONTHS_IN_QUARTER = 3
     state.updatePlayer((prev) => ({
       jobs: prev.jobs.filter((j) => j.id !== jobId),
-      quarterlySalary: prev.quarterlySalary - job.salary * MONTHS_IN_QUARTER,
+      quarterlySalary: prev.quarterlySalary - job.salary,
     }))
   },
 })

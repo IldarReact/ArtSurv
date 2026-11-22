@@ -2,6 +2,7 @@ import { createDebt } from '@/core/lib/calculations/debt-helpers'
 import { createEmptyQuarterlyReport } from '@/core/lib/calculations/financial-helpers'
 import { getCharacterByArchetype } from '@/core/lib/data-loaders/characters-loader'
 import { getStartingJob, getJobById } from '@/core/lib/data-loaders/jobs-loader'
+import { MONTHS_PER_QUARTER } from '@/core/lib/quarter'
 import { NEUTRAL_RELATION } from '@/core/types/business.types'
 import type { Player } from '@/core/types/game.types'
 import type { Job } from '@/core/types/job.types'
@@ -52,7 +53,7 @@ export function createInitialPlayer(archetype: string, countryId: string): Playe
     // Fallback если вакансий нет (не должно случиться)
     id: `job_${String(Date.now())}`,
     imageUrl: characterData.imageUrl,
-    salary: characterData.startingSalary ?? 0,
+    salary: (characterData.startingSalary ?? 0) * MONTHS_PER_QUARTER,
     title: characterData.name,
   }
 
@@ -61,7 +62,6 @@ export function createInitialPlayer(archetype: string, countryId: string): Playe
   const RANDOM_BASE_36 = 36
   const DEFAULT_AGE = 24
   const DEFAULT_CREDIT_SCORE = 650
-  const QUARTERS_IN_YEAR = 3
   const base: Player = {
     activeFreelanceGigs: [],
     // Обязательные расходы (нельзя снизить до 0)
@@ -123,7 +123,7 @@ export function createInitialPlayer(archetype: string, countryId: string): Playe
     },
     quarterlyReport: createEmptyQuarterlyReport(),
 
-    quarterlySalary: (characterData.startingSalary ?? 0) * QUARTERS_IN_YEAR,
+    quarterlySalary: initialJob.salary,
 
     stats: { ...baseStats },
 

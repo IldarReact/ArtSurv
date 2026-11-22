@@ -1,13 +1,14 @@
 'use client'
 
 import {
-  AlertTriangle,
-  TrendingUp,
-  TrendingDown,
-  Zap,
   Activity,
-  ArrowUp,
+  AlertTriangle,
   ArrowDown,
+  ArrowUp,
+  Landmark,
+  TrendingDown,
+  TrendingUp,
+  Zap,
 } from 'lucide-react'
 
 import { useGameStore } from '@/core/model/store'
@@ -22,16 +23,23 @@ const eventIcons: Record<EconomicEvent['type'], React.ReactNode> = {
   rate_cut: <ArrowDown className="w-5 h-5 text-cyan-400" />,
   rate_hike: <ArrowUp className="w-5 h-5 text-blue-400" />,
   recession: <TrendingDown className="w-5 h-5 text-orange-400" />,
+  tax_reform: <Landmark className="w-5 h-5 text-violet-400" />,
 }
 
 const eventColors: Record<EconomicEvent['type'], string> = {
-  boom: 'bg-emerald-500/10 border-emerald-500/20',
-  crisis: 'bg-red-500/10 border-red-500/20',
-  inflation_spike: 'bg-yellow-500/10 border-yellow-500/20',
-  rate_cut: 'bg-cyan-500/10 border-cyan-500/20',
-  rate_hike: 'bg-blue-500/10 border-blue-500/20',
-  recession: 'bg-orange-500/10 border-orange-500/20',
+  boom: 'bg-slate-950/95 border-emerald-500/50',
+  crisis: 'bg-slate-950/95 border-red-500/50',
+  inflation_spike: 'bg-slate-950/95 border-yellow-500/50',
+  rate_cut: 'bg-slate-950/95 border-cyan-500/50',
+  rate_hike: 'bg-slate-950/95 border-blue-500/50',
+  recession: 'bg-slate-950/95 border-orange-500/50',
+  tax_reform: 'bg-slate-950/95 border-violet-500/50',
 }
+
+const visibleMetrics = [
+  { key: 'inflation', label: 'Инфляция' },
+  { key: 'keyRate', label: 'Ключевая ставка' },
+] as const
 
 export function EconomicEventsPanel() {
   const { countries, player } = useGameStore()
@@ -39,95 +47,61 @@ export function EconomicEventsPanel() {
   if (!player) return null
 
   const country = countries[player.countryId]
-  const activeEvents = country.activeEvents
 
-  if (activeEvents.length === 0) {
-    return null
+  const activeEventIds = new Set(country.activeEvents.map((event) => event.id))
+  const eventsById = new Map(
+    (country.eventHistory ?? []).map((event) => [event.id, event] as const),
+  )
+  for (const event of country.activeEvents) {
+    eventsById.set(event.id, event)
   }
+  const events = [...eventsById.values()].reverse()
 
   return (
-    <div className="space-y-3">
+    <section className="space-y-3">
       <div className="flex items-center gap-2">
         <Activity className="w-5 h-5 text-white/70" />
-        <h3 className="text-lg font-bold text-white">Экономические события</h3>
+        <h3 className="text-xl font-semibold text-white/80">События страны: {country.name}</h3>
       </div>
 
-      {activeEvents.map((event) => (
-        <Card className={`p-4 border ${eventColors[event.type]} backdrop-blur-sm`} key={event.id}>
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-white/5">{eventIcons[event.type]}</div>
+      {events.length === 0 ? (
+        <p className="text-white/70 italic">В стране всё спокойно...</p>
+      ) : (
+        events.map((event) => (
+          <Card className={`p-4 border ${eventColors[event.type]}`} key={event.id}>
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-black/50">{eventIcons[event.type]}</div>
 
-            <div className="flex-1">
-              <div className="flex items-start justify-between mb-2">
-                <h4 className="font-bold text-white">{event.title}</h4>
-                <Badge className="text-xs border-white/20 text-white/60" variant="outline">
-                  {event.duration} кв.
-                </Badge>
-              </div>
+              <div className="flex-1">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-bold text-white">{event.title}</h4>
+                  <Badge className="text-xs border-white/30 text-white/80" variant="outline">
+                    {activeEventIds.has(event.id) ? 'Сейчас' : `Ход ${String(event.turn)}`}
+                  </Badge>
+                </div>
 
-              <p className="text-sm text-white/70 mb-3">{event.description}</p>
+                <p className="text-sm text-white/90 mb-3">{event.description}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  {visibleMetrics.map(({ key, label }) => {
+                    const change = event.appliedChanges?.[key]
+                    if (!change) return null
 
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                {event.effects.inflationChange && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-white/50">Инфляция:</span>
-                    <span
-                      className={
-                        event.effects.inflationChange > 0 ? 'text-red-400' : 'text-emerald-400'
-                      }
-                    >
-                      {event.effects.inflationChange > 0 ? '+' : ''}
-                      {event.effects.inflationChange}%
-                    </span>
-                  </div>
-                )}
-
-                {event.effects.keyRateChange && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-white/50">Ключ. ставка:</span>
-                    <span
-                      className={
-                        event.effects.keyRateChange > 0 ? 'text-red-400' : 'text-emerald-400'
-                      }
-                    >
-                      {event.effects.keyRateChange > 0 ? '+' : ''}
-                      {event.effects.keyRateChange}%
-                    </span>
-                  </div>
-                )}
-
-                {event.effects.gdpGrowthChange && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-white/50">Рост ВВП:</span>
-                    <span
-                      className={
-                        event.effects.gdpGrowthChange > 0 ? 'text-emerald-400' : 'text-red-400'
-                      }
-                    >
-                      {event.effects.gdpGrowthChange > 0 ? '+' : ''}
-                      {event.effects.gdpGrowthChange}%
-                    </span>
-                  </div>
-                )}
-
-                {event.effects.unemploymentChange && (
-                  <div className="flex items-center gap-1">
-                    <span className="text-white/50">Безработица:</span>
-                    <span
-                      className={
-                        event.effects.unemploymentChange > 0 ? 'text-red-400' : 'text-emerald-400'
-                      }
-                    >
-                      {event.effects.unemploymentChange > 0 ? '+' : ''}
-                      {event.effects.unemploymentChange}%
-                    </span>
-                  </div>
-                )}
+                    return (
+                      <div className="flex flex-wrap gap-1" key={key}>
+                        <span className="text-white/70">{label}:</span>
+                        <span className="font-semibold text-white">{change.to.toFixed(2)}%</span>
+                      </div>
+                    )
+                  })}
+                  {!visibleMetrics.some((metric) => event.appliedChanges?.[metric.key]) && (
+                    <span className="text-white/70">Инфляция и ключевая ставка не изменились.</span>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
-      ))}
-    </div>
+          </Card>
+        ))
+      )}
+    </section>
   )
 }

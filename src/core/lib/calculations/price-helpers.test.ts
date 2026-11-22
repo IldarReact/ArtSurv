@@ -41,6 +41,23 @@ describe('Price Helpers - Multi-Year Inflation', () => {
     expect(price).toBeGreaterThan(1200) // Should actually increase
   })
 
+  it('keeps category-specific price volatility without changing country inflation', () => {
+    const economy: Partial<CountryEconomy> = {
+      activeEvents: [],
+      inflation: 4,
+      inflationHistory: [4],
+    }
+
+    const basePrice = 1000
+    const foodPrice = getInflatedPrice(basePrice, economy as CountryEconomy, 'food')
+    const defaultPrice = getInflatedPrice(basePrice, economy as CountryEconomy, 'default')
+    const housingPrice = getInflatedPrice(basePrice, economy as CountryEconomy, 'housing')
+
+    expect(housingPrice).toBeGreaterThan(defaultPrice)
+    expect(defaultPrice).toBeGreaterThan(foodPrice)
+    expect(economy.inflation).toBe(4)
+  })
+
   it('should handle inflation history reversal correctly', () => {
     // If history is [3, 2.5, 2] (newest to oldest)
     // After reverse: [2, 2.5, 3] (oldest to newest)

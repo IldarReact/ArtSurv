@@ -14,8 +14,26 @@ export type EconomicEventType =
   | 'inflation_spike' // Скачок инфляции
   | 'rate_hike' // Повышение ставки
   | 'rate_cut' // Снижение ставки
+  | 'tax_reform' // Налоговая реформа
+
+export type EconomicMetric =
+  | 'corporateTaxRate'
+  | 'gdpGrowth'
+  | 'inflation'
+  | 'keyRate'
+  | 'personalTaxRate'
+  | 'psychologicalStability'
+  | 'salaryModifier'
+  | 'unemployment'
+
+export interface EconomicMetricChange {
+  delta: number
+  from: number
+  to: number
+}
 
 export interface EconomicEvent {
+  appliedChanges?: Partial<Record<EconomicMetric, EconomicMetricChange>>
   description: string
   duration: number // Длительность в кварталах
   effects: {
@@ -54,6 +72,7 @@ export interface CountryEconomy {
   gdpGrowth: number // Рост ВВП (%)
   id: string
   imageUrl?: string // URL изображения страны
+  eventHistory?: EconomicEvent[]
   readonly inflation: number // Инфляция (% годовых)
   inflationHistory?: number[] // История годовой инфляции для накопленного расчета
   interestRate: number // Базовая процентная ставка (deprecated, используем keyRate)

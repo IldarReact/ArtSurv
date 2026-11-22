@@ -86,7 +86,16 @@ describe('Jobs Processor', () => {
 
     const result = processJobs([], applications, skills, 1, 2025, cycle)
 
-    expect(result.notifications.some((n) => n.title === '💼 Приглашение на работу!')).toBe(true)
+    const offer = result.notifications.find((n) => n.title === '💼 Приглашение на работу!')
+    expect(offer).toBeDefined()
+    expect(offer?.type).toBe('job_offer')
+    expect(offer?.data).toMatchObject({
+      applicationId: 'app-1',
+      company: 'New Corp',
+      jobTitle: 'Senior Dev',
+      salary: 8000,
+    })
+    expect(offer?.data).toHaveProperty('requirements')
 
     randomSpy.mockRestore()
   })

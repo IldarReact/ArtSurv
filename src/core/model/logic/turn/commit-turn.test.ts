@@ -106,6 +106,33 @@ describe('commitTurn', () => {
     expect(result.player?.quarterlyReport).toEqual(mockState.financial.quarterlyReport)
   })
 
+  it('should commit country event history with the country economy', () => {
+    const recordedEvent = {
+      appliedChanges: {
+        inflation: { delta: 1, from: 2, to: 3 },
+      },
+      description: 'Инфляция выросла',
+      duration: 1,
+      effects: { inflationChange: 1 },
+      id: 'event_1_inflation_spike',
+      title: 'Скачок инфляции',
+      turn: 1,
+      type: 'inflation_spike',
+    } as const
+    const eventCountry = {
+      activeEvents: [recordedEvent],
+      eventHistory: [recordedEvent],
+    } as unknown as Country
+    const stateWithCountry = {
+      ...mockState,
+      countries: { us: eventCountry },
+    }
+
+    const result = commitTurn(mockCtx, stateWithCountry)
+
+    expect(result.countries?.us.eventHistory).toEqual([recordedEvent])
+  })
+
   it('should update history if historyEntry is present', () => {
     const stateWithHistory: TurnState = {
       ...mockState,

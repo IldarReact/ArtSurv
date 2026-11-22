@@ -55,13 +55,13 @@ export function NotificationsToast() {
   }
 
   const bgColors: Record<Notification['type'], string> = {
-    error: 'bg-red-500/10 border-red-500/20',
-    info: 'bg-blue-500/10 border-blue-500/20',
-    job_offer: 'bg-blue-500/10 border-blue-500/20',
-    job_rejection: 'bg-red-500/10 border-red-500/20',
-    promotion: 'bg-emerald-500/10 border-emerald-500/20',
-    success: 'bg-green-500/10 border-green-500/20',
-    warning: 'bg-amber-500/10 border-amber-500/20',
+    error: 'bg-red-950/80 border-red-500/40',
+    info: 'bg-blue-950/80 border-blue-500/40',
+    job_offer: 'bg-blue-950/80 border-blue-500/40',
+    job_rejection: 'bg-red-950/80 border-red-500/40',
+    promotion: 'bg-emerald-950/80 border-emerald-500/40',
+    success: 'bg-green-950/80 border-green-500/40',
+    warning: 'bg-amber-950/80 border-amber-500/40',
   }
 
   const type = activeNotification.type

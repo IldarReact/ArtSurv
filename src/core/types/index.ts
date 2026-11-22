@@ -50,6 +50,8 @@ export type {
 // Economy types
 export type {
   CountryArchetype,
+  EconomicMetric,
+  EconomicMetricChange,
   EconomicEventType,
   EconomicEvent,
   CountryEconomy,

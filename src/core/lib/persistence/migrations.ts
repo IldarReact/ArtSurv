@@ -12,6 +12,7 @@ const migrations: Record<number, MigrationFn | undefined> = {
   2: (state) => migrateV2(state),
   3: (state) => migrateV3(state),
   4: (state) => migrateV4(state),
+  5: (state) => migrateV5(state),
 }
 
 function toObject(value: unknown): Record<string, unknown> {
@@ -154,6 +155,52 @@ function migrateV4(rawState: unknown): unknown {
         stats: personalStats,
       },
       stats: playerStats,
+    },
+  }
+}
+
+function quarterlyJob(jobLike: unknown): Record<string, unknown> {
+  const job = toObject(jobLike)
+  return typeof job.salary === 'number' ? { ...job, salary: job.salary * 3 } : job
+}
+
+function migrateV5(rawState: unknown): unknown {
+  const state = toObject(rawState)
+  const player = toObject(state.player)
+  if (!state.player) return state
+
+  const jobs = Array.isArray(player.jobs) ? player.jobs.map(quarterlyJob) : undefined
+  const quarterlySalary =
+    jobs?.reduce((total, job) => total + (typeof job.salary === 'number' ? job.salary : 0), 0) ??
+    player.quarterlySalary
+  const currentJob = player.currentJob ? quarterlyJob(player.currentJob) : player.currentJob
+  const pendingApplications = toArray(state.pendingApplications).map(quarterlyJob)
+  const notifications = toArray(state.notifications).map((notification) => {
+    const data = toObject(notification.data)
+    const applicationId =
+      typeof data.applicationId === 'string' ? data.applicationId : data.jobApplicationId
+    if (typeof applicationId !== 'string') {
+      return notification
+    }
+
+    const migratedData = quarterlyJob({ ...data, applicationId })
+    Reflect.deleteProperty(migratedData, 'jobApplicationId')
+
+    return {
+      ...notification,
+      data: migratedData,
+      type: 'job_offer',
+    }
+  })
+
+  return {
+    ...state,
+    notifications,
+    pendingApplications,
+    player: {
+      ...player,
+      currentJob,
+      ...(jobs ? { jobs, quarterlySalary } : {}),
     },
   }
 }

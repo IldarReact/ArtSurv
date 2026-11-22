@@ -1,3 +1,5 @@
+import { MONTHS_PER_QUARTER } from '@/core/lib/quarter'
+
 import { CHARACTER_IMAGES } from './shared-constants'
 import type { CharacterDetailedInfo } from './types'
 
@@ -6,7 +8,7 @@ export function getCharacterImage(archetypeId: string): string {
 }
 
 export function calculateQuarterlySalary(monthlySalary: number): number {
-  return monthlySalary * 3
+  return monthlySalary * MONTHS_PER_QUARTER
 }
 
 export const MOCK_DETAILED_INFO: CharacterDetailedInfo = {

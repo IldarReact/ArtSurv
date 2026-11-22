@@ -15,7 +15,7 @@ import { useInflatedPrice } from '@/core/hooks'
 const price = useInflatedPrice(item)
 
 // ✅ Для зарплаты
-const salary = useInflatedPrice({ salary: 5000 })
+const quarterlySalary = useInflatedPrice({ salary: 15000 })
 ```
 
 ### 2. `useInflatedPrices()` - для массивов
@@ -111,9 +111,11 @@ function ShopList({ items }: { items: ShopItem[] }) {
 function JobCard({ job }: { job: Job }) {
   const salary = useInflatedPrice({ salary: job.salary })
 
-  return <div>${salary.toLocaleString()}/мес</div>
+  return <div>${salary.toLocaleString()}/кв</div>
 }
 ```
+
+`Job.salary` and salary values passed to this hook are quarterly amounts. Job templates in `jobs.json` are monthly and are normalized by `jobs-loader.ts`.
 
 ### Пример 4: Список работ
 

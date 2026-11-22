@@ -118,7 +118,7 @@ export function CurrentJobsList({ jobs, onAskForRaise, onQuit }: CurrentJobsList
             secondaryActionLabel={!isBusinessRole ? 'Повышение' : undefined}
             subtitle={job.company}
             title={job.title}
-            value={`$${(job.salary || job.inflatedPrice).toLocaleString()}/мес`}
+            value={`$${job.inflatedPrice.toLocaleString()}/кв`}
           />
         )
       })}

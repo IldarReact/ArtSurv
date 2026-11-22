@@ -7,6 +7,7 @@ import type { Stats } from '@/core/types/stats.types'
 import { createEmptyQuarterlyReport } from './financial-helpers'
 import { calculateQuarterlyExpenses } from './quarterly/calculate-quarterly-expenses'
 import { calculateQuarterlyIncome } from './quarterly/calculate-quarterly-income'
+import { calculateQuarterlyReport } from './quarterly/calculate-quarterly-report'
 import { calculateQuarterlyTaxes } from './quarterly/calculate-quarterly-taxes'
 
 describe('Quarterly Calculations', () => {
@@ -99,6 +100,38 @@ describe('Quarterly Calculations', () => {
     it('should calculate gross income correctly', () => {
       const result = calculateQuarterlyIncome(mockPlayer)
       expect(result).toBe(15000)
+    })
+  })
+
+  describe('calculateQuarterlyReport', () => {
+    it('uses a job salary as a quarterly amount without multiplying it by three', () => {
+      const player = {
+        ...mockPlayer,
+        jobs: [
+          {
+            company: 'Test Co',
+            cost: {},
+            id: 'job-1',
+            imageUrl: '',
+            salary: 9000,
+            title: 'Test role',
+          },
+        ],
+        quarterlySalary: 9000,
+      }
+
+      const result = calculateQuarterlyReport({
+        assetIncome: 0,
+        assetMaintenance: 0,
+        buffIncomeMod: 0,
+        country: mockCountry,
+        debtInterest: 0,
+        familyExpenses: 0,
+        familyIncome: 0,
+        player,
+      })
+
+      expect(result.income.salary).toBe(9000)
     })
   })
 

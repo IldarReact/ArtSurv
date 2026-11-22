@@ -1,14 +1,50 @@
 import { generateEconomicEvent } from '@/core/lib/economic-events/generator'
-import type { CountryEconomy, EconomicEvent } from '@/core/types'
+import { isQuarterEnd } from '@/core/lib/quarter'
+import type {
+  CountryEconomy,
+  EconomicEvent,
+  EconomicMetric,
+  EconomicMetricChange,
+} from '@/core/types'
 
 import { processEconomicCycle } from './cycle-processor'
 
 const MIN_PERCENT = 0
 const MAX_TAX_PERCENT = 100
-const MAX_HISTORY_LENGTH = 10
+
+const MAX_INFLATION_HISTORY_LENGTH = 10
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value))
+}
+
+function getAppliedChanges(
+  before: CountryEconomy,
+  after: CountryEconomy,
+): Partial<Record<EconomicMetric, EconomicMetricChange>> {
+  const metrics: [EconomicMetric, number, number][] = [
+    ['inflation', before.inflation, after.inflation],
+    ['keyRate', before.keyRate, after.keyRate],
+    ['personalTaxRate', before.taxRate, after.taxRate],
+    ['corporateTaxRate', before.corporateTaxRate, after.corporateTaxRate],
+    ['gdpGrowth', before.gdpGrowth, after.gdpGrowth],
+    ['unemployment', before.unemployment, after.unemployment],
+    [
+      'psychologicalStability',
+      before.psychologicalStability ?? 50,
+      after.psychologicalStability ?? 50,
+    ],
+    ['salaryModifier', before.salaryModifier, after.salaryModifier],
+  ]
+  const changes: Partial<Record<EconomicMetric, EconomicMetricChange>> = {}
+
+  for (const [metric, from, to] of metrics) {
+    if (from !== to) {
+      changes[metric] = { delta: to - from, from, to }
+    }
+  }
+
+  return changes
 }
 
 export interface CountryEconomyProcessorResult {
@@ -21,7 +57,7 @@ export function processCountryEconomy(
   turn: number,
 ): CountryEconomyProcessorResult {
   const event = generateEconomicEvent(turn, currentCountry)
-  const cycleResult = processEconomicCycle(currentCountry.cycle, turn)
+  const cycle = processEconomicCycle(currentCountry.cycle)
   const effects = event?.effects
 
   const inflation = clamp(
@@ -49,18 +85,20 @@ export function processCountryEconomy(
     MIN_PERCENT,
     100,
   )
+  const previousInflationHistory = currentCountry.inflationHistory ?? [currentCountry.inflation]
+  const inflationHistory = isQuarterEnd(turn)
+    ? [inflation, ...previousInflationHistory].slice(0, MAX_INFLATION_HISTORY_LENGTH)
+    : [inflation, ...previousInflationHistory.slice(1)]
 
   const country: CountryEconomy = {
     ...currentCountry,
-    activeEvents: event ? [event] : [],
+    activeEvents: [],
     corporateTaxRate,
-    cycle: cycleResult.cycle,
+    cycle,
+    eventHistory: currentCountry.eventHistory ?? [],
     gdpGrowth: currentCountry.gdpGrowth + (effects?.gdpGrowthChange ?? 0),
     inflation,
-    inflationHistory: [inflation, ...(currentCountry.inflationHistory ?? [])].slice(
-      0,
-      MAX_HISTORY_LENGTH,
-    ),
+    inflationHistory,
     interestRate: keyRate,
     keyRate,
     psychologicalStability,
@@ -77,5 +115,16 @@ export function processCountryEconomy(
     ),
   }
 
-  return { country, event }
+  if (!event) {
+    return { country, event: null }
+  }
+
+  const recordedEvent: EconomicEvent = {
+    ...event,
+    appliedChanges: getAppliedChanges(currentCountry, country),
+  }
+  country.activeEvents = [recordedEvent]
+  country.eventHistory = [...(currentCountry.eventHistory ?? []), recordedEvent]
+
+  return { country, event: recordedEvent }
 }

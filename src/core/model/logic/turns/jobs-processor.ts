@@ -97,7 +97,7 @@ function updateSkillAndSalary(
       date: formatGameDate(currentYear, currentTurn),
       id: `salary_inc_${job.id}_${String(currentTurn)}`,
       isRead: false,
-      message: `Ваша зарплата на должности ${job.title} выросла на ${String(increase)}!`,
+      message: `Ваша зарплата на должности ${job.title} выросла на ${String(increase)}/кв!`,
       title: 'Повышение зарплаты! 💰',
       type: 'success',
     })
@@ -140,17 +140,19 @@ function processJobApplications(
     if (Math.random() < chance) {
       notifications.push({
         data: {
+          applicationId: app.id,
           company: app.company,
-          jobApplicationId: app.id,
+          cost: app.cost,
+          jobTitle: app.jobTitle,
+          requirements: app.requirements,
           salary: app.salary,
-          title: app.jobTitle,
         },
         date: formatGameDate(currentYear, currentTurn),
         id: `job_offer_${app.id}_${String(currentTurn)}`,
         isRead: false,
         message: `Ваша заявка в компанию ${app.company} на должность ${app.jobTitle} была одобрена.`,
         title: '💼 Приглашение на работу!',
-        type: 'info',
+        type: 'job_offer',
       })
     } else if (app.daysPending < MAX_APPLICATION_PENDING_DAYS) {
       // Keep application for one more turn

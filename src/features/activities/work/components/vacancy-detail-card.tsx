@@ -40,7 +40,7 @@ export function VacancyDetailCard({
 }: VacancyDetailCardProps) {
   const [showDetails, setShowDetails] = useState(false)
 
-  const formattedSalary = `$${salary.toLocaleString()}/мес`
+  const formattedSalary = `$${salary.toLocaleString()}/кв`
 
   return (
     <>
@@ -66,7 +66,7 @@ export function VacancyDetailCard({
         role="worker" // Дефолтная роль для отображения иконки, если не указана
         roleLabel="Вакансия"
         salary={salary}
-        salaryLabel="/мес"
+        salaryLabel="/кв"
         secondaryActionLabel="Подробнее"
         stars={Math.max(1, ...requirements.map((r) => r.level), 1)}
       />

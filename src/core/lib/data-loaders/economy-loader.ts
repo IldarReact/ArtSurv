@@ -6,6 +6,11 @@ import germanyEconomy from '@/shared/data/world/countries/germany/economy.json'
 import usEconomy from '@/shared/data/world/countries/us/economy.json'
 
 export type CountryData = CountryEconomy
+export const TEST_COUNTRY_ID = 'us'
+
+export function isCountryAvailable(id: string): boolean {
+  return id === TEST_COUNTRY_ID
+}
 
 // Создаем объект со всеми странами
 const rawCountries = {
@@ -33,6 +38,7 @@ for (const [_key, raw] of Object.entries(rawCountries)) {
     baseYear: 2024,
     corporateTaxRate: validatedRaw.corporateTaxRate,
     costOfLivingModifier: validatedRaw.costOfLivingModifier,
+    eventHistory: [],
     gdpGrowth: validatedRaw.gdpGrowth,
     id: validatedRaw.id,
     imageUrl: validatedRaw.imageUrl,
@@ -41,6 +47,7 @@ for (const [_key, raw] of Object.entries(rawCountries)) {
     interestRate: validatedRaw.keyRate,
     keyRate: validatedRaw.keyRate,
     name: validatedRaw.name,
+    psychologicalStability: validatedRaw.psychologicalStability,
     salaryModifier: validatedRaw.salaryModifier,
     stockMarketInflation: validatedRaw.stockMarketInflation,
     taxRate: validatedRaw.taxRate,
@@ -56,4 +63,6 @@ export const getCountry = (id: string) => WORLD_COUNTRIES[id]
 export const getAllCountryIds = () => Object.keys(WORLD_COUNTRIES)
 
 export const getAvailableCountries = () =>
-  Object.values(WORLD_COUNTRIES).map((data) => ({ id: data.id, name: data.name }))
+  Object.values(WORLD_COUNTRIES)
+    .filter((data) => isCountryAvailable(data.id))
+    .map((data) => ({ id: data.id, name: data.name }))

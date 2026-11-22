@@ -1,3 +1,4 @@
+import { MONTHS_PER_QUARTER } from '@/core/lib/quarter'
 import { JobSchema } from '@/core/schemas/game.schema'
 import type { Job } from '@/core/types/job.types'
 // Country imports
@@ -5,13 +6,19 @@ import brJobs from '@/shared/data/world/countries/brazil/jobs.json'
 import geJobs from '@/shared/data/world/countries/germany/jobs.json'
 import usJobs from '@/shared/data/world/countries/us/jobs.json'
 
+// Job templates store monthly salaries; the game model uses quarterly salaries.
+const QUARTERLY_SALARY_MULTIPLIER = MONTHS_PER_QUARTER
+
 function loadJobs(data: unknown[], source: string): Job[] {
   const validated: Job[] = []
 
   for (const item of data) {
     const result = JobSchema.safeParse(item)
     if (result.success) {
-      validated.push(result.data as Job)
+      validated.push({
+        ...result.data,
+        salary: result.data.salary * QUARTERLY_SALARY_MULTIPLIER,
+      })
     } else {
       // eslint-disable-next-line no-console
       console.error(

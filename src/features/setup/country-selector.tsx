@@ -1,5 +1,6 @@
 'use client'
 
+import { isCountryAvailable } from '@/core/lib/data-loaders/economy-loader'
 import { useGameStore } from '@/core/model/store'
 import type { CountryEconomy } from '@/core/types'
 import { ExpandableCard } from '@/shared/components/expandable-card'
@@ -7,7 +8,9 @@ import { ExpandableCard } from '@/shared/components/expandable-card'
 export function CountrySelector() {
   const { countries, setSetupCountry } = useGameStore()
 
-  const countryList: CountryEconomy[] = Object.values(countries)
+  const countryList: CountryEconomy[] = Object.values(countries).filter((country) =>
+    isCountryAvailable(country.id),
+  )
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
@@ -42,6 +45,10 @@ export function CountrySelector() {
                   <div>
                     <p className="text-xs text-muted-foreground">Tax Rate</p>
                     <p className="font-semibold">{country.taxRate}%</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Corporate Tax</p>
+                    <p className="font-semibold">{country.corporateTaxRate}%</p>
                   </div>
                 </div>
                 <button

@@ -12,6 +12,7 @@ export const jobsStep: TurnStep = (ctx, state) => {
   )
 
   state.player.jobs = res.updatedJobs
+  state.player.quarterlySalary = res.updatedJobs.reduce((total, job) => total + job.salary, 0)
   state.pendingApplications = res.remainingApplications
   state.player.personal.skills = res.updatedSkills
 

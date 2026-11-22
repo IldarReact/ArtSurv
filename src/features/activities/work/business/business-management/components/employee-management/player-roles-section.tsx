@@ -111,15 +111,15 @@ function PlayerRoleItem({
       onSalaryChange={
         isEmployed
           ? (value: number) => {
-              setPlayerEmploymentSalary(business.id, value * 3)
+              setPlayerEmploymentSalary(business.id, value)
             }
           : undefined
       }
       role={role}
       roleIcon={ROLE_ICONS[role]}
       roleLabel={ROLE_LABELS[role]}
-      salary={isEmployed ? Math.round((business.playerEmployment?.salary ?? 0) / 3) : 0}
-      salaryLabel="/мес"
+      salary={isEmployed ? (business.playerEmployment?.salary ?? 0) : 0}
+      salaryLabel="/кв"
       skillGrowth={skillGrowth}
       skills={skills}
       stars={stars}

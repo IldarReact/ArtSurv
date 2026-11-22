@@ -16,7 +16,7 @@ export interface Job {
   id: string
   imageUrl: string
   requirements?: JobRequirements
-  salary: number // Monthly salary
+  salary: number // Salary per quarter
   startedTurn?: number
   title: string
 }
@@ -28,5 +28,5 @@ export interface JobApplication {
   id: string
   jobTitle: string
   requirements: SkillRequirement[]
-  salary: number
+  salary: number // Salary per quarter
 }

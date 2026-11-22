@@ -98,7 +98,7 @@ export function useWorkActivity() {
       return roles.map((role) => {
         const roleCfg = getRoleConfig(role)
         const isEmployed = b.playerEmployment?.role === role
-        const salary = isEmployed ? Math.round((b.playerEmployment?.salary ?? 0) / 3) : 0
+        const salary = isEmployed ? (b.playerEmployment?.salary ?? 0) : 0
         const effortPercent = isEmployed ? (b.playerEmployment?.effortPercent ?? 100) : 100
 
         const costs = roleCfg?.playerEffects

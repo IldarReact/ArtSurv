@@ -82,10 +82,9 @@ export function calculateMixedQuarterlyReport(params: QuarterlyReportParams): Qu
 
   let baseSalary = 0
   for (const job of player.jobs) {
-    const monthlySalary = sanitizeNumber(job.salary)
+    const quarterlySalary = sanitizeNumber(job.salary)
     // Применить инфляцию к зарплате
-    const inflatedMonthlySalary = getInflatedPrice(monthlySalary, country, 'salaries')
-    baseSalary += inflatedMonthlySalary * MONTHS_IN_QUARTER
+    baseSalary += getInflatedPrice(quarterlySalary, country, 'salaries')
   }
 
   // Total personal income from work (external jobs + own business salary)

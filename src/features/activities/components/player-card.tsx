@@ -148,7 +148,7 @@ export function PlayerCard() {
                   <div className="pl-4 border-l-2 border-white/10 space-y-1 text-sm">
                     <div className="flex justify-between text-white/40">
                       <span>Зарплата</span>
-                      <span>${player.quarterlySalary.toLocaleString()}</span>
+                      <span>${player.quarterlySalary.toLocaleString()}/кв</span>
                     </div>
                     {/* Add other income sources breakdown if available in report or calculate them */}
                   </div>
