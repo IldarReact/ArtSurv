@@ -22,6 +22,7 @@ import {
   PregnancySchema,
 } from './family.schema'
 import { AssetSchema, DebtSchema, QuarterlyReportSchema } from './finance.schema'
+import { LifeEventSchema } from './life-history.schema'
 
 // Re-export for convenience if needed elsewhere
 export * from './base.schema'
@@ -429,7 +430,7 @@ export const GameStateSchema = z
     activeActivity: z.string().nullable(),
     countries: z.record(z.string(), CountryEconomySchema),
     endReason: z
-      .enum(['DEATH', 'MENTAL_BREAKDOWN', 'DEGRADATION', 'DEPRESSION', 'BANKRUPTCY'])
+      .enum(['COMPLETED', 'DEATH', 'MENTAL_BREAKDOWN', 'DEGRADATION', 'DEPRESSION', 'BANKRUPTCY'])
       .nullable(),
     gameStatus: z.enum([
       'menu',
@@ -443,15 +444,22 @@ export const GameStateSchema = z
     globalEvents: z.array(GlobalEventSchema),
     history: z.array(
       z.object({
+        energy: z.number().finite().min(STAT_MIN).max(STAT_MAX).optional(),
         eventDescription: z.string().optional(),
         happiness: z.number().finite().min(STAT_MIN).max(STAT_MAX),
         health: z.number().finite().min(STAT_MIN).max(STAT_MAX),
+        intelligence: z.number().finite().min(STAT_MIN).max(STAT_MAX).optional(),
+        investmentCostBasis: z.number().finite().min(0).optional(),
+        investmentValue: z.number().finite().min(0).optional(),
+        money: z.number().finite().optional(),
         netWorth: z.number().finite(),
+        sanity: z.number().finite().min(STAT_MIN).max(STAT_MAX).optional(),
         turn: z.number().int().min(TURN_MIN),
         year: z.number().int().min(0),
       }),
     ),
     isProcessingTurn: z.boolean(),
+    lifeEvents: z.array(LifeEventSchema),
     notifications: z.array(NotificationSchema),
     pendingApplications: z.array(PendingApplicationSchema),
     pendingEventNotification: GlobalEventSchema.nullable(),

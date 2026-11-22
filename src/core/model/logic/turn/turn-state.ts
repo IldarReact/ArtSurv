@@ -10,7 +10,7 @@ import type {
   TimedBuff,
   GameStatus,
   GameOverReason,
-  HistoryEntry,
+  LifeEvent,
 } from '@/core/types'
 import type { CountryEconomy, GlobalEvent } from '@/core/types/economy.types'
 import type { StatChangeEffect } from '@/core/types/stats.types'
@@ -39,7 +39,7 @@ export interface TurnState {
   globalMarketValue: number
 
   // history
-  historyEntry: HistoryEntry | null
+  lifeEvents: LifeEvent[]
   // economy
   inflationNotification: InflationNotification | null
 

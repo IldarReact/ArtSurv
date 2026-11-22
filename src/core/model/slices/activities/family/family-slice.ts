@@ -17,7 +17,8 @@ export const createFamilySlice: StateCreator<GameStore, [], [], FamilySlice> = (
   // ACCEPT PARTNER
   // ------------------------------------------------------------
   acceptPartner: () => {
-    const { countries, player } = get()
+    const state = get()
+    const { countries, player } = state
     if (!player) return
 
     const result = processAcceptPartner(player, countries, calculateMemberExpenses)
@@ -31,6 +32,14 @@ export const createFamilySlice: StateCreator<GameStore, [], [], FamilySlice> = (
         potentialPartner: null,
       },
     }))
+    get().recordLifeEvent({
+      category: 'family',
+      entityName: result.partnerName,
+      id: `relationship_started_${result.newMember.id}_${String(state.turn)}`,
+      kind: 'relationship_started',
+      turn: state.turn,
+      year: state.year,
+    })
 
     get().pushNotification({
       message: `Вы начали отношения с ${result.partnerName}.`,
@@ -43,6 +52,9 @@ export const createFamilySlice: StateCreator<GameStore, [], [], FamilySlice> = (
   // ADD FAMILY MEMBER
   // ------------------------------------------------------------
   addFamilyMember: (name, type, age, income, expenses) => {
+    const state = get()
+    if (!state.player) return
+
     const newMember = createNewMember(name, type, age, income, expenses)
 
     get().updatePlayer((prev) => ({
@@ -51,6 +63,14 @@ export const createFamilySlice: StateCreator<GameStore, [], [], FamilySlice> = (
         familyMembers: [...prev.personal.familyMembers, newMember],
       },
     }))
+    get().recordLifeEvent({
+      category: 'family',
+      entityName: name,
+      id: `family_member_added_${newMember.id}_${String(state.turn)}`,
+      kind: 'family_member_added',
+      turn: state.turn,
+      year: state.year,
+    })
 
     get().pushNotification({
       message: `В вашей семье появился новый член: ${name}`,
@@ -79,6 +99,14 @@ export const createFamilySlice: StateCreator<GameStore, [], [], FamilySlice> = (
         familyMembers: [...prev.personal.familyMembers, result.newPet],
       },
     }))
+    get().recordLifeEvent({
+      category: 'family',
+      entityName: name,
+      id: `pet_adopted_${result.newPet.id}_${String(get().turn)}`,
+      kind: 'family_member_added',
+      turn: get().turn,
+      year: get().year,
+    })
 
     get().pushNotification({
       message: `У вас появился питомец: ${name}`,
@@ -129,12 +157,25 @@ export const createFamilySlice: StateCreator<GameStore, [], [], FamilySlice> = (
   // REMOVE FAMILY MEMBER
   // ------------------------------------------------------------
   removeFamilyMember: (id) => {
+    const member = get().player?.personal.familyMembers.find(
+      (familyMember) => familyMember.id === id,
+    )
     get().updatePlayer((prev) => ({
       personal: {
         ...prev.personal,
         familyMembers: prev.personal.familyMembers.filter((m) => m.id !== id),
       },
     }))
+    if (member) {
+      get().recordLifeEvent({
+        category: 'family',
+        entityName: member.name,
+        id: `family_member_removed_${member.id}_${String(get().turn)}`,
+        kind: 'family_member_removed',
+        turn: get().turn,
+        year: get().year,
+      })
+    }
   },
 
   // ------------------------------------------------------------

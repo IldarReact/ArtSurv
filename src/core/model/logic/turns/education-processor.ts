@@ -6,6 +6,7 @@ import type {
   SkillLevel,
   ActiveCourse,
   ActiveUniversity,
+  LifeEvent,
   Progressable,
 } from '@/core/types'
 
@@ -13,6 +14,7 @@ interface EducationResult {
   activeCourses: ActiveCourse[]
   activeUniversity: ActiveUniversity[]
   notifications: Notification[]
+  lifeEvents: LifeEvent[]
   protectedSkills: string[]
   updatedSkills: Skill[]
 }
@@ -30,8 +32,9 @@ function handleEducationProgress<
   currentTurn: number,
   currentYear: number,
   type: 'course' | 'uni',
-): { active: T[]; notifications: Notification[] } {
+): { active: T[]; lifeEvents: LifeEvent[]; notifications: Notification[] } {
   const notifications: Notification[] = []
+  const lifeEvents: LifeEvent[] = []
   const progress = processProgress(items)
 
   progress.completed.forEach((item) => {
@@ -39,6 +42,15 @@ function handleEducationProgress<
     const skillIdx = updatedSkills.findIndex((s) => s.name === item.skillName)
     const itemName = item.courseName ?? item.programName ?? item.title
     const isUni = type === 'uni'
+    lifeEvents.push({
+      amount: levelsGained,
+      category: 'education',
+      entityName: itemName,
+      id: `education_${type}_${item.id}_${String(currentTurn)}`,
+      kind: isUni ? 'university_completed' : 'course_completed',
+      turn: currentTurn,
+      year: currentYear,
+    })
     const successTitle = isUni ? 'Диплом получен' : 'Курс завершен'
     const successMsg = isUni
       ? `Поздравляем! Вы завершили обучение по программе "${itemName}"`
@@ -79,7 +91,7 @@ function handleEducationProgress<
     }
   })
 
-  return { active: progress.active, notifications }
+  return { active: progress.active, lifeEvents, notifications }
 }
 
 /**
@@ -117,6 +129,7 @@ export function processEducation(
   return {
     activeCourses: courseRes.active,
     activeUniversity: uniRes.active,
+    lifeEvents: [...courseRes.lifeEvents, ...uniRes.lifeEvents],
     notifications: [...courseRes.notifications, ...uniRes.notifications],
     protectedSkills: Array.from(protectedSkills),
     updatedSkills,

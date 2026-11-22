@@ -39,12 +39,11 @@ export function initTurnState(ctx: TurnContext): TurnState {
     globalEvents: prev.globalEvents,
     globalMarketValue: 1,
 
-    // history
-    historyEntry: null,
     // economy
     inflationNotification: null,
-
     isAborted: false,
+
+    lifeEvents: [],
     // lifestyle
     lifestyle: {
       breakdown: {

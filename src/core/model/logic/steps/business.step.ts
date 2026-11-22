@@ -14,6 +14,24 @@ export const businessStep: TurnStep = (ctx, state) => {
   state.player.businesses = res.updatedBusinesses
   state.player.personal.skills = res.updatedSkills
 
+  for (const business of res.updatedBusinesses) {
+    if (business.state !== 'active') continue
+
+    const profit =
+      business.lastQuarterSummary?.netProfit ??
+      business.quarterlyIncome - business.quarterlyExpenses - business.quarterlyTax
+    state.lifeEvents.push({
+      amount: business.quarterlyIncome,
+      category: 'work',
+      entityName: business.name,
+      gainOrLoss: profit,
+      id: `business_quarter_${business.id}_${String(ctx.turn)}`,
+      kind: 'business_quarter',
+      turn: ctx.turn,
+      year: ctx.year,
+    })
+  }
+
   state.business.totalIncome = res.totalIncome
   state.business.totalExpenses = res.totalExpenses
   state.business.totalTax = res.totalTax

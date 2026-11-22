@@ -3,6 +3,7 @@ import { formatGameDate } from '@/core/lib/quarter'
 import { PREGNANCY_DURATION_MONTHS } from '@/core/lib/time/constants'
 import type { Notification } from '@/core/types'
 import type { Player } from '@/core/types'
+import type { LifeEvent } from '@/core/types'
 
 /**
  * Обрабатывает логику свиданий
@@ -176,10 +177,37 @@ export function processPersonal(
     year,
     notifications,
   )
+  const lifeEvents: LifeEvent[] = []
+  const previousFamilyMemberIds = new Set(prevPersonal.familyMembers.map((member) => member.id))
+  const newborns = familyMembers.filter(
+    (member) => member.type === 'child' && !previousFamilyMemberIds.has(member.id),
+  )
+  if (newborns.length > 0) {
+    lifeEvents.push({
+      amount: newborns.length,
+      category: 'family',
+      entityName: newborns.map((member) => member.name).join(', '),
+      id: `children_born_${newborns.map((member) => member.id).join('_')}`,
+      kind: 'child_born',
+      turn,
+      year,
+    })
+  }
+  if (!prevPersonal.potentialPartner && potentialPartner) {
+    lifeEvents.push({
+      category: 'family',
+      entityName: potentialPartner.name,
+      id: `partner_met_${potentialPartner.id}`,
+      kind: 'partner_met',
+      turn,
+      year,
+    })
+  }
 
   return {
     familyMembers,
     isDating,
+    lifeEvents,
     notifications,
     potentialPartner,
     pregnancy,

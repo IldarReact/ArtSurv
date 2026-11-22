@@ -37,22 +37,26 @@ export function YearReportModal() {
         </h2>
 
         <div className="grid grid-cols-2 gap-6 mb-6">
-          <div>
-            <p className="text-xs text-muted-foreground uppercase">Ход</p>
-            <p className="text-2xl font-bold">{lastSnapshot.turn}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground uppercase">Чистая стоимость</p>
-            <p className="text-2xl font-bold">${lastSnapshot.netWorth.toLocaleString()}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground uppercase">Счастье</p>
-            <p className="text-2xl font-bold">{lastSnapshot.happiness}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground uppercase">Здоровье</p>
-            <p className="text-2xl font-bold">{lastSnapshot.health}</p>
-          </div>
+          {[
+            ['Ход', lastSnapshot.turn],
+            ['Деньги', lastSnapshot.money],
+            ['Капитал за вычетом долгов', lastSnapshot.netWorth],
+            ['Счастье', lastSnapshot.happiness],
+            ['Здоровье', lastSnapshot.health],
+            ['Рассудок', lastSnapshot.sanity],
+            ['Интеллект', lastSnapshot.intelligence],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <p className="text-xs text-muted-foreground uppercase">{label}</p>
+              <p className="text-2xl font-bold">
+                {typeof value === 'number'
+                  ? label === 'Деньги' || label === 'Капитал за вычетом долгов'
+                    ? `$${value.toLocaleString()}`
+                    : value
+                  : '—'}
+              </p>
+            </div>
+          ))}
         </div>
 
         <button

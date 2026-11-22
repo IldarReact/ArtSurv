@@ -6,6 +6,7 @@ import {
 } from '@/core/lib/financial-crisis'
 import { createInitialPlayer } from '@/core/lib/initial-state'
 import type { ActivityType } from '@/core/types'
+import type { LifeEvent } from '@/core/types'
 
 import { processTurn } from '../logic'
 import type { GameStateCreator, GameSlice } from './types'
@@ -35,11 +36,12 @@ export const createGameSlice: GameStateCreator<GameSlice> = (set, get) => ({
         countries: WORLD_COUNTRIES,
         gameStatus: 'playing',
         history: [],
+        lifeEvents: [],
         notifications: [],
         pendingApplications: [],
         pendingFreelanceApplications: [],
         player: createInitialPlayer(archetype, cId),
-        turn: 1,
+        turn: 0,
         year: 2024,
       },
       false,
@@ -52,6 +54,17 @@ export const createGameSlice: GameStateCreator<GameSlice> = (set, get) => ({
     processTurn(get, set)
   },
 
+  recordLifeEvent: (event: LifeEvent) => {
+    set(
+      (state) => {
+        if (state.lifeEvents.some((existing) => existing.id === event.id)) return state
+        return { lifeEvents: [...state.lifeEvents, event] }
+      },
+      false,
+      'game/recordLifeEvent',
+    )
+  },
+
   resetGame: () => {
     set({
       activeActivity: null,
@@ -61,6 +74,7 @@ export const createGameSlice: GameStateCreator<GameSlice> = (set, get) => ({
       globalEvents: [],
       history: [],
       isProcessingTurn: false,
+      lifeEvents: [],
       notifications: [],
       pendingApplications: [],
       pendingEventNotification: null,
@@ -83,12 +97,26 @@ export const createGameSlice: GameStateCreator<GameSlice> = (set, get) => ({
 
     if (actionType === 'sell_asset') {
       // Продаем все активы
-      let assetsValue = 0
-      for (const a of player.assets) {
-        assetsValue += a.value
-      }
+      const assetsValue = player.assets.reduce((total, asset) => total + asset.currentValue, 0)
 
-      get().performTransaction({ money: assetsValue }, { title: 'Продажа активов для спасения' })
+      if (
+        !get().performTransaction({ money: assetsValue }, { title: 'Продажа активов для спасения' })
+      ) {
+        return
+      }
+      for (const asset of player.assets) {
+        get().recordLifeEvent({
+          amount: asset.currentValue,
+          category: 'investments',
+          costBasis: asset.purchasePrice,
+          entityName: asset.name,
+          gainOrLoss: asset.currentValue - asset.purchasePrice,
+          id: `asset_sold_${asset.id}_${String(get().turn)}`,
+          kind: 'asset_sold',
+          turn: get().turn,
+          year: get().year,
+        })
+      }
       get().updatePlayer({
         assets: [],
       })

@@ -4,6 +4,7 @@ import type { Asset, Debt, QuarterlyReport } from './finance.types'
 import type { ActiveFreelanceGig, FreelanceApplication } from './freelance.types'
 import type { BusinessIdea } from './idea.types'
 import type { Job, JobApplication } from './job.types'
+import type { LifeEvent } from './life-history.types'
 import type { Notification } from './notification.types'
 import type { PersonalLife } from './personal.types'
 import type { StatChangeEffect, StatEffect } from './stats.types'
@@ -18,6 +19,7 @@ export type GameStatus =
   | 'ended'
 
 export type GameOverReason =
+  | 'COMPLETED'
   | 'DEATH' // Health = 0
   | 'MENTAL_BREAKDOWN' // Sanity = 0
   | 'DEGRADATION' // Intelligence = 0
@@ -76,10 +78,16 @@ export interface Player {
 }
 
 export interface HistoryEntry {
+  energy?: number
   eventDescription?: string
   happiness: number
   health: number
+  intelligence?: number
+  investmentCostBasis?: number
+  investmentValue?: number
+  money?: number
   netWorth: number
+  sanity?: number
   turn: number
   year: number
 }
@@ -102,6 +110,7 @@ export interface GameState {
   gameStatus: GameStatus
   globalEvents: GlobalEvent[]
   history: HistoryEntry[]
+  lifeEvents: LifeEvent[]
   isProcessingTurn: boolean
   // New fields
   notifications: Notification[]

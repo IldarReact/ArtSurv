@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react'
 import { useState, useEffect, useCallback } from 'react'
 
 import { isInFinancialCrisis } from '@/core/lib/financial-crisis'
+import { GAME_DURATION_QUARTERS } from '@/core/lib/game-duration'
 import {
   isMultiplayerActive,
   setTurnReady,
@@ -161,7 +162,7 @@ export function GameplayLayout() {
             ) : isCrisis ? (
               'УСТРАНИТЬ ДОЛГ'
             ) : (
-              `ЗАВЕРШИТЬ ХОД (${String(turn)}/40)`
+              `ЗАВЕРШИТЬ ХОД (${String(Math.min(turn + 1, GAME_DURATION_QUARTERS))}/${String(GAME_DURATION_QUARTERS)})`
             )}
           </Button>
         </div>

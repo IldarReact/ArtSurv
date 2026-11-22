@@ -46,6 +46,15 @@ export const createInvestmentSlice: StateCreator<GameStore, [], [], InvestmentSl
     get().updatePlayer({
       assets: [...player.assets, asset],
     })
+    get().recordLifeEvent({
+      amount: totalCost,
+      category: 'investments',
+      entityName: asset.name,
+      id: `asset_purchased_${asset.id}_${String(get().turn)}`,
+      kind: 'asset_purchased',
+      turn: get().turn,
+      year: get().year,
+    })
 
     get().pushNotification({
       message: `Вы купили ${quantity.toString()} шт. ${name} за $${totalCost.toLocaleString()}`,

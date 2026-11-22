@@ -34,6 +34,11 @@ export function checkDefeatConditions(stats: StatEffect): GameOverReason | null 
  */
 export function getGameOverMessage(reason: GameOverReason): { title: string; message: string } {
   switch (reason) {
+    case 'COMPLETED':
+      return {
+        message: 'Вы прожили все 20 игровых лет.',
+        title: 'Жизнь завершена',
+      }
     case 'DEATH':
       return {
         message: 'Ваше здоровье упало до нуля. Вы умерли от болезни или истощения.',

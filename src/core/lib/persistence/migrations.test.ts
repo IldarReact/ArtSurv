@@ -160,4 +160,25 @@ describe('migrations', () => {
     expect(migrated.notifications[0].type).toBe('job_offer')
     expect(migrated.notifications[1].data.salary).toBe(100)
   })
+
+  it('adds an empty life-event ledger when migrating pre-history saves', () => {
+    const legacyState = {
+      history: [
+        {
+          happiness: 80,
+          health: 70,
+          netWorth: 1000,
+          turn: 3,
+          year: 2024,
+        },
+      ],
+      lifeEvents: undefined,
+      player: null,
+    }
+
+    const migrated = migrateState(legacyState, 5, 6)
+
+    expect(migrated.lifeEvents).toEqual([])
+    expect(migrated.history).toEqual(legacyState.history)
+  })
 })

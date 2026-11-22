@@ -63,6 +63,7 @@ export type GameStore = GameSlice &
     countries: GameState['countries']
     globalEvents: GameState['globalEvents']
     history: GameState['history']
+    lifeEvents: GameState['lifeEvents']
   }
 
 // Удобный алиас для StateCreator со всеми middleware стора

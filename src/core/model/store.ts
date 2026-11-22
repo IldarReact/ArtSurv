@@ -61,6 +61,7 @@ export const useGameStore = create<GameStore>()(
         countries: WORLD_COUNTRIES,
         globalEvents: [],
         history: [],
+        lifeEvents: [],
 
         // Combine all slices
         ...createGameSlice(...a),

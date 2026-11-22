@@ -32,4 +32,5 @@ export const personalStep: TurnStep = (ctx, state) => {
   })
 
   state.notifications.push(...res.notifications)
+  state.lifeEvents.push(...res.lifeEvents)
 }

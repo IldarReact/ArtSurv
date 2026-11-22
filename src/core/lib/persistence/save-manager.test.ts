@@ -47,6 +47,7 @@ describe('saveManager', () => {
     globalEvents: [],
     history: [],
     isProcessingTurn: false,
+    lifeEvents: [],
     notifications: [],
     pendingApplications: [],
     pendingFreelanceApplications: [],

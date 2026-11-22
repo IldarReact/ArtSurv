@@ -37,6 +37,15 @@ export const createJobSlice: StateCreator<GameStore, [], [], JobSlice> = (set, g
       jobs: [...prev.jobs, newJob],
       quarterlySalary: prev.quarterlySalary + salary,
     }))
+    state.recordLifeEvent({
+      amount: salary,
+      category: 'work',
+      entityName: jobTitle,
+      id: `external_job_started_${newJob.id}_${String(state.turn)}`,
+      kind: 'job_started',
+      turn: state.turn,
+      year: state.year,
+    })
 
     state.pushNotification({
       message: `Вы устроились на должность ${jobTitle} в ${company}.`,
@@ -79,6 +88,15 @@ export const createJobSlice: StateCreator<GameStore, [], [], JobSlice> = (set, g
       jobs: [...prev.jobs, newJob],
       quarterlySalary: prev.quarterlySalary + newJob.salary,
     }))
+    state.recordLifeEvent({
+      amount: newJob.salary,
+      category: 'work',
+      entityName: newJob.title,
+      id: `job_started_${newJob.id}_${String(state.turn)}`,
+      kind: 'job_started',
+      turn: state.turn,
+      year: state.year,
+    })
 
     state.dismissNotification(notification.id)
   },
@@ -174,6 +192,15 @@ export const createJobSlice: StateCreator<GameStore, [], [], JobSlice> = (set, g
         jobs: prev.jobs.map((j) => (j.id === jobId ? { ...j, salary: newSalary } : j)),
         quarterlySalary: prev.quarterlySalary + salaryDiff,
       }))
+      state.recordLifeEvent({
+        amount: salaryDiff,
+        category: 'work',
+        entityName: job.title,
+        id: `job_raise_${job.id}_${String(state.turn)}`,
+        kind: 'job_salary_increased',
+        turn: state.turn,
+        year: state.year,
+      })
 
       state.pushNotification({
         message: `Ваш разговор прошел успешно. Зарплата в ${job.company} выросла на ${String(Math.round(raisePercent))}% (+$${String(salaryDiff)}/кв).`,
@@ -203,5 +230,14 @@ export const createJobSlice: StateCreator<GameStore, [], [], JobSlice> = (set, g
       jobs: prev.jobs.filter((j) => j.id !== jobId),
       quarterlySalary: prev.quarterlySalary - job.salary,
     }))
+    state.recordLifeEvent({
+      amount: job.salary,
+      category: 'work',
+      entityName: job.title,
+      id: `job_quit_${job.id}_${String(state.turn)}`,
+      kind: 'job_quit',
+      turn: state.turn,
+      year: state.year,
+    })
   },
 })

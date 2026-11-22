@@ -18,9 +18,9 @@ function createState(): TurnState {
     gameStatus: 'playing',
     globalEvents: [],
     globalMarketValue: 1,
-    historyEntry: null,
     inflationNotification: null,
     isAborted: false,
+    lifeEvents: [],
     lifestyle: {
       breakdown: { credits: 0, food: 0, housing: 0, mortgage: 0, other: 0, total: 0, transport: 0 },
       expenses: 0,

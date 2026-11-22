@@ -7,6 +7,7 @@ import type { OnlinePlayer as Player } from './multiplayer.types'
 
 interface Presence extends JsonObject {
   color: string
+  finalScore: number | null
   gameStarted: boolean
   isHost: boolean
   isReady: boolean
@@ -69,6 +70,7 @@ export function initMultiplayer(inputRoomId?: string, isCreator = false): string
   const { room } = clientInstance.enterRoom<Presence, JsonObject, JsonObject, GameEvent>(id, {
     initialPresence: {
       color: randomColor,
+      finalScore: null,
       gameStarted: false,
       isHost: isCreator,
       isReady: false,
@@ -106,6 +108,7 @@ export function getOnlinePlayers(): Player[] {
   const players: Player[] = others.map((other) => ({
     clientId: String(other.connectionId),
     color: other.presence.color,
+    finalScore: other.presence.finalScore ?? null,
     gameStarted: other.presence.gameStarted,
     isHost: other.presence.isHost,
     isLocal: false,
@@ -119,6 +122,7 @@ export function getOnlinePlayers(): Player[] {
     players.unshift({
       clientId: String(self.connectionId),
       color: self.presence.color,
+      finalScore: self.presence.finalScore ?? null,
       gameStarted: self.presence.gameStarted,
       isHost: self.presence.isHost,
       isLocal: true,
@@ -135,6 +139,19 @@ export function getOnlinePlayers(): Player[] {
 export function setPlayerName(name: string) {
   if (!roomInstance) return
   roomInstance.updatePresence({ name })
+}
+
+export function setFinalScore(finalScore: number | null) {
+  if (!roomInstance) return
+  roomInstance.updatePresence({ finalScore })
+}
+
+export function subscribeToFinalScoreChanges(callback: () => void): () => void {
+  if (!roomInstance)
+    return () => {
+      // no-op when multiplayer is disabled
+    }
+  return roomInstance.subscribe('others', callback)
 }
 
 export function setPlayerReady(ready: boolean) {

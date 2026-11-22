@@ -63,4 +63,5 @@ export const educationStep: TurnStep = (ctx, state) => {
 
   res.protectedSkills.forEach((s) => state.protectedSkills.add(s))
   state.notifications.push(...res.notifications)
+  state.lifeEvents.push(...res.lifeEvents)
 }

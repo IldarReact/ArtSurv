@@ -66,6 +66,7 @@ describe('Centralized Stats Logic', () => {
       pushNotification: vi.fn((n) => {
         state.notifications = [n, ...state.notifications]
       }),
+      recordLifeEvent: vi.fn(),
     } as unknown as TestState
 
     const playerSlice = createPlayerSlice(

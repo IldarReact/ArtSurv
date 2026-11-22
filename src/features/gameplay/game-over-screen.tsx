@@ -1,11 +1,10 @@
 'use client'
 
-import { Skull, Brain, Frown, DollarSign } from 'lucide-react'
+import { Brain, DollarSign, Frown, Skull, Trophy } from 'lucide-react'
 
 import { getGameOverMessage } from '@/core/lib/defeat-conditions'
 import { getQuarter } from '@/core/lib/quarter'
 import { useGameStore } from '@/core/model/store'
-import type { GameOverReason } from '@/core/types/game.types'
 import { Button } from '@/shared/components/button'
 
 export function GameOverScreen() {
@@ -13,11 +12,13 @@ export function GameOverScreen() {
 
   if (!endReason) return null
 
-  const { message, title } = getGameOverMessage(endReason as GameOverReason)
+  const { message, title } = getGameOverMessage(endReason)
 
   // Иконка в зависимости от причины
   const getIcon = () => {
     switch (endReason) {
+      case 'COMPLETED':
+        return <Trophy className="w-24 h-24 text-yellow-500" />
       case 'DEATH':
         return <Skull className="w-24 h-24 text-red-500" />
       case 'MENTAL_BREAKDOWN':
@@ -34,6 +35,8 @@ export function GameOverScreen() {
   // Цвет фона в зависимости от причины
   const getBgGradient = (): string => {
     switch (endReason) {
+      case 'COMPLETED':
+        return 'from-yellow-950/50 to-black'
       case 'DEATH':
         return 'from-red-950/50 to-black'
       case 'MENTAL_BREAKDOWN':

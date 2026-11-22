@@ -123,6 +123,10 @@ export function processCountryEconomy(
     ...event,
     appliedChanges: getAppliedChanges(currentCountry, country),
   }
+  if (Object.keys(recordedEvent.appliedChanges ?? {}).length === 0) {
+    return { country, event: null }
+  }
+
   country.activeEvents = [recordedEvent]
   country.eventHistory = [...(currentCountry.eventHistory ?? []), recordedEvent]
 

@@ -76,11 +76,24 @@ export const createBankSlice: StateCreator<GameStore, [], [], BankSlice> = (set,
     const deposit = state.player.assets.find((a) => a.id === id)
     if (deposit?.type !== 'deposit') return
 
-    state.performTransaction({ money: deposit.currentValue }, { title: 'Закрытие вклада' })
+    if (!state.performTransaction({ money: deposit.currentValue }, { title: 'Закрытие вклада' })) {
+      return
+    }
 
     state.updatePlayer((prev) => ({
       assets: prev.assets.filter((a) => a.id !== id),
     }))
+    state.recordLifeEvent({
+      amount: deposit.currentValue,
+      category: 'investments',
+      costBasis: deposit.purchasePrice,
+      entityName: deposit.name,
+      gainOrLoss: deposit.currentValue - deposit.purchasePrice,
+      id: `asset_sold_${deposit.id}_${String(state.turn)}`,
+      kind: 'asset_sold',
+      turn: state.turn,
+      year: state.year,
+    })
   },
 
   openDeposit: (amount) => {
@@ -111,6 +124,15 @@ export const createBankSlice: StateCreator<GameStore, [], [], BankSlice> = (set,
     state.updatePlayer((prev) => ({
       assets: [...prev.assets, deposit],
     }))
+    state.recordLifeEvent({
+      amount,
+      category: 'investments',
+      entityName: deposit.name,
+      id: `asset_purchased_${deposit.id}_${String(state.turn)}`,
+      kind: 'asset_purchased',
+      turn: state.turn,
+      year: state.year,
+    })
 
     state.pushNotification({
       message: `Вы открыли вклад на $${amount.toLocaleString()} под ${depositRate.toFixed(1)}% годовых.`,

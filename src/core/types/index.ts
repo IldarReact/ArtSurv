@@ -114,6 +114,12 @@ export type {
   GameState,
   ActivityType,
 } from './game.types'
+export type {
+  LifeEvent,
+  LifeEventCategory,
+  LifeEventKind,
+  LifeEventStat,
+} from './life-history.types'
 
 // Inflation
 export type { InflationNotification } from '@/core/lib/calculations/inflation-engine'

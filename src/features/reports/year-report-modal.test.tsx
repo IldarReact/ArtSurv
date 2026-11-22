@@ -53,6 +53,7 @@ describe('YearReportModal', () => {
     expect(screen.getByText(/150.*000/)).toBeDefined()
     expect(screen.getByText('85')).toBeDefined()
     expect(screen.getByText('90')).toBeDefined()
+    expect(screen.queryByText('Энергия')).toBeNull()
   }, 15000)
 
   it('should render error message when history is empty instead of black screen', () => {

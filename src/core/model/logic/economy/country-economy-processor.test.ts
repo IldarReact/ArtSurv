@@ -105,6 +105,30 @@ describe('processCountryEconomy', () => {
     expect(result.country.eventHistory).toEqual([])
   })
 
+  it('does not record or notify an event when every effect is clamped away', () => {
+    generateEconomicEventMock.mockReturnValueOnce({
+      ...createEvent(2),
+      effects: {
+        corporateTaxRateChange: -2,
+        personalTaxRateChange: 1,
+      },
+      type: 'tax_reform',
+    })
+
+    const result = processCountryEconomy(
+      {
+        ...country,
+        corporateTaxRate: 0,
+        taxRate: 100,
+      },
+      2,
+    )
+
+    expect(result.event).toBeNull()
+    expect(result.country.activeEvents).toEqual([])
+    expect(result.country.eventHistory).toEqual([])
+  })
+
   it('routes event tax changes into personal and business tax calculations', () => {
     const result = processCountryEconomy(country, 1).country
     const personalTaxes = calculateQuarterlyTaxes({

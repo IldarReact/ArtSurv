@@ -68,6 +68,6 @@ describe('EconomicEventsPanel', () => {
 
     render(<EconomicEventsPanel />)
 
-    expect(screen.getByText('В стране всё спокойно...')).toBeTruthy()
+    expect(screen.getByText('За этот период нет событий с фактическими изменениями.')).toBeTruthy()
   })
 })

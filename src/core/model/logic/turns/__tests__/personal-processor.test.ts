@@ -116,6 +116,15 @@ describe('personal-processor', () => {
     expect(result.pregnancy).toBeNull()
     expect(result.familyMembers).toHaveLength(1)
     expect(result.notifications.some((n) => n.title === 'Рождение ребенка! 👶')).toBe(true)
+    expect(result.lifeEvents).toContainEqual(
+      expect.objectContaining({
+        amount: 1,
+        category: 'family',
+        kind: 'child_born',
+        turn: 1,
+        year: 2025,
+      }),
+    )
 
     nowSpy.mockRestore()
   })

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 
-import type { Country, HistoryEntry, Player } from '@/core/types'
+import type { Country, Player } from '@/core/types'
 
 import { commitTurn } from './commit-turn'
 import type { TurnContext } from './turn-context'
@@ -8,6 +8,38 @@ import type { TurnState } from './turn-state'
 
 describe('commitTurn', () => {
   const mockPlayer = {
+    assets: [
+      {
+        currentValue: 500,
+        expenses: 0,
+        id: 'stock-1',
+        income: 0,
+        liquidity: 'high',
+        name: 'Stock',
+        purchasePrice: 300,
+        risk: 'medium',
+        type: 'stock',
+        unrealizedGain: 200,
+        value: 500,
+      },
+    ],
+    businesses: [],
+    debts: [
+      {
+        id: 'debt-1',
+        interestRate: 10,
+        name: 'Loan',
+        principalAmount: 100,
+        quarterlyInterest: 0,
+        quarterlyPayment: 0,
+        quarterlyPrincipal: 0,
+        remainingAmount: 100,
+        remainingQuarters: 1,
+        startTurn: 0,
+        termQuarters: 1,
+        type: 'consumer_credit',
+      },
+    ],
     id: 'player-1',
     personal: { stats: { energy: 100, health: 100 } },
     quarterlyReport: { netProfit: 0 },
@@ -15,7 +47,7 @@ describe('commitTurn', () => {
   } as unknown as Player
 
   const mockCtx: TurnContext = {
-    prev: { history: [] } as any,
+    prev: { history: [], lifeEvents: [] } as any,
     turn: 1,
     year: 2024,
   }
@@ -38,9 +70,9 @@ describe('commitTurn', () => {
     gameStatus: 'playing',
     globalEvents: [],
     globalMarketValue: 100,
-    historyEntry: { turn: 1, year: 2024 } as unknown as HistoryEntry,
     inflationNotification: null,
     isAborted: false,
+    lifeEvents: [],
     lifestyle: {
       breakdown: {
         credits: 0,
@@ -63,7 +95,14 @@ describe('commitTurn', () => {
     player: mockPlayer,
     protectedSkills: new Set(),
     statModifiers: {},
-    stats: { energy: 80, health: 90 } as unknown as TurnState['stats'],
+    stats: {
+      energy: 80,
+      happiness: 70,
+      health: 90,
+      intelligence: 60,
+      money: 1000,
+      sanity: 50,
+    },
     turn: 0,
     year: 2024,
   }
@@ -77,17 +116,7 @@ describe('commitTurn', () => {
 
   it('should advance year and change status to year_report at quarter end', () => {
     const yearEndCtx = { ...mockCtx, turn: 3 }
-    const stateWithHistory: TurnState = {
-      ...mockState,
-      historyEntry: {
-        happiness: 90,
-        health: 90,
-        netWorth: 1500,
-        turn: 3,
-        year: 2024,
-      } as unknown as HistoryEntry,
-    }
-    const result = commitTurn(yearEndCtx, stateWithHistory)
+    const result = commitTurn(yearEndCtx, mockState)
     expect(result.turn).toBe(4)
     expect(result.year).toBe(2025)
     expect(result.gameStatus).toBe('year_report')
@@ -133,26 +162,52 @@ describe('commitTurn', () => {
     expect(result.countries?.us.eventHistory).toEqual([recordedEvent])
   })
 
-  it('should update history if historyEntry is present', () => {
-    const stateWithHistory: TurnState = {
-      ...mockState,
-      historyEntry: {
-        happiness: 100,
-        health: 100,
-        netWorth: 1000,
-        turn: 1,
-        year: 2024,
-      } as unknown as HistoryEntry,
-    }
-    const result = commitTurn(mockCtx, stateWithHistory)
-    expect(result.history).toHaveLength(1)
-    expect(result.history![0].netWorth).toBe(1000)
+  it('records post-commit stats, cash, assets, and debts in an annual snapshot', () => {
+    const result = commitTurn({ ...mockCtx, turn: 3 }, mockState)
+    const snapshot = result.history?.[0]
+
+    expect(snapshot).toMatchObject({
+      happiness: 70,
+      health: 90,
+      intelligence: 60,
+      investmentCostBasis: 300,
+      investmentValue: 500,
+      money: 1250,
+      netWorth: 1650,
+      sanity: 50,
+      turn: 3,
+      year: 2024,
+    })
+    expect(snapshot).not.toHaveProperty('energy')
   })
 
-  it('should handle missing historyEntry gracefully', () => {
-    const stateWithoutHistory = { ...mockState, historyEntry: null }
-    const result = commitTurn(mockCtx, stateWithoutHistory as TurnState)
-    expect(result.history).toHaveLength(0)
+  it('does not create annual snapshots before the year-end quarter', () => {
+    const result = commitTurn(mockCtx, mockState)
+    expect(result.history).toEqual([])
+  })
+
+  it('ends the game after the twentieth year and keeps the final annual report', () => {
+    const result = commitTurn({ ...mockCtx, turn: 79 }, mockState)
+
+    expect(result.gameStatus).toBe('ended')
+    expect(result.endReason).toBe('COMPLETED')
+    expect(result.history).toHaveLength(1)
+  })
+
+  it('does not append the same life event twice', () => {
+    const event = {
+      category: 'work',
+      id: 'work-1',
+      kind: 'work_quarter',
+      turn: 1,
+      year: 2024,
+    } as const
+    const result = commitTurn(
+      { ...mockCtx, prev: { history: [], lifeEvents: [event] } as any },
+      { ...mockState, lifeEvents: [event] },
+    )
+
+    expect(result.lifeEvents).toEqual([event])
   })
 
   it('should handle broken/missing cycle data in globalMarket', () => {

@@ -65,7 +65,9 @@ export function EconomicEventsPanel() {
       </div>
 
       {events.length === 0 ? (
-        <p className="text-white/70 italic">В стране всё спокойно...</p>
+        <p className="text-white/70 italic">
+          За этот период нет событий с фактическими изменениями.
+        </p>
       ) : (
         events.map((event) => (
           <Card className={`p-4 border ${eventColors[event.type]}`} key={event.id}>

@@ -50,6 +50,15 @@ describe('Education Processor', () => {
     expect(result.activeCourses).toHaveLength(0)
     expect(result.updatedSkills.find((s) => s.name === 'Marketing')?.level).toBe(3)
     expect(result.notifications.some((n) => n.title === 'Курс завершен')).toBe(true)
+    expect(result.lifeEvents).toContainEqual(
+      expect.objectContaining({
+        category: 'education',
+        entityName: 'Advanced Marketing',
+        kind: 'course_completed',
+        turn: 1,
+        year: 2025,
+      }),
+    )
   })
 
   it('should create new skill upon course completion if not exists', () => {

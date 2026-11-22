@@ -12,6 +12,7 @@ import {
   isHost,
   initMultiplayer,
   setPlayerReady,
+  setFinalScore,
 } from '@/core/lib/multiplayer'
 import { useGameStore } from '@/core/model/store'
 import type { CountryEconomy } from '@/core/types'
@@ -70,6 +71,7 @@ export function MultiplayerLobby() {
 
       const myPlayer = getOnlinePlayers().find((p) => p.isLocal)
       if (myPlayer?.selectedArchetype) {
+        setFinalScore(null)
         initializeGame(selectedCountry, myPlayer.selectedArchetype)
         router.push('/')
       }
@@ -111,6 +113,7 @@ export function MultiplayerLobby() {
 
     const myPlayer = players.find((p) => p.isLocal)
     if (myPlayer?.selectedArchetype) {
+      setFinalScore(null)
       initializeGame(selectedCountry, myPlayer.selectedArchetype)
       router.push('/')
     }

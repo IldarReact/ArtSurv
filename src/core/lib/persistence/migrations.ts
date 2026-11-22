@@ -13,6 +13,7 @@ const migrations: Record<number, MigrationFn | undefined> = {
   3: (state) => migrateV3(state),
   4: (state) => migrateV4(state),
   5: (state) => migrateV5(state),
+  6: (state) => migrateV6(state),
 }
 
 function toObject(value: unknown): Record<string, unknown> {
@@ -202,6 +203,14 @@ function migrateV5(rawState: unknown): unknown {
       currentJob,
       ...(jobs ? { jobs, quarterlySalary } : {}),
     },
+  }
+}
+
+function migrateV6(rawState: unknown): unknown {
+  const state = toObject(rawState)
+  return {
+    ...state,
+    lifeEvents: Array.isArray(state.lifeEvents) ? state.lifeEvents : [],
   }
 }
 

@@ -38,6 +38,7 @@ describe('job slice', () => {
         },
       ],
       player,
+      recordLifeEvent: vi.fn(),
       updatePlayer: (updater: (current: typeof player) => Partial<typeof player>) => {
         player = { ...player, ...updater(player) }
       },
@@ -55,6 +56,9 @@ describe('job slice', () => {
 
     expect(player.jobs.map((job) => job.salary)).toEqual([3000, 9000])
     expect(player.quarterlySalary).toBe(12000)
+    expect(state.recordLifeEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 9000, kind: 'job_started' }),
+    )
     expect(state.dismissNotification).toHaveBeenCalledWith('offer-1')
   })
 })

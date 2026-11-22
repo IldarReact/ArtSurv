@@ -47,6 +47,7 @@ describe('Bank Slice', () => {
         stats: { energy: 100, money: 1000 },
       } as unknown as Player,
       pushNotification: vi.fn(),
+      recordLifeEvent: vi.fn(),
       turn: 1,
       updatePlayer: vi.fn((updater: any) => {
         const patch =
@@ -70,6 +71,9 @@ describe('Bank Slice', () => {
       expect(state.player!.assets[0].type).toBe('deposit')
       expect(state.player!.assets[0].currentValue).toBe(500)
       expect(state.player!.stats.money).toBe(500)
+      expect(state.recordLifeEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ amount: 500, kind: 'asset_purchased' }),
+      )
     })
 
     it('should not open deposit if insufficient funds', () => {

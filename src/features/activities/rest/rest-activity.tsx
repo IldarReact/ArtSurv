@@ -18,6 +18,7 @@ import { getInflatedPrice } from '@/core/lib/calculations/price-helpers'
 import { getRestActivitiesForCountry } from '@/core/lib/data-loaders/rest-loader'
 import { useGameStore } from '@/core/model/store'
 import type { RestActivity as IRestActivity } from '@/core/types'
+import type { LifeEventStat } from '@/core/types'
 import { Button } from '@/shared/components/button'
 import { Card } from '@/shared/components/card'
 
@@ -35,7 +36,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
 }
 
 export function RestActivity(): React.JSX.Element | null {
-  const { countries, performTransaction, player } = useGameStore()
+  const { countries, performTransaction, player, recordLifeEvent, turn, year } = useGameStore()
 
   if (!player) return null
 
@@ -46,7 +47,8 @@ export function RestActivity(): React.JSX.Element | null {
   const currentCountry = countries[player.countryId]
 
   const applyRest = (activity: IRestActivity, inflatedCost: number) => {
-    performTransaction(
+    const before = useGameStore.getState().player
+    const succeeded = performTransaction(
       {
         energy: -activity.energyCost,
         money: -inflatedCost,
@@ -54,6 +56,29 @@ export function RestActivity(): React.JSX.Element | null {
       },
       { title: activity.title },
     )
+    if (!succeeded || !before) return
+
+    const after = useGameStore.getState().player
+    if (!after) return
+
+    const statNames: LifeEventStat[] = ['energy', 'happiness', 'health', 'intelligence', 'sanity']
+    const statChanges: Partial<Record<LifeEventStat, number>> = {}
+    for (const stat of statNames) {
+      const delta = after.stats[stat] - before.stats[stat]
+      if (delta !== 0) statChanges[stat] = delta
+    }
+    const statChangeId = statNames.map((stat) => String(statChanges[stat] ?? 0)).join('_')
+
+    recordLifeEvent({
+      amount: inflatedCost,
+      category: 'rest',
+      entityName: activity.title,
+      id: `rest_${activity.id}_${String(turn)}_${statChangeId}`,
+      kind: 'rest_performed',
+      statChanges,
+      turn,
+      year,
+    })
   }
 
   return (
